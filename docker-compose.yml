@@ -1,0 +1,10 @@
+name: xinghai-image-studio-ui
+services:
+  web:
+    build:
+      context: .
+    container_name: xinghai-image-studio-ui
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18100:18100"
+      - "100.126.43.55:18100:18100"
