@@ -22,6 +22,18 @@ https://img-api.xinghaihub.com/admin
 http://100.126.43.55:18080/admin
 ```
 
+## 技术栈
+
+```text
+框架: React 19
+语言: TypeScript
+构建: Vite
+样式: Tailwind CSS
+组件: Radix UI / 自定义组件
+部署: nginx Docker，后续可迁 CF Pages
+默认端口: 18100
+```
+
 ## 端口
 
 ```text
@@ -66,6 +78,12 @@ curl http://127.0.0.1:18100/healthz
 ```
 
 前端镜像不放上游 AUTH KEY，不直接管理账号池。后端统一鉴权、扣积分、落库、调度 image2api。
+
+## CF Pages 说明
+
+当前不默认上 CF Pages。先用 Docker 部署在自有服务器，保持 `/api/*` 和 `/v1/*` 同源反代到 `18080`。
+
+后续迁 CF Pages 时，优先用 Cloudflare Pages Functions / Worker 做 `/api` 同源代理。不要把后端 AUTH KEY 写进前端。
 
 ## 来源说明
 
