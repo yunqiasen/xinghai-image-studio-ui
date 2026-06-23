@@ -10,10 +10,7 @@ import { ImageEditModal } from "@/components/image-edit-modal";
 import {
   cancelImageTask,
   consumeImageTaskStream,
-  fetchAccounts,
-  fetchConfig,
   listImageTasks,
-  type Account,
   type ImageTaskSnapshot,
   type ImageTaskView,
   type ImageQuality,
@@ -212,69 +209,6 @@ function formatConversationTime(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
-}
-
-function formatAvailableQuota(accounts: Account[], allowDisabled: boolean) {
-  const availableAccounts = accounts.filter((account) =>
-    isImageAccountUsable(account, allowDisabled),
-  );
-  return String(
-    availableAccounts.reduce(
-      (sum, account) => sum + getImageRemaining(account),
-      0,
-    ),
-  );
-}
-
-function getImageRemaining(account: Account) {
-  const limit = account.limits_progress?.find(
-    (item) => item.feature_name === "image_gen",
-  );
-  if (typeof limit?.remaining === "number") {
-    return Math.max(0, limit.remaining);
-  }
-  return Math.max(0, account.quota);
-}
-
-function isImageAccountUsable(account: Account, allowDisabled: boolean) {
-  const disabled = Boolean(account.disabled) || account.status === "禁用";
-  return (
-    (!disabled || allowDisabled) &&
-    account.status !== "异常" &&
-    account.status !== "限流" &&
-    getImageRemaining(account) > 0
-  );
-}
-
-function hasAvailablePaidImageAccount(
-  accounts: Account[],
-  allowDisabled: boolean,
-) {
-  return accounts.some(
-    (account) =>
-      isImageAccountUsable(account, allowDisabled) &&
-      (account.type === "Plus" ||
-        account.type === "Pro" ||
-        account.type === "Team"),
-  );
-}
-
-function hasUsableFreeLegacyAccount(
-  accounts: Account[],
-  allowDisabled: boolean,
-  imageMode: "studio" | "cpa",
-  freeImageRoute: string,
-) {
-  if (imageMode !== "studio" || freeImageRoute !== "legacy") {
-    return false;
-  }
-  return accounts.some(
-    (account) =>
-      isImageAccountUsable(account, allowDisabled) &&
-      account.type !== "Plus" &&
-      account.type !== "Pro" &&
-      account.type !== "Team",
-  );
 }
 
 async function normalizeConversationHistory(items: ImageConversation[]) {
@@ -486,7 +420,7 @@ function buildProcessingStatus(
     }
     return {
       title: "模型正在生成图片",
-      detail: "通常需要 1 到 5 分钟，请保持页面开启",
+      detail: "通常需要 30 到 150 秒；超过约 2-3 分钟会自动给出失败原因",
     };
   }
 
@@ -514,20 +448,19 @@ function buildProcessingStatus(
         variant === "selection-edit"
           ? "模型正在按选区修改图片"
           : "模型正在编辑图片",
-      detail: "通常需要 1 到 5 分钟，请保持页面开启",
+      detail: "通常需要 30 到 150 秒；超过约 2-3 分钟会自动给出失败原因",
     };
   }
 
   return {
     title: "模型正在编辑图片",
-    detail: "通常需要 1 到 5 分钟，请保持页面开启",
+    detail: "通常需要 30 到 150 秒；超过约 2-3 分钟会自动给出失败原因",
   };
 }
 
 export default function ImagePage() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const didLoadQuotaRef = useRef(false);
   const mountedRef = useRef(true);
   const draftSelectionRef = useRef(false);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
@@ -553,15 +486,7 @@ export default function ImagePage() {
       ? window.matchMedia("(min-width: 1024px)").matches
       : false,
   );
-  const [availableQuota, setAvailableQuota] = useState("加载中");
-  const [availableAccounts, setAvailableAccounts] = useState<Account[]>([]);
-  const [allowDisabledStudioAccounts, setAllowDisabledStudioAccounts] =
-    useState(false);
-  const [configuredImageMode, setConfiguredImageMode] = useState<
-    "studio" | "cpa"
-  >("studio");
-  const [configuredFreeImageRoute, setConfiguredFreeImageRoute] =
-    useState("legacy");
+  const [availableQuota] = useState("按积分扣费");
   const [submitElapsedSeconds, setSubmitElapsedSeconds] = useState(0);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [isMobileComposerCollapsed, setIsMobileComposerCollapsed] =
@@ -731,29 +656,8 @@ export default function ImagePage() {
     () => Math.max(1, Math.min(8, Number(imageCount) || 1)),
     [imageCount],
   );
-  const hasAvailablePaidAccount = useMemo(
-    () =>
-      hasAvailablePaidImageAccount(
-        availableAccounts,
-        allowDisabledStudioAccounts,
-      ),
-    [allowDisabledStudioAccounts, availableAccounts],
-  );
-  const hasLegacyFreeAccountInPool = useMemo(
-    () =>
-      hasUsableFreeLegacyAccount(
-        availableAccounts,
-        allowDisabledStudioAccounts,
-        configuredImageMode,
-        configuredFreeImageRoute,
-      ),
-    [
-      allowDisabledStudioAccounts,
-      availableAccounts,
-      configuredFreeImageRoute,
-      configuredImageMode,
-    ],
-  );
+  const hasAvailablePaidAccount = true;
+  const hasLegacyFreeAccountInPool = false;
   const currentResolutionPresets = useMemo(
     () =>
       imageAspectRatio === "auto"
@@ -771,20 +675,9 @@ export default function ImagePage() {
   const currentRequestRequiresPaidAccount =
     selectedResolutionPreset?.access === "paid";
   const imageQualityDisabledReason = currentRequestRequiresPaidAccount
-    ? "当前输出档位会固定走 Paid 账号，质量参数应可正常生效。"
-    : "当前可用号池里仍有 Free legacy 链路账号，标准分辨率请求可能落到该链路，质量参数无法稳定作为正式参数传给上游，暂时置灰。";
-  const isImageQualityEnabled = useMemo(
-    () =>
-      configuredImageMode === "cpa" ||
-      !hasLegacyFreeAccountInPool ||
-      (currentRequestRequiresPaidAccount && hasAvailablePaidAccount),
-    [
-      configuredImageMode,
-      currentRequestRequiresPaidAccount,
-      hasAvailablePaidAccount,
-      hasLegacyFreeAccountInPool,
-    ],
-  );
+    ? "高像素输出会消耗更多积分，生成耗时也可能更长。"
+    : "可按 Low / Medium / High 选择质量档位；具体耗时以上游模型为准。";
+  const isImageQualityEnabled = true;
   const imageResolutionTierOptions = useMemo(
     () =>
       currentResolutionPresets.map((item) => ({
@@ -1008,39 +901,6 @@ export default function ImagePage() {
       stopPolling();
       streamAbort?.abort();
     };
-  }, []);
-
-  useEffect(() => {
-    const loadQuota = async () => {
-      try {
-        const [accountsData, configData] = await Promise.all([
-          fetchAccounts(),
-          fetchConfig(),
-        ]);
-        const allowDisabled =
-          configData.chatgpt.imageMode === "studio" &&
-          configData.chatgpt.studioAllowDisabledImageAccounts;
-        setAllowDisabledStudioAccounts(allowDisabled);
-        setConfiguredImageMode(configData.chatgpt.imageMode);
-        setConfiguredFreeImageRoute(configData.chatgpt.freeImageRoute);
-        setAvailableAccounts(accountsData.items);
-        setAvailableQuota(
-          formatAvailableQuota(accountsData.items, allowDisabled),
-        );
-      } catch {
-        setAvailableAccounts([]);
-        setAllowDisabledStudioAccounts(false);
-        setConfiguredImageMode("studio");
-        setConfiguredFreeImageRoute("legacy");
-        setAvailableQuota((prev) => (prev === "加载中" ? "—" : prev));
-      }
-    };
-
-    if (didLoadQuotaRef.current) {
-      return;
-    }
-    didLoadQuotaRef.current = true;
-    void loadQuota();
   }, []);
 
   useEffect(() => {

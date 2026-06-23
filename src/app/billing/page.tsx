@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-import { addCredits } from "@/lib/storage/local-session";
+import { redeemCredits } from "@/lib/storage/local-session";
 import { useSessionUser } from "@/lib/storage/session-hooks";
 
 const plans = [
@@ -15,13 +15,20 @@ const plans = [
 export function BillingPage() {
   const { user } = useSessionUser();
   const [credits, setCredits] = useState(() => user?.credits || 0);
+  const [redeemCode, setRedeemCode] = useState("");
 
   useEffect(() => setCredits(user?.credits || 0), [user]);
 
   async function redeem() {
+    const code = redeemCode.trim();
+    if (!code) {
+      toast.error("请输入兑换码");
+      return;
+    }
     try {
-      const next = await addCredits(100);
+      const next = await redeemCredits(code);
       setCredits(next.credits);
+      setRedeemCode("");
       toast.success("兑换成功，积分已到账");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "兑换失败");
@@ -34,7 +41,15 @@ export function BillingPage() {
         <h1 className="mt-2 text-5xl font-semibold tracking-[-0.055em] text-[#142536]">充值和兑换</h1>
         <p className="mt-3 text-[#294258]/62">{user ? `当前余额：${credits} 积分。` : "登录后可查看余额、使用兑换码和购买积分包。"}</p>
         {user ? (
-          <button className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#142536] px-6 py-3 text-white" onClick={redeem} type="button"><Ticket size={18} /> 兑换码兑换</button>
+          <div className="mt-5 flex max-w-xl flex-col gap-3 sm:flex-row">
+            <input
+              className="min-w-0 flex-1 rounded-full border border-[#1d3346]/10 bg-white px-5 py-3 outline-none focus:border-[#2d6f82]/35"
+              placeholder="输入兑换码"
+              value={redeemCode}
+              onChange={(event) => setRedeemCode(event.target.value)}
+            />
+            <button className="inline-flex items-center justify-center gap-2 rounded-full bg-[#142536] px-6 py-3 text-white" onClick={redeem} type="button"><Ticket size={18} /> 兑换</button>
+          </div>
         ) : (
           <Link to="/login" className="mt-5 inline-flex rounded-full bg-[#142536] px-6 py-3 text-white">先登录</Link>
         )}
