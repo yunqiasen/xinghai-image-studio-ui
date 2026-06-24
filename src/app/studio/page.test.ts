@@ -25,7 +25,7 @@ describe("studio result layout", () => {
     expect(EDITOR_PANEL_GRID_CLASS_NAME).toContain("bg-white/96");
     expect(CONTROLS_PANEL_CLASS_NAME).toContain("#171626");
     expect(PREVIEW_PANEL_CLASS_NAME).toContain("bg-white/96");
-    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("xl:grid-cols-[minmax(430px,0.52fr)_minmax(720px,1fr)]");
+    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("xl:grid-cols-[minmax(560px,0.86fr)_minmax(640px,1.14fr)]");
     expect(STUDIO_TEMPLATE_SIDEBAR_ENABLED).toBe(false);
     expect(STUDIO_HEADER_ENABLED).toBe(false);
     expect(STYLE_TAGS_ENABLED).toBe(false);
