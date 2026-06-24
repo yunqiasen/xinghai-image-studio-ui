@@ -5,6 +5,11 @@ import { toast } from "sonner";
 
 import { estimateCredits, modePricing, type ResolutionTier, type StudioMode } from "@/lib/billing/pricing";
 import { submitImageGeneration } from "@/lib/image2api/client";
+import {
+  sizeFromStudioPreset,
+  studioAspectRatioOptions,
+  type StudioAspectRatio,
+} from "@/lib/image2api/size-presets";
 import { useSessionUser } from "@/lib/storage/session-hooks";
 
 type UploadedAsset = { id: string; name: string; dataUrl: string; role: "image" | "mask" };
@@ -20,12 +25,6 @@ const promptTemplates = [
 
 const styleTags = ["真实摄影", "商业主图", "动漫角色", "漫画分镜", "3D 渲染", "换背景", "统一角色", "高级灰调色"];
 const uploadModes: StudioMode[] = ["image", "edit", "remove-bg", "upscale", "background"];
-
-function sizeFromResolution(resolution: ResolutionTier) {
-  if (resolution === "4k") return "4096x4096";
-  if (resolution === "2k") return "2048x2048";
-  return "1024x1024";
-}
 
 function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -49,6 +48,7 @@ function helperText(mode: StudioMode) {
 export function StudioPage() {
   const [mode, setMode] = useState<StudioMode>("text");
   const [resolution, setResolution] = useState<ResolutionTier>("1k");
+  const [aspectRatio, setAspectRatio] = useState<StudioAspectRatio>("1:1");
   const [prompt, setPrompt] = useState(promptTemplates[0]);
   const [count, setCount] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -91,7 +91,7 @@ export function StudioPage() {
         mode,
         prompt,
         n: count,
-        size: sizeFromResolution(resolution),
+        size: sizeFromStudioPreset(aspectRatio, resolution),
         reference_images: referenceImages.map((item) => item.dataUrl),
         mask: maskImage?.dataUrl,
       });
@@ -193,12 +193,32 @@ export function StudioPage() {
           </div>
         ) : null}
 
+        <div className="mt-5 grid gap-3 rounded-[28px] border border-[#1d3346]/10 bg-white/70 p-4 md:grid-cols-[220px_1fr]">
+          <label className="text-sm text-[#294258]/62">
+            图片比例
+            <select
+              className="mt-2 w-full rounded-2xl bg-[#edf4f7] px-4 py-3 text-base font-semibold text-[#142536] outline-none"
+              value={aspectRatio}
+              onChange={(event) => setAspectRatio(event.target.value as StudioAspectRatio)}
+            >
+              {studioAspectRatioOptions.map((item) => (
+                <option key={item.value} value={item.value}>{item.label}</option>
+              ))}
+            </select>
+          </label>
+          <div className="text-sm text-[#294258]/62">
+            分辨率
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              {(["1k", "2k", "4k"] as ResolutionTier[]).map((item) => (
+                <button key={item} className={`rounded-full px-4 py-2 ${resolution === item ? "bg-[#142536] text-white" : "bg-[#edf4f7] text-[#20384d]"}`} onClick={() => setResolution(item)} type="button">
+                  {item.toUpperCase()} · {sizeFromStudioPreset(aspectRatio, item)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          {(["1k", "2k", "4k"] as ResolutionTier[]).map((item) => (
-            <button key={item} className={`rounded-full px-4 py-2 ${resolution === item ? "bg-[#142536] text-white" : "bg-[#edf4f7] text-[#20384d]"}`} onClick={() => setResolution(item)} type="button">
-              {item.toUpperCase()}
-            </button>
-          ))}
           <button disabled={busy} className="ml-auto inline-flex items-center gap-2 rounded-full bg-[#142536] px-7 py-3 text-white shadow-xl shadow-[#142536]/18 disabled:opacity-50" onClick={submit} type="button">
             {busy ? <Layers3 size={18} /> : <Sparkles size={18} />}
             {busy ? "生成中" : "开始生成"}

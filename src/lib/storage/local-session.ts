@@ -2,6 +2,7 @@ export type LocalUser = {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   credits: number;
   role?: string;
   unlimitedCredits?: boolean;
@@ -72,7 +73,7 @@ export async function loadCurrentUser() {
   return currentUser;
 }
 
-export async function registerLocalUser(input: { name: string; email: string; password: string; redeemCode?: string }) {
+export async function registerLocalUser(input: { name: string; email: string; password: string; redeemCode?: string; phone?: string; smsCode?: string }) {
   const payload = await apiRequest<{ ok: boolean; user: LocalUser }>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(input),
