@@ -1,10 +1,35 @@
-import { ImagePlus, Layers3, Sparkles, UploadCloud, WandSparkles, X } from "lucide-react";
+import {
+  Brush,
+  Eraser,
+  FileImage,
+  ImagePlus,
+  Images,
+  Layers3,
+  Maximize2,
+  PaintBucket,
+  Repeat2,
+  Sparkles,
+  UploadCloud,
+  WandSparkles,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { estimateCredits, modePricing, type ResolutionTier, type StudioMode } from "@/lib/billing/pricing";
 import { submitImageGeneration } from "@/lib/image2api/client";
+import {
+  ASPECT_RATIO_SELECTOR_CLASS_NAME,
+  COUNT_SELECTOR_CLASS_NAME,
+  EDITOR_PANEL_GRID_CLASS_NAME,
+  GENERATED_IMAGE_CLASS_NAME,
+  MODE_OPTION_CLASS_NAME,
+  PREVIEW_PANEL_CLASS_NAME,
+  PRIMARY_ASPECT_RATIOS,
+  STUDIO_WORKSPACE_GRID_CLASS_NAME,
+} from "./layout-constants";
 import {
   sizeFromStudioPreset,
   studioAspectRatioOptions,
@@ -15,15 +40,17 @@ import { useSessionUser } from "@/lib/storage/session-hooks";
 type UploadedAsset = { id: string; name: string; dataUrl: string; role: "image" | "mask" };
 
 const DEFAULT_PROMPT = "流星雨划过澄澈夜空，远处山脊与湖面倒影，真实摄影，广角构图";
-const styleTags = ["真实摄影", "商业主图", "动漫角色", "漫画分镜", "3D 渲染", "换背景", "统一角色", "高级灰调色"];
-
-export const STUDIO_TEMPLATE_SIDEBAR_ENABLED = false;
-export const STUDIO_WORKSPACE_GRID_CLASS_NAME = "grid gap-6 xl:grid-cols-[minmax(520px,0.82fr)_minmax(620px,1.18fr)]";
-export const EDITOR_PANEL_GRID_CLASS_NAME = "grid gap-5 rounded-[34px] border border-[#1d3346]/10 bg-white/86 p-5 shadow-sm lg:grid-cols-[156px_minmax(0,1fr)]";
-export const PREVIEW_PANEL_CLASS_NAME = "min-h-[calc(100vh-140px)] rounded-[34px] border border-[#1d3346]/10 bg-white/88 p-5 shadow-sm xl:sticky xl:top-24";
-export const GENERATED_IMAGE_CLASS_NAME = "max-h-[calc(100vh-270px)] w-full rounded-[28px] object-contain transition duration-500 group-hover:scale-[1.01]";
 
 const uploadModes: StudioMode[] = ["image", "edit", "remove-bg", "upscale", "background"];
+const modeIcons: Record<StudioMode, LucideIcon> = {
+  text: FileImage,
+  image: Images,
+  edit: Brush,
+  "remove-bg": Eraser,
+  upscale: Maximize2,
+  background: PaintBucket,
+  batch: Repeat2,
+};
 
 function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -34,18 +61,18 @@ function fileToDataUrl(file: File) {
   });
 }
 
-function helperText(mode: StudioMode) {
-  if (mode === "image") return "上传参考图后，根据提示词重绘风格、构图或细节。";
-  if (mode === "edit") return "上传原图和遮罩图，提示词描述需要修改的局部。";
-  if (mode === "remove-bg") return "上传图片后抠出主体，生成透明或干净背景版本。";
-  if (mode === "upscale") return "上传图片后提升清晰度和细节表现。";
-  if (mode === "background") return "上传主体图，提示词描述新背景。";
-  if (mode === "batch") return "适合角色设定、漫画分镜和商品素材批量生成。";
-  return "输入提示词即可生成图片。";
-}
 
 function shortModeLabel(label: string) {
   return label.replace("图片", "").replace("批量一致性", "批量");
+}
+
+function ratioIconSize(value: StudioAspectRatio) {
+  const [wRaw, hRaw] = value.split(":").map(Number);
+  const w = Number.isFinite(wRaw) && wRaw > 0 ? wRaw : 1;
+  const h = Number.isFinite(hRaw) && hRaw > 0 ? hRaw : 1;
+  const max = 26;
+  if (w >= h) return { width: max, height: Math.max(11, Math.round(max * (h / w))) };
+  return { width: Math.max(11, Math.round(max * (w / h))), height: max };
 }
 
 export function StudioPage() {
@@ -64,6 +91,7 @@ export function StudioPage() {
   const referenceImages = assets.filter((item) => item.role === "image");
   const maskImage = assets.find((item) => item.role === "mask");
   const previewGridClass = result.length > 1 ? "grid gap-4 2xl:grid-cols-2" : "grid gap-4";
+  const primaryAspectRatioOptions = studioAspectRatioOptions.filter((item) => PRIMARY_ASPECT_RATIOS.includes(item.value));
 
   async function appendFiles(files: FileList | null, role: "image" | "mask") {
     if (!files?.length) return;
@@ -111,41 +139,44 @@ export function StudioPage() {
   return (
     <div className={STUDIO_WORKSPACE_GRID_CLASS_NAME}>
       <section className={EDITOR_PANEL_GRID_CLASS_NAME}>
-        <aside className="rounded-[28px] border border-[#1d3346]/10 bg-[#f8fbfc] p-3">
-          <p className="px-2 text-xs font-semibold tracking-[0.18em] text-[#2d6f82]">创作类型</p>
-          <h2 className="mt-1 px-2 text-2xl font-semibold tracking-[-0.05em] text-[#142536]">模式</h2>
+        <aside className="self-start rounded-[28px] border border-white/10 bg-[#151827] p-3 text-white shadow-2xl shadow-[#151827]/12">
+          <p className="px-2 text-xs font-semibold tracking-[0.18em] text-[#7adfee]">创作类型</p>
+          <h2 className="mt-1 px-2 text-2xl font-semibold tracking-[-0.05em]">模式</h2>
           <div className="mt-4 grid gap-2">
-            {Object.entries(modePricing).map(([key, item]) => (
-              <button
-                key={key}
-                className={`rounded-2xl border px-3 py-3 text-left transition ${mode === key ? "border-[#142536] bg-[#142536] text-white shadow-xl" : "border-[#1d3346]/10 bg-white/80 text-[#20384d] hover:bg-[#edf4f7]"}`}
-                onClick={() => setMode(key as StudioMode)}
-                type="button"
-              >
-                <b className="block text-base leading-5">{shortModeLabel(item.label)}</b>
-                <span className="mt-1 block text-xs leading-5 opacity-68">{item.description}</span>
-              </button>
-            ))}
+            {Object.entries(modePricing).map(([key, item]) => {
+              const Icon = modeIcons[key as StudioMode] || FileImage;
+              const active = mode === key;
+              return (
+                <button
+                  key={key}
+                  className={`${MODE_OPTION_CLASS_NAME} ${active ? "border-[#78e6ff]/70 bg-white/12 text-white shadow-[0_0_0_1px_rgba(120,230,255,.3),0_16px_42px_rgba(120,230,255,.16)]" : "border-white/8 bg-white/5 text-white/78 hover:bg-white/9"}`}
+                  onClick={() => setMode(key as StudioMode)}
+                  title={item.description}
+                  type="button"
+                >
+                  <span className={`grid h-10 w-10 place-items-center rounded-xl ${active ? "bg-[#78e6ff]/18 text-[#86edff]" : "bg-white/6 text-white/58"}`}>
+                    <Icon size={18} />
+                  </span>
+                  <b className="text-lg leading-6">{shortModeLabel(item.label)}</b>
+                </button>
+              );
+            })}
           </div>
         </aside>
 
         <div className="min-w-0 space-y-4">
-          <div className="rounded-[28px] border border-[#1d3346]/10 bg-white/70 p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-sm text-[#294258]/52">当前：{activeMode.label}</p>
-                <h1 className="text-4xl font-semibold tracking-[-0.055em] text-[#142536]">图片工作台</h1>
-                <p className="mt-2 text-sm text-[#294258]/58">{helperText(mode)}</p>
-              </div>
-              <span className="rounded-full bg-[#edf4f7] px-4 py-2 text-sm font-semibold text-[#20384d]">{cost} 积分</span>
-            </div>
-
+          <div className="rounded-[28px] border border-[#1d3346]/10 bg-[#fbfdfe] p-5">
             {!user ? (
-              <div className="mt-4 rounded-[22px] border border-[#2d6f82]/16 bg-[#eef8f6] p-3 text-sm text-[#294258]/70">
+              <div className="mb-4 rounded-[22px] border border-[#2d6f82]/16 bg-[#eef8f6] p-3 text-sm text-[#294258]/70">
                 登录后即可使用创作、保存作品和管理积分。
                 <Link to="/login" className="ml-2 font-semibold text-[#2d6f82]">去登录</Link>
               </div>
             ) : null}
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-semibold tracking-[0.14em] text-[#2d6f82]">创作参数</p>
+              <span className="rounded-full bg-[#edf4f7] px-4 py-2 text-sm font-semibold text-[#20384d]">{cost} 积分</span>
+            </div>
 
             {needsUpload ? (
               <div className="mt-4 rounded-[24px] border border-dashed border-[#1d3346]/18 bg-[#f4f8fa] p-4 text-[#294258]/70">
@@ -175,40 +206,58 @@ export function StudioPage() {
               </div>
             ) : null}
 
-            <div className="mt-4 grid gap-3 md:grid-cols-[1fr_140px]">
-              <div className="flex flex-wrap gap-2">
-                {styleTags.map((item) => (
-                  <button key={item} className="rounded-full bg-[#edf4f7] px-4 py-2 text-sm text-[#20384d] hover:bg-[#dfecef]" onClick={() => setPrompt(`${prompt}，${item}`)} type="button">
-                    {item}
-                  </button>
-                ))}
+            <div className="mt-5 space-y-5">
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[#294258]/74">比例</p>
+                  <span className="text-xs text-[#294258]/42">选择图片画幅</span>
+                </div>
+                <div className={ASPECT_RATIO_SELECTOR_CLASS_NAME}>
+                  {primaryAspectRatioOptions.map((item) => {
+                    const active = aspectRatio === item.value;
+                    return (
+                      <button
+                        key={item.value}
+                        aria-label={`图片比例 ${item.value}`}
+                        className={`grid h-18 place-items-center rounded-2xl border text-sm font-semibold transition ${active ? "border-[#142536] bg-[#142536] text-white shadow-lg" : "border-[#1d3346]/10 bg-[#edf4f7] text-[#20384d] hover:bg-[#dfecef]"}`}
+                        onClick={() => setAspectRatio(item.value)}
+                        type="button"
+                      >
+                        <span className={`grid place-items-center rounded-md border-2 ${active ? "border-white" : "border-[#20384d]/65"}`} style={ratioIconSize(item.value)} />
+                        <span>{item.value}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <label className="rounded-2xl border border-[#1d3346]/10 bg-white/80 p-3 text-sm text-[#294258]/62">
-                生成张数
-                <select className="mt-2 w-full bg-transparent text-lg font-semibold text-[#142536] outline-none" value={count} onChange={(event) => setCount(Number(event.target.value))}>
-                  {[1, 2, 3, 4].map((item) => <option key={item} value={item}>{item} 张</option>)}
-                </select>
-              </label>
-            </div>
 
-            <div className="mt-4 grid gap-3 rounded-[24px] border border-[#1d3346]/10 bg-[#f8fbfc] p-4">
-              <label className="text-sm text-[#294258]/62">
-                图片比例
-                <select
-                  className="mt-2 w-full rounded-2xl bg-[#edf4f7] px-4 py-3 text-base font-semibold text-[#142536] outline-none"
-                  value={aspectRatio}
-                  onChange={(event) => setAspectRatio(event.target.value as StudioAspectRatio)}
-                >
-                  {studioAspectRatioOptions.map((item) => (
-                    <option key={item.value} value={item.value}>{item.label}</option>
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[#294258]/74">输出数量</p>
+                  <span className="text-xs text-[#294258]/42">一次生成几张</span>
+                </div>
+                <div className={COUNT_SELECTOR_CLASS_NAME}>
+                  {[1, 2, 3, 4].map((item) => (
+                    <button
+                      key={item}
+                      className={`rounded-2xl border px-4 py-3 text-lg font-semibold transition ${count === item ? "border-[#142536] bg-[#142536] text-white shadow-lg" : "border-[#1d3346]/10 bg-[#edf4f7] text-[#20384d] hover:bg-[#dfecef]"}`}
+                      onClick={() => setCount(item)}
+                      type="button"
+                    >
+                      {item}
+                    </button>
                   ))}
-                </select>
-              </label>
-              <div className="text-sm text-[#294258]/62">
-                分辨率
-                <div className="mt-2 flex flex-wrap items-center gap-3">
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[#294258]/74">清晰度</p>
+                  <span className="text-xs text-[#294258]/42">{sizeFromStudioPreset(aspectRatio, resolution)}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
                   {(["1k", "2k", "4k"] as ResolutionTier[]).map((item) => (
-                    <button key={item} className={`rounded-full px-4 py-2 ${resolution === item ? "bg-[#142536] text-white" : "bg-[#edf4f7] text-[#20384d]"}`} onClick={() => setResolution(item)} type="button">
+                    <button key={item} className={`rounded-2xl px-4 py-3 text-sm font-semibold ${resolution === item ? "bg-[#142536] text-white shadow-lg" : "bg-[#edf4f7] text-[#20384d]"}`} onClick={() => setResolution(item)} type="button">
                       {item.toUpperCase()} · {sizeFromStudioPreset(aspectRatio, item)}
                     </button>
                   ))}
@@ -217,7 +266,7 @@ export function StudioPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-[#1d3346]/10 bg-white/70 p-5">
+          <div className="rounded-[28px] border border-[#1d3346]/10 bg-[#fbfdfe] p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold tracking-[0.14em] text-[#2d6f82]">提示词</p>
@@ -226,7 +275,7 @@ export function StudioPage() {
               <span className="text-xs text-[#294258]/45">{prompt.length} 字</span>
             </div>
             <textarea
-              className="min-h-52 w-full resize-none rounded-[26px] border border-[#1d3346]/10 bg-[#f8fbfc] p-5 text-base leading-8 text-[#17202a] outline-none transition placeholder:text-[#294258]/35 focus:border-[#2d6f82]/35 focus:bg-white"
+              className="min-h-56 w-full resize-none rounded-[26px] border border-[#1d3346]/10 bg-white p-5 text-base leading-8 text-[#17202a] outline-none transition placeholder:text-[#294258]/35 focus:border-[#2d6f82]/35 focus:bg-white"
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
             />
