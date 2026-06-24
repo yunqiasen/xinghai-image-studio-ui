@@ -24,6 +24,8 @@ const promptTemplates = [
 ];
 
 const styleTags = ["真实摄影", "商业主图", "动漫角色", "漫画分镜", "3D 渲染", "换背景", "统一角色", "高级灰调色"];
+export const STUDIO_WORKSPACE_GRID_CLASS_NAME = "grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_300px]";
+export const GENERATED_IMAGE_CLASS_NAME = "max-h-[760px] w-full rounded-[24px] object-contain transition duration-500 group-hover:scale-[1.01]";
 const uploadModes: StudioMode[] = ["image", "edit", "remove-bg", "upscale", "background"];
 
 function fileToDataUrl(file: File) {
@@ -105,8 +107,8 @@ export function StudioPage() {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[330px_1fr_320px]">
-      <aside className="space-y-4 rounded-[32px] border border-[#1d3346]/10 bg-white/74 p-5 shadow-sm">
+    <div className={STUDIO_WORKSPACE_GRID_CLASS_NAME}>
+      <aside className="space-y-4 rounded-[32px] border border-[#1d3346]/10 bg-white/74 p-5 shadow-sm xl:sticky xl:top-24 xl:self-start">
         <div>
           <p className="text-sm font-semibold tracking-[0.16em] text-[#2d6f82]">创作类型</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[#142536]">选择功能</h2>
@@ -126,7 +128,7 @@ export function StudioPage() {
         </div>
       </aside>
 
-      <section className="rounded-[34px] border border-[#1d3346]/10 bg-white/82 p-5 shadow-sm">
+      <section className="min-w-0 rounded-[34px] border border-[#1d3346]/10 bg-white/86 p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm text-[#294258]/52">当前：{activeMode.label}</p>
@@ -225,24 +227,33 @@ export function StudioPage() {
           </button>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {result.map((url) => (
-            <a key={url} href={url} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-[30px] bg-[#edf4f7] shadow-sm">
-              <img src={url} className="aspect-square w-full object-cover transition duration-500 group-hover:scale-[1.02]" alt="生成结果" />
-            </a>
-          ))}
-          {!result.length ? (
-            <div className="grid aspect-square place-items-center rounded-[30px] border border-[#1d3346]/10 bg-[#f4f8fa] text-center text-[#294258]/45">
-              <div>
-                <WandSparkles className="mx-auto mb-3" />
-                生成结果会显示在这里
-              </div>
+        <div className="mt-7 rounded-[32px] border border-[#1d3346]/10 bg-[#f8fbfc] p-4 shadow-inner shadow-white/60">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold tracking-[0.14em] text-[#2d6f82]">生成结果</p>
+              <h2 className="text-2xl font-semibold tracking-[-0.04em] text-[#142536]">预览与下载</h2>
             </div>
-          ) : null}
+            {result.length ? <span className="rounded-full bg-white px-3 py-1 text-sm text-[#294258]/58">{result.length} 张</span> : null}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {result.map((url, index) => (
+              <a key={url} href={url} target="_blank" rel="noreferrer" className="group flex min-h-[260px] items-center justify-center overflow-hidden rounded-[28px] border border-[#1d3346]/10 bg-white p-3 shadow-sm">
+                <img src={url} className={GENERATED_IMAGE_CLASS_NAME} alt={`生成结果 ${index + 1}`} />
+              </a>
+            ))}
+            {!result.length ? (
+              <div className="col-span-full grid min-h-[280px] place-items-center rounded-[28px] border border-dashed border-[#1d3346]/14 bg-white/70 text-center text-[#294258]/48">
+                <div>
+                  <WandSparkles className="mx-auto mb-3" />
+                  生成后会完整显示在这里，不会裁切图片
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </section>
 
-      <aside className="space-y-4 rounded-[32px] border border-[#1d3346]/10 bg-white/74 p-5 shadow-sm">
+      <aside className="space-y-4 rounded-[32px] border border-[#1d3346]/10 bg-white/74 p-5 shadow-sm xl:sticky xl:top-24 xl:self-start">
         <h2 className="text-2xl font-semibold tracking-[-0.04em] text-[#142536]">灵感模板</h2>
         {promptTemplates.map((item) => (
           <button key={item} className="w-full rounded-2xl border border-[#1d3346]/10 bg-white/78 p-3 text-left text-sm leading-6 text-[#294258]/72 hover:bg-[#edf4f7]" onClick={() => setPrompt(item)} type="button">
