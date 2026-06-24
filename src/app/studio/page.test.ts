@@ -22,13 +22,15 @@ describe("studio result layout", () => {
   it("keeps the commercial page light while using a local dark control panel", () => {
     expect(STUDIO_PAGE_CLASS_NAME).toContain("bg-[#f6f8fc]");
     expect(STUDIO_PAGE_CLASS_NAME).not.toContain("rounded-[34px]");
+    expect(STUDIO_PAGE_CLASS_NAME).toContain("overflow-x-hidden");
     expect(STUDIO_PAGE_CLASS_NAME).not.toContain("lg:overflow-y-auto");
     expect(STUDIO_PAGE_CLASS_NAME).not.toContain("bg-[#080812]");
     expect(EDITOR_PANEL_GRID_CLASS_NAME).toBe("min-w-0");
     expect(CONTROLS_PANEL_CLASS_NAME).toContain("#171626");
     expect(PREVIEW_PANEL_CLASS_NAME).toContain("bg-white/96");
-    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("max-w-[1760px]");
-    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("xl:grid-cols-[minmax(680px,0.9fr)_minmax(720px,1.1fr)]");
+    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("max-w-[1880px]");
+    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("lg:grid-cols-[minmax(560px,0.84fr)_minmax(420px,1.16fr)]");
+    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("xl:grid-cols-[minmax(660px,0.88fr)_minmax(560px,1.12fr)]");
     expect(STUDIO_TEMPLATE_SIDEBAR_ENABLED).toBe(false);
     expect(STUDIO_HEADER_ENABLED).toBe(false);
     expect(STYLE_TAGS_ENABLED).toBe(false);

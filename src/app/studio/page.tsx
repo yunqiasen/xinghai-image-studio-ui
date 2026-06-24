@@ -206,7 +206,7 @@ export function StudioPage() {
       <div className={STUDIO_WORKSPACE_GRID_CLASS_NAME}>
         <section className={EDITOR_PANEL_GRID_CLASS_NAME}>
           <div className={CONTROLS_PANEL_CLASS_NAME}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
               <div>
                 <p className="text-xs font-semibold tracking-[0.22em] text-[#f0abfc]">XINGHAI STUDIO</p>
                 <h1 className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-white">图像创作</h1>
@@ -217,14 +217,14 @@ export function StudioPage() {
             </div>
 
             {!user ? (
-              <div className="mb-4 rounded-2xl border border-[#60a5fa]/20 bg-[#60a5fa]/10 px-4 py-3 text-sm text-[#dbeafe]">
+              <div className="mb-3 rounded-2xl border border-[#60a5fa]/20 bg-[#60a5fa]/10 px-4 py-2.5 text-sm text-[#dbeafe]">
                 登录后可生成图片、保存作品和管理积分。
                 <Link to="/login" className="ml-2 font-semibold text-white underline decoration-[#93c5fd]/50 underline-offset-4">去登录</Link>
               </div>
             ) : null}
 
-            <div className="grid gap-4 2xl:grid-cols-[200px_minmax(0,1fr)]">
-              <aside className="rounded-[24px] border border-white/10 bg-black/16 p-3">
+            <div className="grid items-start gap-4 lg:grid-cols-[164px_minmax(0,1fr)] xl:grid-cols-[190px_minmax(0,1fr)]">
+              <aside className="self-start rounded-[24px] border border-white/10 bg-black/16 p-3">
                 <p className="px-1 text-sm font-semibold text-white/88">创作类型</p>
                 <p className="mt-1 px-1 text-xs text-white/42">选择要使用的功能</p>
                 <div className="mt-3 grid gap-2">
@@ -241,12 +241,12 @@ export function StudioPage() {
                         title={item.description}
                         type="button"
                       >
-                        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${active ? "bg-[#d946ef]/20 text-[#f0abfc]" : "bg-white/7 text-white/52"}`}>
-                          <Icon size={18} />
+                        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${active ? "bg-[#d946ef]/20 text-[#f0abfc]" : "bg-white/7 text-white/52"}`}>
+                          <Icon size={16} />
                         </span>
                         <span className="min-w-0">
-                          <b className="block text-base leading-5">{shortModeLabel(item.label)}</b>
-                          <span className="mt-1 block truncate text-xs text-white/48">{modeShortDescriptions[studioMode]}</span>
+                          <b className="block text-[15px] leading-5">{shortModeLabel(item.label)}</b>
+                          <span className="mt-0.5 block truncate text-[11px] text-white/48">{modeShortDescriptions[studioMode]}</span>
                         </span>
                       </button>
                     );
@@ -254,7 +254,7 @@ export function StudioPage() {
                 </div>
               </aside>
 
-              <div className="min-w-0 space-y-4">
+              <div className="min-w-0 space-y-3">
                 {needsUpload ? (
                   <div className="rounded-[22px] border border-dashed border-[#a78bfa]/30 bg-[#a78bfa]/8 p-4 text-sm text-white/64">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -331,30 +331,30 @@ export function StudioPage() {
                           key={item.value}
                           aria-label={`图片比例 ${item.value}`}
                           aria-pressed={active}
-                          className="group flex min-h-[82px] flex-col items-center justify-start gap-2 rounded-[18px] px-1 py-0 text-center transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d946ef]/70"
+                          className="group flex min-h-[68px] flex-col items-center justify-start gap-1.5 rounded-[16px] px-0.5 py-0 text-center transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d946ef]/70"
                           onClick={() => setAspectRatio(item.value)}
                           title={item.label}
                           type="button"
                         >
-                          <span className={`grid h-14 w-14 place-items-center rounded-[17px] border transition duration-200 ${active ? "border-[#d946ef] bg-[#d946ef]/12 shadow-[0_0_24px_rgba(217,70,239,.24)]" : "border-transparent group-hover:border-white/14 group-hover:bg-white/[0.045]"}`}>
+                          <span className={`grid h-12 w-12 place-items-center rounded-[15px] border transition duration-200 ${active ? "border-[#d946ef] bg-[#d946ef]/12 shadow-[0_0_24px_rgba(217,70,239,.24)]" : "border-transparent group-hover:border-white/14 group-hover:bg-white/[0.045]"}`}>
                             <span className={`block rounded-[5px] border-[3px] transition duration-200 ${active ? "border-[#d946ef]" : "border-white/78 group-hover:border-white"}`} style={ratioIconSize(item.value)} />
                           </span>
-                          <span className={`text-base font-bold leading-none tracking-tight transition duration-200 ${active ? "text-[#d946ef]" : "text-white/72 group-hover:text-white"}`}>{item.value}</span>
+                          <span className={`text-sm font-bold leading-none tracking-tight transition duration-200 ${active ? "text-[#d946ef]" : "text-white/72 group-hover:text-white"}`}>{item.value}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="flex min-h-[76px] items-center justify-between gap-4">
+                <div className="flex min-h-[64px] items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-semibold text-white">生成张数</p>
                     <p className="mt-1 text-xs text-white/42">选择输出数量</p>
                   </div>
-                  <label className="relative block w-[152px] shrink-0 sm:w-[168px]">
+                  <label className="relative block w-[140px] shrink-0 sm:w-[156px]">
                     <select
                       aria-label="生成张数"
-                      className="min-h-14 w-full appearance-none rounded-[20px] border border-white/10 bg-black/18 px-5 pr-12 text-xl font-bold text-white outline-none transition focus:border-[#d946ef]/70 focus:ring-2 focus:ring-[#d946ef]/35"
+                      className="min-h-12 w-full appearance-none rounded-[18px] border border-white/10 bg-black/18 px-5 pr-12 text-lg font-bold text-white outline-none transition focus:border-[#d946ef]/70 focus:ring-2 focus:ring-[#d946ef]/35"
                       value={count}
                       onChange={(event) => setCount(Number(event.target.value))}
                     >
@@ -364,14 +364,14 @@ export function StudioPage() {
                   </label>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <p className="text-sm font-semibold text-white">分辨率</p>
                   <div className="grid grid-cols-3 gap-3">
                     {(["1k", "2k", "4k"] as ResolutionTier[]).map((item) => (
                       <button
                         key={item}
                         aria-pressed={resolution === item}
-                        className={`min-h-12 whitespace-nowrap rounded-[17px] border px-2 text-xs font-bold leading-none transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d946ef]/70 2xl:text-[13px] ${resolution === item ? "border-[#d946ef] bg-[#d946ef]/14 text-[#f5d0fe] shadow-[0_0_22px_rgba(217,70,239,.18)]" : "border-white/10 bg-black/18 text-white/58 hover:border-white/16 hover:bg-white/8 hover:text-white/78"}`}
+                        className={`min-h-11 whitespace-nowrap rounded-[16px] border px-2 text-[11px] font-bold leading-none transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d946ef]/70 2xl:text-xs ${resolution === item ? "border-[#d946ef] bg-[#d946ef]/14 text-[#f5d0fe] shadow-[0_0_22px_rgba(217,70,239,.18)]" : "border-white/10 bg-black/18 text-white/58 hover:border-white/16 hover:bg-white/8 hover:text-white/78"}`}
                         onClick={() => setResolution(item)}
                         type="button"
                       >
@@ -381,14 +381,14 @@ export function StudioPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2 rounded-[22px] border border-white/10 bg-white/[0.04] p-3">
+                <div className="space-y-2 rounded-[22px] border border-white/10 bg-white/[0.04] p-2.5">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-white">提示词模板</p>
                       <p className="mt-1 text-xs text-white/42">点击名字填入提示词框</p>
                     </div>
                     <button
-                      className="min-h-9 rounded-full border border-white/10 px-3 text-xs font-semibold text-white/68 transition hover:bg-white/8"
+                      className="min-h-8 rounded-full border border-white/10 px-3 text-xs font-semibold text-white/68 transition hover:bg-white/8"
                       onClick={() => setShowAllTemplates((value) => !value)}
                       type="button"
                     >
@@ -399,7 +399,7 @@ export function StudioPage() {
                     {visiblePromptTemplates.map((template) => (
                       <button
                         key={template.name}
-                        className="min-h-10 rounded-full border border-white/10 bg-black/18 px-3 text-sm font-semibold text-white/72 transition hover:border-[#d946ef]/45 hover:bg-[#d946ef]/14 hover:text-white"
+                        className="min-h-9 rounded-full border border-white/10 bg-black/18 px-3 text-sm font-semibold text-white/72 transition hover:border-[#d946ef]/45 hover:bg-[#d946ef]/14 hover:text-white"
                         onClick={() => setPrompt(template.prompt)}
                         type="button"
                       >
@@ -419,14 +419,14 @@ export function StudioPage() {
                   </div>
                   <textarea
                     aria-label="图片生成提示词"
-                    className="min-h-44 w-full resize-none rounded-[22px] border border-white/10 bg-black/22 p-4 text-base leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-[#d946ef]/55 focus:bg-black/30"
+                    className="min-h-[104px] w-full resize-none rounded-[22px] border border-white/10 bg-black/22 p-4 text-base leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-[#d946ef]/55 focus:bg-black/30"
                     maxLength={MAX_PROMPT_LENGTH}
                     value={prompt}
                     onChange={(event) => setPrompt(event.target.value)}
                   />
                   <button
                     disabled={busy}
-                    className="inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#6d28d9,#d946ef)] px-6 py-3 text-base font-semibold text-white shadow-[0_18px_46px_rgba(109,40,217,.28)] transition duration-200 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
+                    className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#6d28d9,#d946ef)] px-6 py-3 text-base font-semibold text-white shadow-[0_18px_46px_rgba(109,40,217,.28)] transition duration-200 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
                     onClick={submit}
                     type="button"
                   >
@@ -451,7 +451,7 @@ export function StudioPage() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-[30px] border border-[#e5eaf1] bg-[#f8fafc] p-3 shadow-inner shadow-slate-200/80">
+          <div className="mt-4 rounded-[28px] border border-[#e5eaf1] bg-[#f8fafc] p-3 shadow-inner shadow-slate-200/80">
             <div className={previewGridClass}>
               {result.map((url, index) => (
                 <a
@@ -459,13 +459,13 @@ export function StudioPage() {
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="group flex min-h-[650px] items-center justify-center overflow-hidden rounded-[26px] border border-[#e5eaf1] bg-white p-4"
+                  className="group flex min-h-[clamp(460px,calc(100dvh-260px),760px)] items-center justify-center overflow-hidden rounded-[26px] border border-[#e5eaf1] bg-white p-4"
                 >
                   <img src={url} className={GENERATED_IMAGE_CLASS_NAME} alt={`生成结果 ${index + 1}`} />
                 </a>
               ))}
               {!result.length ? (
-                <div className="grid min-h-[690px] place-items-center rounded-[26px] border border-dashed border-[#d8e1ec] bg-[linear-gradient(45deg,rgba(148,163,184,.08)_25%,transparent_25%,transparent_50%,rgba(148,163,184,.08)_50%,rgba(148,163,184,.08)_75%,transparent_75%,transparent)] bg-[length:28px_28px] text-center">
+                <div className="grid min-h-[clamp(500px,calc(100dvh-248px),820px)] place-items-center rounded-[26px] border border-dashed border-[#d8e1ec] bg-[linear-gradient(45deg,rgba(148,163,184,.08)_25%,transparent_25%,transparent_50%,rgba(148,163,184,.08)_50%,rgba(148,163,184,.08)_75%,transparent_75%,transparent)] bg-[length:28px_28px] text-center">
                   <div className="max-w-xs rounded-[24px] border border-[#e5eaf1] bg-white/86 px-8 py-7 shadow-xl shadow-slate-200/80 backdrop-blur">
                     <WandSparkles className="mx-auto mb-3 text-[#a855f7]" size={28} />
                     <p className="text-lg font-semibold text-[#111827]">等待生成</p>
