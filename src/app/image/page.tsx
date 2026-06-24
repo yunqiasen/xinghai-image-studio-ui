@@ -43,6 +43,7 @@ import { useImageHistory } from "./hooks/use-image-history";
 import { useImageSourceInputs } from "./hooks/use-image-source-inputs";
 import { useImageSubmit } from "./hooks/use-image-submit";
 import { buildConversationPreviewSource } from "./view-utils";
+import { useSessionUser } from "@/lib/storage/session-hooks";
 
 type ImageAspectRatio = "auto" | "1:1" | "4:3" | "3:2" | "16:9" | "21:9" | "9:16";
 type ImageResolutionTier = "auto-free" | "auto-paid" | "sd" | "2k" | "4k";
@@ -471,6 +472,7 @@ export default function ImagePage() {
   const previousSelectedConversationIdRef = useRef<string | null>(null);
   const previousTurnCountRef = useRef(0);
   const previousLastTurnKeyRef = useRef("");
+  const { user } = useSessionUser();
 
   const [mode, setMode] = useState<ImageMode>("generate");
   const [imagePrompt, setImagePrompt] = useState("");
@@ -486,7 +488,7 @@ export default function ImagePage() {
       ? window.matchMedia("(min-width: 1024px)").matches
       : false,
   );
-  const [availableQuota] = useState("按积分扣费");
+  const availableQuota = user?.unlimitedCredits ? "无限配额" : user ? `${user.credits} 积分` : "登录后查看";
   const [submitElapsedSeconds, setSubmitElapsedSeconds] = useState(0);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [isMobileComposerCollapsed, setIsMobileComposerCollapsed] =

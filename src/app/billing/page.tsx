@@ -18,6 +18,7 @@ export function BillingPage() {
   const [redeemCode, setRedeemCode] = useState("");
 
   useEffect(() => setCredits(user?.credits || 0), [user]);
+  const balanceText = user?.unlimitedCredits ? "当前账号为管理员无限配额。" : user ? `当前余额：${credits} 积分。` : "登录后可查看余额、使用兑换码和购买积分包。";
 
   async function redeem() {
     const code = redeemCode.trim();
@@ -39,8 +40,8 @@ export function BillingPage() {
       <section className="rounded-[32px] border border-[#1d3346]/10 bg-white/74 p-8 shadow-sm">
         <p className="text-sm font-semibold tracking-[0.16em] text-[#2d6f82]">积分中心</p>
         <h1 className="mt-2 text-5xl font-semibold tracking-[-0.055em] text-[#142536]">充值和兑换</h1>
-        <p className="mt-3 text-[#294258]/62">{user ? `当前余额：${credits} 积分。` : "登录后可查看余额、使用兑换码和购买积分包。"}</p>
-        {user ? (
+        <p className="mt-3 text-[#294258]/62">{balanceText}</p>
+        {user && !user.unlimitedCredits ? (
           <div className="mt-5 flex max-w-xl flex-col gap-3 sm:flex-row">
             <input
               className="min-w-0 flex-1 rounded-full border border-[#1d3346]/10 bg-white px-5 py-3 outline-none focus:border-[#2d6f82]/35"
@@ -50,6 +51,8 @@ export function BillingPage() {
             />
             <button className="inline-flex items-center justify-center gap-2 rounded-full bg-[#142536] px-6 py-3 text-white" onClick={redeem} type="button"><Ticket size={18} /> 兑换</button>
           </div>
+        ) : user?.unlimitedCredits ? (
+          <div className="mt-5 inline-flex rounded-full bg-[#2d6f82]/10 px-5 py-3 font-semibold text-[#2d6f82]">无需充值，生成不扣积分</div>
         ) : (
           <Link to="/login" className="mt-5 inline-flex rounded-full bg-[#142536] px-6 py-3 text-white">先登录</Link>
         )}

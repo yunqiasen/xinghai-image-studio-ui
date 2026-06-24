@@ -3,6 +3,8 @@ export type LocalUser = {
   name: string;
   email: string;
   credits: number;
+  role?: string;
+  unlimitedCredits?: boolean;
   createdAt: string;
 };
 
@@ -57,6 +59,8 @@ export function getLocalUser(): LocalUser {
     name: "未登录用户",
     email: "",
     credits: 0,
+    role: "guest",
+    unlimitedCredits: false,
     createdAt: new Date().toISOString(),
   };
 }

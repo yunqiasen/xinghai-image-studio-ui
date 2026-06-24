@@ -25,7 +25,8 @@ export function AccountPage() {
         <div className="grid gap-4 text-[#294258]/72">
           <p className="inline-flex items-center gap-3"><BadgeCheck className="text-[#2d6f82]" /> 用户名：{user.name}</p>
           <p className="inline-flex items-center gap-3"><Mail className="text-[#2d6f82]" /> 邮箱：{user.email}</p>
-          <p className="text-4xl font-semibold tracking-[-0.05em] text-[#142536]">{user.credits} 积分</p>
+          <p className="text-4xl font-semibold tracking-[-0.05em] text-[#142536]">{user.unlimitedCredits ? "无限配额" : `${user.credits} 积分`}</p>
+          {user.role === "admin" && <p className="inline-flex w-fit rounded-full bg-[#2d6f82]/10 px-3 py-1 text-sm font-semibold text-[#2d6f82]">管理员账号</p>}
         </div>
       </section>
     </div>

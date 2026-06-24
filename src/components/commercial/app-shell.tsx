@@ -51,8 +51,8 @@ export function CommercialShell() {
           </nav>
           {user ? (
             <div className="flex items-center gap-2 rounded-full border border-[#1d3346]/10 bg-white/80 px-2 py-2 text-sm shadow-sm sm:px-4">
-              <span className="hidden font-semibold sm:inline">{user.credits} 积分</span>
-              <NavLink to="/billing" className="rounded-full bg-[#2d6f82] px-3 py-1.5 font-semibold text-white">充值</NavLink>
+              <span className="hidden font-semibold sm:inline">{user.unlimitedCredits ? "无限配额" : `${user.credits} 积分`}</span>
+              {!user.unlimitedCredits && <NavLink to="/billing" className="rounded-full bg-[#2d6f82] px-3 py-1.5 font-semibold text-white">充值</NavLink>}
               <button className="rounded-full p-1.5 text-[#1d3346]/58 hover:bg-[#1d3346]/8" onClick={logout} type="button" title="退出登录">
                 <LogOut size={16} />
               </button>
