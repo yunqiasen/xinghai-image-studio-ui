@@ -1,5 +1,5 @@
 import { GalleryHorizontalEnd, Image, LogOut, Sparkles, UserCircle, Wallet } from "lucide-react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { logoutLocalUser } from "@/lib/storage/local-session";
@@ -15,7 +15,9 @@ const nav = [
 
 export function CommercialShell() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useSessionUser();
+  const studioRoute = location.pathname === "/studio";
 
   async function logout() {
     try {
@@ -65,7 +67,7 @@ export function CommercialShell() {
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-[1500px] px-4 py-6">
+      <main className={studioRoute ? "w-full" : "mx-auto max-w-[1500px] px-4 py-6"}>
         <Outlet />
       </main>
     </div>
