@@ -223,7 +223,7 @@ export function StudioPage() {
               </div>
             ) : null}
 
-            <div className="grid gap-4 2xl:grid-cols-[228px_minmax(0,1fr)]">
+            <div className="grid gap-4 2xl:grid-cols-[200px_minmax(0,1fr)]">
               <aside className="rounded-[24px] border border-white/10 bg-black/16 p-3">
                 <p className="px-1 text-sm font-semibold text-white/88">创作类型</p>
                 <p className="mt-1 px-1 text-xs text-white/42">选择要使用的功能</p>
@@ -331,50 +331,53 @@ export function StudioPage() {
                           key={item.value}
                           aria-label={`图片比例 ${item.value}`}
                           aria-pressed={active}
-                          className={`grid min-h-16 place-items-center rounded-2xl border px-2 py-2 text-sm font-semibold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d946ef]/70 ${active ? "border-[#d946ef] bg-[#d946ef]/18 text-[#f0abfc] shadow-[0_0_24px_rgba(217,70,239,.22)]" : "border-white/10 bg-black/18 text-white/70 hover:border-white/20 hover:bg-white/8"}`}
+                          className="group flex min-h-[82px] flex-col items-center justify-start gap-2 rounded-[18px] px-1 py-0 text-center transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d946ef]/70"
                           onClick={() => setAspectRatio(item.value)}
                           title={item.label}
                           type="button"
                         >
-                          <span className={`grid place-items-center rounded-[5px] border-2 ${active ? "border-[#f0abfc]" : "border-white/64"}`} style={ratioIconSize(item.value)} />
-                          <span>{item.value}</span>
+                          <span className={`grid h-14 w-14 place-items-center rounded-[17px] border transition duration-200 ${active ? "border-[#d946ef] bg-[#d946ef]/12 shadow-[0_0_24px_rgba(217,70,239,.24)]" : "border-transparent group-hover:border-white/14 group-hover:bg-white/[0.045]"}`}>
+                            <span className={`block rounded-[5px] border-[3px] transition duration-200 ${active ? "border-[#d946ef]" : "border-white/78 group-hover:border-white"}`} style={ratioIconSize(item.value)} />
+                          </span>
+                          <span className={`text-base font-bold leading-none tracking-tight transition duration-200 ${active ? "text-[#d946ef]" : "text-white/72 group-hover:text-white"}`}>{item.value}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-[0.72fr_1fr] 2xl:grid-cols-1">
-                  <div className="space-y-2">
+                <div className="flex min-h-[76px] items-center justify-between gap-4">
+                  <div>
                     <p className="text-sm font-semibold text-white">生成张数</p>
-                    <label className="relative block">
-                      <select
-                        aria-label="生成张数"
-                        className="min-h-12 w-full appearance-none rounded-2xl border border-white/10 bg-black/18 px-4 py-3 text-base font-semibold text-white outline-none transition focus:border-[#d946ef]/70 focus:ring-2 focus:ring-[#d946ef]/35"
-                        value={count}
-                        onChange={(event) => setCount(Number(event.target.value))}
-                      >
-                        {[1, 2, 3, 4].map((item) => <option key={item} value={item}>{item} 张</option>)}
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/52" size={18} />
-                    </label>
+                    <p className="mt-1 text-xs text-white/42">选择输出数量</p>
                   </div>
+                  <label className="relative block w-[152px] shrink-0 sm:w-[168px]">
+                    <select
+                      aria-label="生成张数"
+                      className="min-h-14 w-full appearance-none rounded-[20px] border border-white/10 bg-black/18 px-5 pr-12 text-xl font-bold text-white outline-none transition focus:border-[#d946ef]/70 focus:ring-2 focus:ring-[#d946ef]/35"
+                      value={count}
+                      onChange={(event) => setCount(Number(event.target.value))}
+                    >
+                      {[1, 2, 3, 4].map((item) => <option key={item} value={item}>{item} 张</option>)}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-white/64" size={20} />
+                  </label>
+                </div>
 
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-white">分辨率</p>
-                    <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1 2xl:grid-cols-3">
-                      {(["1k", "2k", "4k"] as ResolutionTier[]).map((item) => (
-                        <button
-                          key={item}
-                          aria-pressed={resolution === item}
-                          className={`min-h-11 rounded-2xl border px-3 py-2 text-sm font-semibold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d946ef]/70 ${resolution === item ? "border-[#d946ef] bg-[#d946ef]/16 text-[#f5d0fe] shadow-[0_0_22px_rgba(217,70,239,.16)]" : "border-white/10 bg-black/18 text-white/62 hover:bg-white/8"}`}
-                          onClick={() => setResolution(item)}
-                          type="button"
-                        >
-                          {item.toUpperCase()} · {sizeFromStudioPreset(aspectRatio, item)}
-                        </button>
-                      ))}
-                    </div>
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-white">分辨率</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(["1k", "2k", "4k"] as ResolutionTier[]).map((item) => (
+                      <button
+                        key={item}
+                        aria-pressed={resolution === item}
+                        className={`min-h-12 whitespace-nowrap rounded-[17px] border px-2 text-xs font-bold leading-none transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d946ef]/70 2xl:text-[13px] ${resolution === item ? "border-[#d946ef] bg-[#d946ef]/14 text-[#f5d0fe] shadow-[0_0_22px_rgba(217,70,239,.18)]" : "border-white/10 bg-black/18 text-white/58 hover:border-white/16 hover:bg-white/8 hover:text-white/78"}`}
+                        onClick={() => setResolution(item)}
+                        type="button"
+                      >
+                        {item.toUpperCase()} · {sizeFromStudioPreset(aspectRatio, item)}
+                      </button>
+                    ))}
                   </div>
                 </div>
 

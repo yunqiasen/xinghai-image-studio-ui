@@ -25,7 +25,7 @@ describe("studio result layout", () => {
     expect(EDITOR_PANEL_GRID_CLASS_NAME).toContain("bg-white/96");
     expect(CONTROLS_PANEL_CLASS_NAME).toContain("#171626");
     expect(PREVIEW_PANEL_CLASS_NAME).toContain("bg-white/96");
-    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("xl:grid-cols-[minmax(560px,0.86fr)_minmax(640px,1.14fr)]");
+    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("xl:grid-cols-[minmax(700px,0.95fr)_minmax(560px,1.05fr)]");
     expect(STUDIO_TEMPLATE_SIDEBAR_ENABLED).toBe(false);
     expect(STUDIO_HEADER_ENABLED).toBe(false);
     expect(STYLE_TAGS_ENABLED).toBe(false);
@@ -38,6 +38,7 @@ describe("studio result layout", () => {
     expect(PROMPT_TEMPLATE_COLLAPSED_COUNT).toBe(4);
     expect(PRIMARY_ASPECT_RATIOS).toEqual(["1:1", "16:9", "3:2", "2:3", "3:4", "4:3", "9:16"]);
     expect(ASPECT_RATIO_SELECTOR_CLASS_NAME).toContain("sm:grid-cols-7");
+    expect(ASPECT_RATIO_SELECTOR_CLASS_NAME).not.toContain("xl:grid-cols-4");
   });
 
   it("shows generated images without forced square cropping", () => {
