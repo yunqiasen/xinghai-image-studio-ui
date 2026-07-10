@@ -17,6 +17,15 @@ export type GalleryItem = {
   createdAt: string;
 };
 
+export type RegistrationPolicy = {
+  enabled: boolean;
+  allowedEmailDomains: string[];
+  ipLimitEnabled: boolean;
+  ipAccountLimit: number;
+  phoneRequired: boolean;
+  smsRequired: boolean;
+};
+
 const authEvent = "xinghai-auth-change";
 let currentUser: LocalUser | null = null;
 
@@ -41,8 +50,37 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
     },
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok || payload?.ok === false) throw new Error(payload?.error || `请求失败 HTTP ${response.status}`);
+  if (!response.ok || payload?.ok === false) throw new Error(payload?.message || payload?.error || `请求失败 HTTP ${response.status}`);
   return payload as T;
+}
+
+export function normalizeAllowedEmailDomains(domains: string[]) {
+  return Array.from(
+    new Set(
+      domains
+        .map((domain) => domain.trim().toLowerCase().replace(/^@+/, ""))
+        .filter(Boolean),
+    ),
+  );
+}
+
+export function isEmailAllowedByPolicy(email: string, policy: RegistrationPolicy) {
+  const allowedDomains = normalizeAllowedEmailDomains(policy.allowedEmailDomains);
+  if (!allowedDomains.length) return true;
+  const normalizedEmail = email.trim().toLowerCase();
+  const separatorIndex = normalizedEmail.lastIndexOf("@");
+  if (separatorIndex < 1) return false;
+  return allowedDomains.includes(normalizedEmail.slice(separatorIndex + 1));
+}
+
+export async function fetchRegistrationPolicy() {
+  const payload = await apiRequest<{ ok: boolean; policy: RegistrationPolicy }>("/api/auth/registration-policy", {
+    method: "GET",
+  });
+  return {
+    ...payload.policy,
+    allowedEmailDomains: normalizeAllowedEmailDomains(payload.policy.allowedEmailDomains),
+  };
 }
 
 export function setCurrentUser(user: LocalUser | null) {
