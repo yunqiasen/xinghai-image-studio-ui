@@ -33,7 +33,7 @@
 | 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送 `code` |
 | 获取作品 | `GET /api/gallery` | `src/lib/storage/local-session.ts` | 已接入 |
 | 清空作品 | `DELETE /api/gallery` | `src/lib/storage/local-session.ts` | 已接入 |
-| 同步生图 | `POST /api/image/generate` | `src/lib/image2api/client.ts` | 已接入 |
+| 同步生图 | `POST /api/image/generate` | `src/lib/image2api/client.ts`、`src/app/studio/page.tsx` | 已接入，含生成中、失败、单图和多图结果状态 |
 | 站点公开信息 | `GET /api/public/site-info` | 暂无 | 未接入，页面品牌信息仍是静态内容 |
 | 异步图片任务 | `/api/image/tasks*` | `src/lib/api.ts`、`src/app/image/*` | 有旧实现，但当前商业路由未启用 |
 
@@ -60,7 +60,7 @@ type RegistrationPolicy = {
 
 ### 生图
 
-同步生图依赖 `ok`、`taskId`、`imageUrls`、`user`、`creditsCost`。失败依赖统一的 `code`、`message`、`error`。
+同步生图依赖 `ok`、`taskId`、`imageUrls`、`user`、`creditsCost`。失败提示按 `message`、`error`、HTTP 状态降级。提交后右侧立即按请求 `n` 渲染加载占位和等待时间；成功后完整消费 `imageUrls`，单图进入可缩放画布，多图按双列网格展示且不裁切。
 
 ## 已发现的接口缺口
 

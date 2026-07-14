@@ -12,7 +12,7 @@ type RawImageItem = {
   b64_json?: unknown;
 };
 
-type RawImageResponse = {
+export type RawImageResponse = {
   data?: RawImageItem[];
   imageUrls?: unknown[];
   image_urls?: unknown[];
@@ -20,6 +20,9 @@ type RawImageResponse = {
   imageUrl?: unknown;
   task_id?: unknown;
   taskId?: unknown;
+  ok?: unknown;
+  code?: unknown;
+  message?: unknown;
   error?: unknown;
 };
 
@@ -52,7 +55,7 @@ export function normalizeImageResponse(raw: RawImageResponse): NormalizedImageRe
     taskId: taskId ? String(taskId) : undefined,
     imageUrls: uniqueUrls,
     status,
-    error: errorMessage(raw?.error),
+    error: errorMessage(raw?.message) ?? errorMessage(raw?.error),
     raw,
   };
 }

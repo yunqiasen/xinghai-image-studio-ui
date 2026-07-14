@@ -32,7 +32,7 @@ export function CommercialShell() {
     <div className="min-h-screen bg-[#eef3f7] text-[#17202a] selection:bg-[#28465f]/12">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_12%_8%,rgba(126,171,196,.32),transparent_30%),radial-gradient(circle_at_86%_12%,rgba(220,231,236,.9),transparent_28%),linear-gradient(180deg,#f8fbfc,#e8eef3)]" />
       <header className="sticky top-0 z-40 border-b border-[#1d3346]/10 bg-[#f8fbfc]/86 backdrop-blur-xl">
-        <div className="mx-auto flex h-18 max-w-[1500px] items-center justify-between px-4">
+        <div className={`mx-auto flex h-18 items-center justify-between px-4 ${studioRoute ? "max-w-[1240px]" : "max-w-[1500px]"}`}>
           <NavLink to="/" className="flex items-center gap-3 font-semibold tracking-tight">
             <span className="grid h-11 w-11 place-items-center rounded-[18px] bg-[#142536] text-lg text-white shadow-[0_18px_40px_rgba(20,37,54,.22)]">星</span>
             <span className="hidden text-lg sm:inline">星海图像</span>
