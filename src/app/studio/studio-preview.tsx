@@ -95,6 +95,15 @@ export function StudioPreview({
     dragOrigin.current = null;
   }
 
+  const syncTitle = busy ? "正在生成" : error ? "本次未保存" : results.length ? "已保存作品" : "等待开始";
+  const syncNote = busy
+    ? "任务已提交，完成后自动同步"
+    : error
+      ? "参数已保留，可重新提交"
+      : results.length
+        ? `${results.length} 张结果已进入作品`
+        : "生成完成后自动保存到作品";
+
   return (
     <section className={PREVIEW_PANEL_CLASS_NAME} data-preview-state={state}>
       <header className="flex min-h-[74px] items-center justify-between gap-4 border-b border-[#e3e8ef] px-5">
@@ -113,9 +122,9 @@ export function StudioPreview({
         </div>
       </header>
 
-      <div className="relative min-h-0 bg-[#eef2f6] p-3.5">
+      <div className="relative grid min-h-0 gap-3 bg-[linear-gradient(145deg,#eef3f7,#f2f0f6)] p-3.5 lg:grid-cols-[minmax(0,1fr)_148px]">
         <div
-          className="relative grid h-full min-h-[430px] place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-[linear-gradient(45deg,#f0f3f7_25%,transparent_25%),linear-gradient(-45deg,#f0f3f7_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f3f7_75%),linear-gradient(-45deg,transparent_75%,#f0f3f7_75%)] bg-[length:24px_24px] bg-[position:0_0,0_12px,12px_-12px,-12px_0] shadow-inner shadow-slate-300/25"
+          className="relative grid h-full min-h-[430px] place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-[radial-gradient(circle_at_14%_10%,rgba(46,211,211,.07),transparent_28%),radial-gradient(circle_at_88%_92%,rgba(142,85,240,.07),transparent_30%),linear-gradient(45deg,#f0f3f7_25%,transparent_25%),linear-gradient(-45deg,#f0f3f7_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f3f7_75%),linear-gradient(-45deg,transparent_75%,#f0f3f7_75%)] bg-[length:auto,auto,24px_24px,24px_24px,24px_24px,24px_24px] bg-[position:0_0,0_0,0_0,0_12px,12px_-12px,-12px_0] shadow-inner shadow-slate-300/25"
           onWheel={handleWheel}
         >
           {results.length === 1 && !busy ? (
@@ -202,6 +211,37 @@ export function StudioPreview({
             </div>
           )}
         </div>
+
+        <aside className="grid content-start gap-2.5 sm:grid-cols-2 lg:grid-cols-1" aria-label="本次生成信息">
+          <section className="rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
+            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">当前引擎</p>
+            <p className="mt-1.5 text-xs font-semibold text-[#1e2d43]">GPT Image 2.0</p>
+            <p className="mt-2 inline-flex items-center gap-2 text-[9px] text-slate-500"><i className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_0_4px_rgba(20,184,166,.1)]" />服务可用</p>
+          </section>
+
+          <section className="rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
+            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">输出参数</p>
+            <dl className="mt-2.5 grid gap-2 text-[9px] text-slate-500">
+              <div className="flex justify-between gap-2"><dt>比例</dt><dd className="font-semibold text-[#27364b]">{aspectRatio}</dd></div>
+              <div className="flex justify-between gap-2"><dt>分辨率</dt><dd className="font-semibold text-[#27364b]">{resolution.toUpperCase()}</dd></div>
+              <div className="flex justify-between gap-2"><dt>数量</dt><dd className="font-semibold text-[#27364b]">{count} 张</dd></div>
+            </dl>
+          </section>
+
+          <section className="rounded-2xl border border-[#e3daf8] bg-[linear-gradient(145deg,rgba(244,240,255,.94),rgba(255,255,255,.88))] p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)]">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#ebe3ff] text-xs text-[#7651c7]">▣</span>
+            <p className="mt-2 text-[9px] font-bold tracking-[0.16em] text-slate-400">作品同步</p>
+            <p className={`mt-1.5 text-xs font-semibold ${error ? "text-rose-600" : results.length ? "text-emerald-700" : busy ? "text-violet-700" : "text-[#1e2d43]"}`}>{syncTitle}</p>
+            <p className="mt-1 text-[9px] leading-4 text-slate-500">{syncNote}</p>
+          </section>
+
+          <section className="rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
+            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">灵感色板</p>
+            <div className="mt-2.5 flex gap-1.5" aria-label="青色、珊瑚色、紫色、金色">
+              {['#6fcfd0', '#ef9a82', '#8d71d9', '#e0bd69'].map((color) => <i key={color} className="h-5 w-5 rounded-[7px] border-2 border-white shadow-sm" style={{ backgroundColor: color }} />)}
+            </div>
+          </section>
+        </aside>
       </div>
 
       <footer className="flex min-h-[42px] items-center justify-between gap-3 border-t border-[#e3e8ef] bg-white px-4 text-[10px] text-slate-500">

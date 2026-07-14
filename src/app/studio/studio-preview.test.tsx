@@ -31,6 +31,22 @@ describe("StudioPreview", () => {
     expect(html).toContain('src="/three.png"');
   });
 
+  it("shows the current backend generation context in the preview information rail", () => {
+    const idle = renderToStaticMarkup(<StudioPreview {...baseProps} />);
+    expect(idle).toContain("GPT Image 2.0");
+    expect(idle).toContain("输出参数");
+    expect(idle).toContain("1:1");
+    expect(idle).toContain("1K");
+    expect(idle).toContain("1 张");
+    expect(idle).toContain("生成完成后自动保存到作品");
+
+    const loading = renderToStaticMarkup(<StudioPreview {...baseProps} busy startedAt={Date.now()} />);
+    expect(loading).toContain("任务已提交，完成后自动同步");
+
+    const complete = renderToStaticMarkup(<StudioPreview {...baseProps} results={["/one.png"]} />);
+    expect(complete).toContain("已保存作品");
+  });
+
   it("keeps a generation failure visible in the preview panel", () => {
     const html = renderToStaticMarkup(<StudioPreview {...baseProps} error="图片生成超时，请稍后重试" />);
 

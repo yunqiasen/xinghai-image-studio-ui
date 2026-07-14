@@ -192,7 +192,9 @@ export function StudioPage() {
 
   return (
     <div className={STUDIO_PAGE_CLASS_NAME}>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_3%,rgba(124,58,237,.08),transparent_28%),radial-gradient(circle_at_88%_5%,rgba(236,72,153,.06),transparent_24%),linear-gradient(180deg,#f7f9fc,#edf2f7)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_34%_46%_at_-4%_28%,rgba(32,211,218,.22),transparent_68%),radial-gradient(ellipse_31%_45%_at_104%_18%,rgba(255,119,129,.2),transparent_67%),radial-gradient(ellipse_30%_42%_at_91%_104%,rgba(145,92,246,.18),transparent_68%),radial-gradient(ellipse_28%_40%_at_8%_102%,rgba(254,190,86,.13),transparent_68%),linear-gradient(138deg,#edf4f7_0%,#f7f4fa_50%,#edf3f7_100%)]" />
+      <div className="pointer-events-none absolute -left-48 top-[34%] h-[370px] w-[370px] rounded-full border border-cyan-400/15" />
+      <div className="pointer-events-none absolute -bottom-44 -right-56 h-[430px] w-[430px] rounded-full border border-violet-400/15" />
 
       <div className={STUDIO_WORKSPACE_GRID_CLASS_NAME}>
         <section className={EDITOR_PANEL_GRID_CLASS_NAME}>
@@ -234,6 +236,13 @@ export function StudioPage() {
                     );
                   })}
                 </div>
+                <section className="relative mt-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+                  <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-semibold text-white">灵感光谱</p><span className="text-[9px] text-white/35">本轮氛围</span></div>
+                  <div className="mt-2.5 grid h-6 grid-cols-[1.05fr_.8fr_1.2fr_.75fr] gap-1" aria-hidden="true">
+                    <i className="rounded-[7px] bg-[linear-gradient(135deg,#c8f3ed,#61c8ce)]" /><i className="rounded-[7px] bg-[linear-gradient(135deg,#ffd6bb,#ef8c79)]" /><i className="rounded-[7px] bg-[linear-gradient(135deg,#d8c4ff,#8765d8)]" /><i className="rounded-[7px] bg-[linear-gradient(135deg,#fbefbd,#d6ad5d)]" />
+                  </div>
+                  <p className="mt-2 text-[9px] leading-4 text-white/38">只提供色彩启发，不改变提示词。</p>
+                </section>
               </aside>
 
               <div className={STUDIO_PARAMETER_SCROLL_CLASS_NAME}>

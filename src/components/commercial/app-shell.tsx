@@ -1,7 +1,9 @@
 import { GalleryHorizontalEnd, Image, LogOut, Sparkles, UserCircle, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { DEFAULT_SITE_INFO, fetchSiteInfo } from "@/lib/site-info";
 import { logoutLocalUser } from "@/lib/storage/local-session";
 import { useSessionUser } from "@/lib/storage/session-hooks";
 
@@ -18,6 +20,18 @@ export function CommercialShell() {
   const location = useLocation();
   const { user } = useSessionUser();
   const studioRoute = location.pathname === "/studio";
+  const [siteInfo, setSiteInfo] = useState(DEFAULT_SITE_INFO);
+
+  useEffect(() => {
+    let active = true;
+    fetchSiteInfo().then((value) => {
+      if (active) {
+        setSiteInfo(value);
+        document.title = value.name;
+      }
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
 
   async function logout() {
     try {
@@ -34,8 +48,10 @@ export function CommercialShell() {
       <header className="sticky top-0 z-40 border-b border-[#1d3346]/10 bg-[#f8fbfc]/86 backdrop-blur-xl">
         <div className={`mx-auto flex h-18 items-center justify-between px-4 ${studioRoute ? "max-w-[1240px]" : "max-w-[1500px]"}`}>
           <NavLink to="/" className="flex items-center gap-3 font-semibold tracking-tight">
-            <span className="grid h-11 w-11 place-items-center rounded-[18px] bg-[#142536] text-lg text-white shadow-[0_18px_40px_rgba(20,37,54,.22)]">星</span>
-            <span className="hidden text-lg sm:inline">星海图像</span>
+            <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] bg-[#142536] text-lg text-white shadow-[0_18px_40px_rgba(20,37,54,.22)]">
+              {siteInfo.logoUrl ? <img alt="" className="h-full w-full object-cover" src={siteInfo.logoUrl} /> : "星"}
+            </span>
+            <span className="hidden text-lg sm:inline">{siteInfo.name}</span>
           </NavLink>
           <nav className="hidden items-center gap-1 rounded-full border border-[#1d3346]/10 bg-white/72 p-1 shadow-sm md:flex">
             {nav.map((item) => (
@@ -70,6 +86,15 @@ export function CommercialShell() {
       <main className={studioRoute ? "w-full" : "mx-auto max-w-[1500px] px-4 py-6"}>
         <Outlet />
       </main>
+      {!studioRoute && (siteInfo.footer || siteInfo.contactEmail || siteInfo.docsUrl) ? (
+        <footer className="mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 pb-7 text-xs text-[#294258]/52">
+          <span>{siteInfo.footer || siteInfo.description}</span>
+          <span className="flex items-center gap-4">
+            {siteInfo.contactEmail ? <a href={`mailto:${siteInfo.contactEmail}`}>联系邮箱</a> : null}
+            {siteInfo.docsUrl ? <a href={siteInfo.docsUrl} rel="noreferrer" target="_blank">使用文档</a> : null}
+          </span>
+        </footer>
+      ) : null}
     </div>
   );
 }

@@ -147,16 +147,6 @@ export async function redeemCredits(code: string) {
   return payload.user;
 }
 
-export async function addCredits(amount: number) {
-  const payload = await apiRequest<{ ok: boolean; user: LocalUser; amount: number }>("/api/credits/redeem", {
-    method: "POST",
-    body: JSON.stringify({ amount }),
-  });
-  currentUser = payload.user;
-  emitAuthChange();
-  return payload.user;
-}
-
 export async function fetchGallery() {
   const payload = await apiRequest<{ ok: boolean; items: GalleryItem[] }>("/api/gallery", { method: "GET" });
   return payload.items;
