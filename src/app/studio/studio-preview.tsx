@@ -144,9 +144,9 @@ export function StudioPreview({
         </div>
       </header>
 
-      <div className="studio-preview-body relative grid min-h-0 gap-3 bg-[linear-gradient(145deg,#eef3f7,#f2f0f6)] p-3.5 lg:grid-cols-[minmax(0,1fr)_190px]">
+      <div className="studio-preview-body relative grid min-h-0 overflow-hidden gap-3 bg-[linear-gradient(145deg,#eef3f7,#f2f0f6)] p-3.5 lg:grid-cols-[minmax(0,1fr)_190px]">
         <div
-          className="studio-preview-canvas relative grid h-full min-h-[430px] place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-[radial-gradient(circle_at_14%_10%,rgba(46,211,211,.07),transparent_28%),radial-gradient(circle_at_88%_92%,rgba(142,85,240,.07),transparent_30%),linear-gradient(45deg,#f0f3f7_25%,transparent_25%),linear-gradient(-45deg,#f0f3f7_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f3f7_75%),linear-gradient(-45deg,transparent_75%,#f0f3f7_75%)] bg-[length:auto,auto,24px_24px,24px_24px,24px_24px,24px_24px] bg-[position:0_0,0_0,0_0,0_12px,12px_-12px,-12px_0] shadow-inner shadow-slate-300/25"
+          className="studio-preview-canvas relative grid h-full min-h-0 place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-[radial-gradient(circle_at_14%_10%,rgba(46,211,211,.07),transparent_28%),radial-gradient(circle_at_88%_92%,rgba(142,85,240,.07),transparent_30%),linear-gradient(45deg,#f0f3f7_25%,transparent_25%),linear-gradient(-45deg,#f0f3f7_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f3f7_75%),linear-gradient(-45deg,transparent_75%,#f0f3f7_75%)] bg-[length:auto,auto,24px_24px,24px_24px,24px_24px,24px_24px] bg-[position:0_0,0_0,0_0,0_12px,12px_-12px,-12px_0] shadow-inner shadow-slate-300/25"
           onWheel={handleWheel}
         >
           {results.length === 1 && !busy ? (
@@ -235,7 +235,7 @@ export function StudioPreview({
           )}
         </div>
 
-        <aside className="grid content-start gap-2.5 sm:grid-cols-2 lg:grid-cols-1" aria-label={t("preview.info")}>
+        <aside className="grid min-h-0 content-start gap-2.5 overflow-y-auto sm:grid-cols-2 lg:grid-cols-1" aria-label={t("preview.info")}>
           <section className="studio-info-card rounded-2xl border border-[#e3daf8] bg-[linear-gradient(145deg,rgba(244,240,255,.96),rgba(255,255,255,.9))] p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)]" data-template-mode={mode}>
             <p className="text-[9px] font-bold tracking-[0.16em] text-[#7651c7]">{t("studio.templates")}</p>
             <p className="mt-1 text-[9px] leading-4 text-slate-500">{t("studio.templateHelp")}</p>
