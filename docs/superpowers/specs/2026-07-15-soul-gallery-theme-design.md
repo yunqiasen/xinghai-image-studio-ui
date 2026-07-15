@@ -17,7 +17,7 @@
 ## 素材与数据
 
 - 收录 19 项：imagic6 8 项、imya 11 项。
-- 素材复制到 `public/soul-gallery/imagic6` 与 `public/soul-gallery/imya`，运行时不依赖外站。
+- 素材复制到 `public/soul-gallery-assets/imagic6` 与 `public/soul-gallery-assets/imya`，运行时不依赖外站。
 - 数据集中在 `src/app/soul-gallery/catalog.ts`，每项包含 id、标题、英文标题、来源、分类、图片、宽高、描述和完整提示词。
 - 搜索覆盖中英文标题、分类、来源、描述和提示词；分类使用纯前端过滤，不新增后端接口。
 

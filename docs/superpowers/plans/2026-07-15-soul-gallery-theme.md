@@ -15,8 +15,8 @@
 **Files:**
 - Create: `src/app/soul-gallery/catalog.ts`
 - Create: `src/app/soul-gallery/catalog.test.ts`
-- Create: `public/soul-gallery/imagic6/*`
-- Create: `public/soul-gallery/imya/*`
+- Create: `public/soul-gallery-assets/imagic6/*`
+- Create: `public/soul-gallery-assets/imya/*`
 
 - [x] **Step 1: 写失败测试**：断言目录正好 19 项，指定标题全部存在，每项提示词非空且图片使用 `/soul-gallery/` 路径，并验证 `filterSoulGallery` 对标题、提示词与分类生效。
 - [x] **Step 2: 验证 RED**：运行 `npx vitest run src/app/soul-gallery/catalog.test.ts`，预期因模块尚不存在而失败。

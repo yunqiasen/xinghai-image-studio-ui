@@ -38,7 +38,7 @@ describe("soul gallery catalog", () => {
 
     for (const item of soulGalleryCatalog) {
       expect(item.prompt.trim().length).toBeGreaterThan(20);
-      expect(item.image.startsWith("/soul-gallery/")).toBe(true);
+      expect(item.image.startsWith("/soul-gallery-assets/")).toBe(true);
       expect(item.width).toBeGreaterThan(0);
       expect(item.height).toBeGreaterThan(0);
       expect(fs.existsSync(path.join(process.cwd(), "public", item.image))).toBe(true);
