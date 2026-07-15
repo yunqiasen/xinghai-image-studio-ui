@@ -8,6 +8,8 @@
 
 **Tech Stack:** React 19, TypeScript, Vite, Vitest, Radix Select, Tailwind CSS.
 
+**后续视觉调整（2026-07-15）：** 用户取消高饱和彩色增强，当前实现恢复到增强前的克制极光配色；Task 4 中的高饱和方案只保留为历史执行记录，不代表当前运行效果。
+
 ---
 
 ### Task 1: Locale state and translation contract

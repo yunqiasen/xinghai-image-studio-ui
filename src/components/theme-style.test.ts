@@ -11,14 +11,13 @@ describe("commercial preference styling", () => {
     expect(css).not.toContain("grid-template-columns: repeat(3");
   });
 
-  it("gives colorful mode a saturated five-color aurora distinct from light mode", () => {
-    expect(css).toContain("--commercial-colorful-cyan");
-    expect(css).toContain("--commercial-colorful-blue");
-    expect(css).toContain("--commercial-colorful-violet");
-    expect(css).toContain("--commercial-colorful-pink");
-    expect(css).toContain("--commercial-colorful-gold");
-    expect(css).toContain(".theme-colorful .commercial-nav-link.is-active");
-    expect(css).toContain(".theme-colorful .studio-ambient-mesh");
-    expect(css).toContain("saturate(1.55)");
+  it("keeps colorful mode on the original restrained aurora palette", () => {
+    expect(css).toContain("--commercial-bg: #eef3f7");
+    expect(css).toContain("--commercial-accent: #2d6f82");
+    expect(css).toContain("rgba(38,204,220,.34)");
+    expect(css).toContain("rgba(255,105,154,.30)");
+    expect(css).not.toContain("--commercial-colorful-cyan");
+    expect(css).not.toContain("saturate(1.55)");
+    expect(css).not.toContain(".theme-colorful .commercial-nav-link.is-active");
   });
 });

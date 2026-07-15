@@ -317,27 +317,16 @@
 /* 商业前端三套主题：默认保留当前极光彩色风格。 */
 :root,
 .theme-colorful {
-  --commercial-colorful-cyan: #00d9ee;
-  --commercial-colorful-blue: #3678ff;
-  --commercial-colorful-violet: #8b4dff;
-  --commercial-colorful-pink: #ff4fa3;
-  --commercial-colorful-gold: #ffb62e;
-  --commercial-bg: #eef2ff;
-  --commercial-text: #172039;
-  --commercial-header: rgb(250 251 255 / 82%);
-  --commercial-surface: rgb(255 255 255 / 72%);
-  --commercial-border: rgb(72 69 146 / 15%);
-  --commercial-muted: rgb(48 58 93 / 68%);
-  --commercial-strong: #172343;
-  --commercial-accent: #6654e8;
+  --commercial-bg: #eef3f7;
+  --commercial-text: #17202a;
+  --commercial-header: rgb(248 251 252 / 86%);
+  --commercial-surface: rgb(255 255 255 / 76%);
+  --commercial-border: rgb(29 51 70 / 10%);
+  --commercial-muted: rgb(41 66 88 / 62%);
+  --commercial-strong: #142536;
+  --commercial-accent: #2d6f82;
   --commercial-on-accent: #ffffff;
-  --commercial-ambient:
-    radial-gradient(ellipse 43% 36% at 2% 4%, color-mix(in srgb, var(--commercial-colorful-cyan) 42%, transparent), transparent 72%),
-    radial-gradient(ellipse 38% 35% at 98% 2%, color-mix(in srgb, var(--commercial-colorful-pink) 42%, transparent), transparent 72%),
-    radial-gradient(ellipse 44% 40% at 88% 92%, color-mix(in srgb, var(--commercial-colorful-violet) 36%, transparent), transparent 74%),
-    radial-gradient(ellipse 34% 32% at 8% 94%, color-mix(in srgb, var(--commercial-colorful-gold) 31%, transparent), transparent 72%),
-    radial-gradient(ellipse 30% 30% at 52% 45%, color-mix(in srgb, var(--commercial-colorful-blue) 20%, transparent), transparent 76%),
-    linear-gradient(142deg,#effdff 0%,#f1efff 43%,#fff0f8 72%,#fff8e8 100%);
+  --commercial-ambient: radial-gradient(circle at 7% 9%, rgba(38,204,220,.34), transparent 28%), radial-gradient(circle at 92% 10%, rgba(255,105,154,.30), transparent 30%), radial-gradient(circle at 84% 88%, rgba(142,91,246,.24), transparent 31%), radial-gradient(circle at 13% 91%, rgba(255,190,77,.20), transparent 29%), linear-gradient(145deg,#f4fbfd 0%,#f8f4fb 49%,#eef4f8 100%);
 }
 
 .theme-light {
@@ -429,21 +418,6 @@
 .preference-select-item { min-height: 40px; color: var(--commercial-muted); font-weight: 650; }
 .preference-select-item:focus { background: color-mix(in srgb, var(--commercial-accent) 11%, transparent); color: var(--commercial-strong); }
 
-.theme-colorful .commercial-header {
-  border-color: color-mix(in srgb, var(--commercial-colorful-violet) 18%, transparent);
-  box-shadow: 0 12px 46px -34px rgba(83, 58, 183, .48);
-}
-.theme-colorful .commercial-logo,
-.theme-colorful .commercial-register-link,
-.theme-colorful .commercial-nav-link.is-active {
-  background: linear-gradient(125deg,var(--commercial-colorful-blue),var(--commercial-colorful-violet) 52%,var(--commercial-colorful-pink));
-  color: #fff;
-  box-shadow: 0 12px 28px -14px rgba(111, 71, 235, .72);
-}
-.theme-colorful .preference-select-trigger {
-  border-color: rgba(116, 86, 220, .18);
-  box-shadow: 0 10px 28px -20px rgba(104, 69, 210, .5), 0 0 0 1px rgba(255,255,255,.52) inset;
-}
 
 /* 彩色主题保持 Aurora V5；浅色和暗色只替换材质与对比，不改版式。 */
 .theme-light .studio-page {
@@ -490,7 +464,7 @@
 .theme-dark .studio-info-card { border-color: rgba(255,255,255,.1) !important; background: rgba(28,37,48,.9) !important; }
 .theme-dark .studio-preview > footer { border-color: rgba(255,255,255,.1) !important; background: #121923 !important; color: #9fb0bf !important; }
 .theme-dark .studio-preview .preference-select-trigger { background: rgba(12,18,24,.7); border-color: rgba(255,255,255,.1); color: #edf4f8; }
-.theme-colorful .studio-controls .preference-select-trigger { background: rgba(255,255,255,.075); border-color: rgba(255,255,255,.14); color: #f8eaff; box-shadow: 0 10px 26px -18px rgba(236,72,255,.58); }
+.theme-colorful .studio-controls .preference-select-trigger { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); color: #f4ddfb; box-shadow: none; }
 
 .theme-dark .commercial-main:not(:has(.studio-page)) [class*="bg-white"] { background-color: var(--commercial-surface) !important; }
 .theme-dark .commercial-main:not(:has(.studio-page)) [class*="border-[#1d3346]"] { border-color: var(--commercial-border) !important; }
@@ -628,29 +602,6 @@
 .soul-gallery-secondary-action:hover { background: var(--soul-accent-soft); }
 .soul-gallery-primary-action { background: linear-gradient(120deg,#5d8ff5,#9b6af2 55%,#e15ab4); color: white; box-shadow: 0 14px 32px -16px rgba(121,82,220,.72); }
 .soul-gallery-primary-action:hover { filter: brightness(1.07); transform: translateY(-1px); }
-.theme-colorful .studio-ambient-mesh {
-  opacity: 1;
-  filter: saturate(1.55) contrast(1.04);
-  background:
-    radial-gradient(ellipse 42% 52% at -3% 18%,rgba(0,217,238,.34),transparent 68%),
-    radial-gradient(ellipse 38% 48% at 103% 12%,rgba(255,68,157,.32),transparent 68%),
-    radial-gradient(ellipse 35% 42% at 88% 106%,rgba(122,70,255,.31),transparent 70%),
-    radial-gradient(ellipse 28% 38% at 7% 104%,rgba(255,182,46,.24),transparent 68%),
-    linear-gradient(138deg,#eaffff 0%,#f0edff 47%,#fff0f8 76%,#fff8e8 100%) !important;
-}
-.theme-colorful .studio-controls {
-  border-color: rgba(229,190,255,.18) !important;
-  background: linear-gradient(145deg,rgba(23,19,45,.98),rgba(51,27,75,.97) 56%,rgba(18,29,57,.98)) !important;
-  box-shadow: 0 26px 78px rgba(65,31,115,.24), 0 0 0 1px rgba(255,112,226,.045) inset !important;
-}
-.theme-colorful .studio-preview {
-  border-color: rgba(112,79,210,.18) !important;
-  box-shadow: 0 26px 78px rgba(73,58,136,.17) !important;
-}
-.theme-colorful .studio-generate-button {
-  background: linear-gradient(115deg,var(--commercial-colorful-blue),var(--commercial-colorful-violet) 48%,var(--commercial-colorful-pink)) !important;
-  box-shadow: 0 14px 34px -14px rgba(139,77,255,.76) !important;
-}
 
 @keyframes soul-card-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
