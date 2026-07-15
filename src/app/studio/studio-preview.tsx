@@ -63,6 +63,7 @@ export function StudioPreview({
   const [elapsedMs, setElapsedMs] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [previewUrl, setPreviewUrl] = useState("");
   const dragOrigin = useRef<DragOrigin | null>(null);
   const ratio = useMemo(() => aspectRatioCss(aspectRatio), [aspectRatio]);
   const state = busy ? "loading" : error ? "error" : results.length ? "results" : "empty";
@@ -83,6 +84,13 @@ export function StudioPreview({
     setZoom(1);
     setOffset({ x: 0, y: 0 });
   }, [aspectRatio, results]);
+
+  useEffect(() => {
+    if (!previewUrl) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setPreviewUrl(""); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [previewUrl]);
 
   function applyZoom(next: number) {
     const clamped = Math.min(1.8, Math.max(0.6, next));
@@ -146,19 +154,19 @@ export function StudioPreview({
         </div>
       </header>
 
-      <div className="studio-preview-body relative grid min-h-0 overflow-hidden gap-3 bg-[linear-gradient(145deg,#eef3f7,#f2f0f6)] p-3.5 lg:grid-cols-[minmax(0,1fr)_190px]">
+      <div className="studio-preview-body relative grid min-h-0 overflow-hidden gap-2.5 bg-[linear-gradient(145deg,#eef3f7,#f2f0f6)] p-2.5 lg:grid-cols-[minmax(0,1fr)_180px]">
         <div
           className="studio-preview-canvas relative grid h-full min-h-0 place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-[radial-gradient(circle_at_14%_10%,rgba(46,211,211,.07),transparent_28%),radial-gradient(circle_at_88%_92%,rgba(142,85,240,.07),transparent_30%),linear-gradient(45deg,#f0f3f7_25%,transparent_25%),linear-gradient(-45deg,#f0f3f7_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f3f7_75%),linear-gradient(-45deg,transparent_75%,#f0f3f7_75%)] bg-[length:auto,auto,24px_24px,24px_24px,24px_24px,24px_24px] bg-[position:0_0,0_0,0_0,0_12px,12px_-12px,-12px_0] shadow-inner shadow-slate-300/25"
           onWheel={handleWheel}
         >
           {results.length === 1 && !busy ? (
-            <div className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-[11px] border border-[#dce3ec] bg-white/94 p-1 text-xs text-slate-500 shadow-lg shadow-slate-900/8 backdrop-blur">
+            <div className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1 rounded-[11px] border border-[#dce3ec] bg-white/94 p-1 text-xs text-slate-500 shadow-lg shadow-slate-900/8 backdrop-blur">
               <button aria-label={t("preview.zoomOut")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom - 0.1)} type="button"><Minus size={14} /></button>
               <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
               <button aria-label={t("preview.zoomIn")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom + 0.1)} type="button"><Plus size={14} /></button>
               <button aria-label={t("preview.fit")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(1)} title={t("preview.fit")} type="button"><Maximize2 size={14} /></button>
               <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[#7651c7] hover:bg-violet-50" onClick={() => onEditResult(results[0])} title={t("studio.localEdit")} type="button"><ScanLine size={14} /><span className="hidden xl:inline">{t("studio.localEdit")}</span></button>
-              <a aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" href={results[0]} rel="noreferrer" target="_blank"><ExternalLink size={14} /></a>
+              <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => setPreviewUrl(results[0])} title={t("preview.openOriginal")} type="button"><ExternalLink size={14} /></button>
             </div>
           ) : null}
 
@@ -190,18 +198,18 @@ export function StudioPreview({
               <p className="mt-3 text-xs text-slate-400">{t("preview.retryNote")}</p>
             </div>
           ) : results.length ? (
-            <div className="h-full w-full overflow-auto p-5">
-              <div className={`${resultGridClass(results.length)} mx-auto min-h-full max-w-[600px] content-center`}>
+            <div className="h-full w-full overflow-hidden p-3 pt-14">
+              <div className={`${resultGridClass(results.length)} mx-auto h-full max-w-[760px] content-center`}>
                 {results.map((url, index) => results.length === 1 ? (
                   <div
                     key={url}
-                    className={`relative mx-auto grid max-h-full w-full max-w-[560px] touch-none place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-white shadow-[0_22px_50px_rgba(38,49,65,.15)] ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
+                    className={`relative mx-auto grid h-full max-h-full w-full max-w-[720px] touch-none place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-white shadow-[0_22px_50px_rgba(38,49,65,.15)] ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"}`}
                     data-result-card={index + 1}
+                    onClick={() => { if (zoom <= 1) setPreviewUrl(url); }}
                     onPointerCancel={stopDragging}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={stopDragging}
-                    style={{ aspectRatio: ratio }}
                   >
                     <img
                       alt={t("preview.resultAlt", { index: index + 1 })}
@@ -218,10 +226,10 @@ export function StudioPreview({
                     data-result-card={index + 1}
                     style={{ aspectRatio: ratio }}
                   >
-                    <img alt={t("preview.resultAlt", { index: index + 1 })} className="h-full w-full select-none object-contain transition duration-300 group-hover:scale-[1.02]" draggable={false} src={url} />
+                    <img alt={t("preview.resultAlt", { index: index + 1 })} className="h-full w-full cursor-zoom-in select-none object-contain transition duration-300 group-hover:scale-[1.02]" draggable={false} onClick={() => setPreviewUrl(url)} src={url} />
                     <div className="absolute right-2 top-2 flex gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                       <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-950/65 px-2.5 text-[10px] font-semibold text-white backdrop-blur hover:bg-violet-700" onClick={() => onEditResult(url)} type="button"><ScanLine size={13} />{t("studio.localEdit")}</button>
-                      <a aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950/65 text-white backdrop-blur hover:bg-slate-950/80" href={url} rel="noreferrer" target="_blank"><ExternalLink size={14} /></a>
+                      <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950/65 text-white backdrop-blur hover:bg-slate-950/80" onClick={() => setPreviewUrl(url)} type="button"><ExternalLink size={14} /></button>
                     </div>
                     <span className="absolute bottom-2 left-2 rounded-lg bg-slate-950/55 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur">{index + 1}/{results.length}</span>
                   </div>
@@ -270,14 +278,19 @@ export function StudioPreview({
         </aside>
       </div>
 
-      <footer className="grid min-h-[78px] grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 border-t border-[#e3e8ef] bg-white px-3 text-[10px] text-slate-500">
+      <footer className="grid min-h-[78px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-[#e3e8ef] bg-white px-3 text-[10px] text-slate-500">
         <div className="min-w-0"><textarea aria-label={t("studio.promptLabel")} className="h-14 w-full resize-none rounded-xl border border-violet-200 bg-violet-50/35 px-3 py-2 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} /></div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button aria-label={t("studio.optimizePrompt")} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[13px] border border-violet-200 bg-violet-50 px-3 text-xs font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-45" disabled={promptDisabled || !prompt.trim()} onClick={onOptimizePrompt} type="button"><WandSparkles size={15} />{t("studio.optimizePrompt")}</button>
-          <button aria-label={t("studio.generate")} className="inline-flex h-11 items-center justify-center gap-2 rounded-[13px] bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,.24)] disabled:cursor-not-allowed disabled:opacity-60" disabled={promptDisabled} onClick={onGenerate} type="button"><Sparkles size={16} />{t("studio.generate")}</button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button aria-label={t("studio.optimizePrompt")} className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-violet-200 bg-violet-50 px-2.5 text-[11px] font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-45" disabled={promptDisabled || !prompt.trim()} onClick={onOptimizePrompt} type="button"><WandSparkles size={14} />{t("studio.optimizePrompt")}</button>
+          <button aria-label={t("studio.generate")} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-4 text-xs font-bold text-white shadow-[0_10px_24px_rgba(124,58,237,.22)] disabled:cursor-not-allowed disabled:opacity-60" disabled={promptDisabled} onClick={onGenerate} type="button"><Sparkles size={15} />{t("studio.generate")}</button>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap pr-1"><i className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-[#a855f7]" : error ? "bg-rose-500" : results.length ? "bg-emerald-500" : "bg-[#a78bfa]"}`} />{busy ? t("preview.footer.processing") : error ? t("preview.footer.failed") : results.length ? t("preview.footer.complete", { count: results.length }) : t("preview.footer.ready")}</span>
       </footer>
+      {previewUrl ? (
+        <div aria-label={t("preview.openOriginal")} aria-modal="true" className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-xl" onClick={() => setPreviewUrl("")} role="dialog">
+          <button aria-label={t("common.close")} className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full bg-white/12 text-2xl text-white hover:bg-white/20" onClick={() => setPreviewUrl("")} type="button">×</button>
+          <img alt={t("preview.resultAlt", { index: 1 })} className="max-h-[92dvh] max-w-[94vw] rounded-2xl object-contain shadow-2xl" onClick={(event) => event.stopPropagation()} src={previewUrl} />
+        </div>
+      ) : null}
     </section>
   );
 }
