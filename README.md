@@ -56,7 +56,7 @@ http://127.0.0.1:18100
 
 ## 图像创作页
 
-`/studio` 使用后端异步任务接口 `POST /api/image/tasks`，并通过 `GET /api/image/tasks` 每 2 秒同步状态。任务状态由 `CommercialShell` 下的全局 `GenerationProvider` 管理，不再绑定创作页组件：切换到作品、积分或账号页不会终止任务；返回创作页会恢复生成中、成功图片或失败原因；刷新页面后会从后端最近 50 个当前用户任务中恢复。
+`/studio` 使用后端异步任务接口 `POST /api/image/tasks`，并通过 `GET /api/image/tasks` 每 2 秒同步状态。任务状态由 `CommercialShell` 下的全局 `GenerationProvider` 管理，不再绑定创作页组件：切换到作品、积分或账号页不会终止任务；返回创作页会恢复生成中、成功图片或失败原因；刷新页面后会从后端最近 50 个当前用户任务中恢复。任务 ID 支持缺少 `crypto.randomUUID()` 的内网 HTTP 浏览器环境，不会在提交前因浏览器兼容性中断。
 
 右侧按任务 `count` 显示加载画布和等待时间。成功后完整展示 `task.images[].url`，单图支持缩放、适应画布、拖拽查看和打开原图，多图按双列网格展示且不裁切。失败和取消状态会保留后端中文原因，积分变化通过 `GET /api/auth/me` 重新同步。
 

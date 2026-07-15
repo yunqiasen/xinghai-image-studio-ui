@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { ImageEditModal } from "@/components/image-edit-modal";
+import { createLocalId } from "@/lib/client-id";
 import {
   cancelImageTask,
   consumeImageTaskStream,
@@ -217,10 +218,7 @@ async function normalizeConversationHistory(items: ImageConversation[]) {
 }
 
 function makeId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return createLocalId();
 }
 
 function formatProcessingDuration(totalSeconds: number) {

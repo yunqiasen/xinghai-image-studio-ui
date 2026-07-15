@@ -69,7 +69,7 @@ type RegistrationPolicy = {
 
 ### 生图
 
-商业创作页使用异步请求字段 `taskId`、`conversationId`、`turnId`、`mode`、`prompt`、`model`、`count`、`size`、`quality`、`sourceImages`。固定 `conversationId=commercial-studio`，客户端 ID 仅用于幂等；源图和遮罩按契约映射为 `sourceImages[].role=image|mask`。
+商业创作页使用异步请求字段 `taskId`、`conversationId`、`turnId`、`mode`、`prompt`、`model`、`count`、`size`、`quality`、`sourceImages`。固定 `conversationId=commercial-studio`，客户端 ID 仅用于幂等；ID 生成优先使用 `crypto.randomUUID()`，在内网 HTTP 等缺少该函数的浏览器环境自动回退到 `crypto.getRandomValues()`，避免创建任务前中断。源图和遮罩按契约映射为 `sourceImages[].role=image|mask`。
 
 前端消费 `queued`、`running`、`cancel_requested`、`succeeded`、`failed`、`cancelled` 六种状态。全局 Provider 位于 `CommercialShell` 与路由 `Outlet` 之间，因此子页面卸载不会清除任务；登录用户变化时立即清空上一账号任务，再读取当前账号最近任务。成功图片只读取 `task.images[].url`，失败原因优先显示 `task.error`。
 

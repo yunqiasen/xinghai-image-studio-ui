@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { createClientId } from "@/lib/client-id";
 import { createImageTask, listImageTasks } from "@/lib/image-tasks/client";
 import {
   COMMERCIAL_STUDIO_CONVERSATION_ID,
@@ -13,11 +14,6 @@ import type { ImageTask } from "@/lib/image-tasks/types";
 import { loadCurrentUser } from "@/lib/storage/local-session";
 
 import { GenerationContext, type GenerationContextValue } from "./generation-context";
-
-function clientID(prefix: string) {
-  const suffix = crypto.randomUUID().replaceAll("-", "");
-  return `${prefix}_${suffix}`;
-}
 
 export function GenerationProvider({ children, userId }: { children: ReactNode; userId?: string }) {
   const [task, setTask] = useState<ImageTask>();
@@ -91,9 +87,9 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
     setRequestError(undefined);
     try {
       const payload = await createImageTask({
-        taskId: clientID("web"),
+        taskId: createClientId("web"),
         conversationId: COMMERCIAL_STUDIO_CONVERSATION_ID,
-        turnId: clientID("turn"),
+        turnId: createClientId("turn"),
         mode: input.mode,
         prompt: input.prompt,
         model: input.model,

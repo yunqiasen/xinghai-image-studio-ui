@@ -22,6 +22,7 @@ import { useGeneration } from "@/components/commercial/generation-context";
 import { useLanguage } from "@/components/language-provider";
 import type { TranslationKey } from "@/components/language-modes";
 import { ThemeSelector } from "@/components/theme-selector";
+import { createLocalId } from "@/lib/client-id";
 import { estimateCredits, modePricing, type ResolutionTier, type StudioMode } from "@/lib/billing/pricing";
 import {
   sizeFromStudioPreset,
@@ -140,7 +141,7 @@ export function StudioPage() {
     const next: UploadedAsset[] = [];
     for (const file of Array.from(files).slice(0, role === "mask" ? 1 : 4)) {
       if (!file.type.startsWith("image/")) continue;
-      next.push({ id: crypto.randomUUID(), name: file.name, dataUrl: await fileToDataUrl(file, t("studio.error.readImage")), role });
+      next.push({ id: createLocalId(), name: file.name, dataUrl: await fileToDataUrl(file, t("studio.error.readImage")), role });
     }
     if (!next.length) return;
     setAssets((previous) => role === "mask"
