@@ -138,12 +138,24 @@ export function StudioPreview({
 
   return (
     <section className={PREVIEW_PANEL_CLASS_NAME} data-preview-state={state}>
-      <header className="flex min-h-[74px] items-center justify-between gap-4 border-b border-[#e3e8ef] px-5">
+      <header className="relative flex min-h-[74px] items-center justify-between gap-4 border-b border-[#e3e8ef] px-5">
         <div>
           <p className="text-[10px] font-bold tracking-[0.24em] text-[#7c3aed]">PREVIEW</p>
           <h2 className="mt-0.5 text-[22px] font-semibold tracking-[-0.04em] text-[#152238]">{t("preview.title")}</h2>
           <p className="mt-0.5 text-[11px] text-slate-500">{t("preview.description")}</p>
         </div>
+        {results.length === 1 && !busy ? (
+          <div className="absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-[11px] border border-[#dce3ec] bg-white/94 p-1 text-xs text-slate-500 shadow-lg shadow-slate-900/8 backdrop-blur">
+              <button aria-label={t("preview.zoomOut")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom - 0.1)} type="button"><Minus size={14} /></button>
+              <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
+              <button aria-label={t("preview.zoomIn")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom + 0.1)} type="button"><Plus size={14} /></button>
+              <button aria-label={t("preview.fit")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(1)} title={t("preview.fit")} type="button"><Maximize2 size={14} /></button>
+              <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[#7651c7] hover:bg-violet-50" onClick={() => onEditResult(results[0])} title={t("studio.localEdit")} type="button"><ScanLine size={14} /><span className="hidden xl:inline">{t("studio.localEdit")}</span></button>
+              <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => setPreviewUrl(results[0])} title={t("preview.openOriginal")} type="button"><ExternalLink size={14} /></button>
+            </div>
+        ) : null}
+
+
         <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
           <span className="studio-preview-chip rounded-[10px] border border-[#dce3ec] bg-[#f8fafc] px-3 py-2">
             {busy ? t("preview.status.generating") : results.length ? t(results.length === 1 ? "studio.result" : "studio.resultCount", { count: results.length }) : error ? t("preview.status.failed") : t("preview.status.idle")}
@@ -159,17 +171,6 @@ export function StudioPreview({
           className="studio-preview-canvas relative grid h-full min-h-0 place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-[radial-gradient(circle_at_14%_10%,rgba(46,211,211,.07),transparent_28%),radial-gradient(circle_at_88%_92%,rgba(142,85,240,.07),transparent_30%),linear-gradient(45deg,#f0f3f7_25%,transparent_25%),linear-gradient(-45deg,#f0f3f7_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f3f7_75%),linear-gradient(-45deg,transparent_75%,#f0f3f7_75%)] bg-[length:auto,auto,24px_24px,24px_24px,24px_24px,24px_24px] bg-[position:0_0,0_0,0_0,0_12px,12px_-12px,-12px_0] shadow-inner shadow-slate-300/25"
           onWheel={handleWheel}
         >
-          {results.length === 1 && !busy ? (
-            <div className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1 rounded-[11px] border border-[#dce3ec] bg-white/94 p-1 text-xs text-slate-500 shadow-lg shadow-slate-900/8 backdrop-blur">
-              <button aria-label={t("preview.zoomOut")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom - 0.1)} type="button"><Minus size={14} /></button>
-              <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
-              <button aria-label={t("preview.zoomIn")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom + 0.1)} type="button"><Plus size={14} /></button>
-              <button aria-label={t("preview.fit")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(1)} title={t("preview.fit")} type="button"><Maximize2 size={14} /></button>
-              <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[#7651c7] hover:bg-violet-50" onClick={() => onEditResult(results[0])} title={t("studio.localEdit")} type="button"><ScanLine size={14} /><span className="hidden xl:inline">{t("studio.localEdit")}</span></button>
-              <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => setPreviewUrl(results[0])} title={t("preview.openOriginal")} type="button"><ExternalLink size={14} /></button>
-            </div>
-          ) : null}
-
           {busy ? (
             <div className="relative flex h-full w-full items-center justify-center p-6">
               <div className={`${resultGridClass(count)} h-fit w-full max-w-[560px]`}>
@@ -198,12 +199,12 @@ export function StudioPreview({
               <p className="mt-3 text-xs text-slate-400">{t("preview.retryNote")}</p>
             </div>
           ) : results.length ? (
-            <div className="h-full w-full overflow-hidden p-3 pt-14">
-              <div className={`${resultGridClass(results.length)} mx-auto h-full max-w-[760px] content-center`}>
+            <div className="h-full w-full overflow-hidden p-1.5">
+              <div className={`${resultGridClass(results.length)} mx-auto h-full max-w-none content-center`}>
                 {results.map((url, index) => results.length === 1 ? (
                   <div
                     key={url}
-                    className={`relative mx-auto grid h-full max-h-full w-full max-w-[720px] touch-none place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-white shadow-[0_22px_50px_rgba(38,49,65,.15)] ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"}`}
+                    className={`relative mx-auto grid h-full max-h-full w-full max-w-none touch-none place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-white shadow-[0_22px_50px_rgba(38,49,65,.15)] ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"}`}
                     data-result-card={index + 1}
                     onClick={() => { if (zoom <= 1) setPreviewUrl(url); }}
                     onPointerCancel={stopDragging}
@@ -213,10 +214,10 @@ export function StudioPreview({
                   >
                     <img
                       alt={t("preview.resultAlt", { index: index + 1 })}
-                      className="h-full w-full select-none object-contain transition-transform duration-150"
+                      className="max-h-full max-w-full select-none object-contain transition-transform duration-150"
                       draggable={false}
                       src={url}
-                      style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}
+                      style={zoom <= 1 ? { width: `${zoom * 100}%`, height: `${zoom * 100}%` } : { width: "100%", height: "100%", transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}
                     />
                   </div>
                 ) : (
