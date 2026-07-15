@@ -19,16 +19,16 @@ export function ThemeToggleButton({
     light: {
       icon: Sun,
       current: "浅色主题",
-      next: "浅灰主题",
-    },
-    graphite: {
-      icon: Moon,
-      current: "浅灰主题",
-      next: "深黑主题",
+      next: "暗色主题",
     },
     dark: {
+      icon: Moon,
+      current: "暗色主题",
+      next: "彩色主题",
+    },
+    colorful: {
       icon: Sparkles,
-      current: "深黑主题",
+      current: "彩色主题",
       next: "浅色主题",
     },
   } as const;

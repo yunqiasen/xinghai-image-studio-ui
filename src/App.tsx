@@ -1,6 +1,4 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { Toaster } from "sonner";
-
 import { AccountPage } from "@/app/account/page";
 import { LoginPage } from "@/app/auth/login/page";
 import { RegisterPage } from "@/app/auth/register/page";
@@ -12,8 +10,6 @@ import { CommercialShell } from "@/components/commercial/app-shell";
 
 export default function App() {
   return (
-    <>
-      <Toaster richColors position="top-center" />
       <Routes>
         <Route element={<CommercialShell />}>
           <Route path="/" element={<LandingPage />} />
@@ -26,6 +22,5 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
   );
 }

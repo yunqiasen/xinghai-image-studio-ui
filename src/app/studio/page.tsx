@@ -18,8 +18,9 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
+import { useGeneration } from "@/components/commercial/generation-context";
+import { ThemeSelector } from "@/components/theme-selector";
 import { estimateCredits, modePricing, type ResolutionTier, type StudioMode } from "@/lib/billing/pricing";
-import { submitImageGeneration } from "@/lib/image2api/client";
 import {
   sizeFromStudioPreset,
   studioAspectRatioOptions,
@@ -115,12 +116,9 @@ export function StudioPage() {
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [count, setCount] = useState(1);
   const [showAllTemplates, setShowAllTemplates] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [generationStartedAt, setGenerationStartedAt] = useState<number>();
-  const [generationError, setGenerationError] = useState<string>();
   const [assets, setAssets] = useState<UploadedAsset[]>([]);
-  const [result, setResult] = useState<string[]>([]);
   const { user } = useSessionUser();
+  const { busy, error: generationError, resultUrls, startGeneration, startedAt: generationStartedAt, task } = useGeneration();
 
   const cost = estimateCredits(mode, resolution, count);
   const activeMode = modePricing[mode];
@@ -152,7 +150,6 @@ export function StudioPage() {
       return;
     }
     if (!prompt.trim()) {
-      setGenerationError("请输入提示词后再生成图片");
       toast.error("请输入提示词后再生成图片");
       return;
     }
@@ -165,28 +162,25 @@ export function StudioPage() {
       return;
     }
 
-    setGenerationError(undefined);
-    setResult([]);
-    setGenerationStartedAt(Date.now());
-    setBusy(true);
     try {
-      const response = await submitImageGeneration({
+      await startGeneration({
         mode,
         prompt: prompt.trim(),
-        n: count,
+        model: selectedModel,
+        count,
         size: sizeFromStudioPreset(aspectRatio, resolution),
-        reference_images: referenceImages.map((item) => item.dataUrl),
-        mask: maskImage?.dataUrl,
+        quality: "",
+        sourceImages: assets.map((item) => ({
+          id: item.id,
+          role: item.role,
+          name: item.name,
+          dataUrl: item.dataUrl,
+          url: "",
+        })),
       });
-      if (!response.imageUrls.length) throw new Error("生成任务未返回图片，请稍后到作品页面查看");
-      setResult(response.imageUrls);
-      toast.success(`生成完成，共 ${response.imageUrls.length} 张，已保存到作品`);
+      toast.success("任务已提交，切换页面不会中断生成");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "生成失败";
-      setGenerationError(message);
-      toast.error(message);
-    } finally {
-      setBusy(false);
+      toast.error(error instanceof Error ? error.message : "创建图片任务失败");
     }
   }
 
@@ -236,12 +230,10 @@ export function StudioPage() {
                     );
                   })}
                 </div>
-                <section className="relative mt-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.045] p-3">
-                  <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-semibold text-white">灵感光谱</p><span className="text-[9px] text-white/35">本轮氛围</span></div>
-                  <div className="mt-2.5 grid h-6 grid-cols-[1.05fr_.8fr_1.2fr_.75fr] gap-1" aria-hidden="true">
-                    <i className="rounded-[7px] bg-[linear-gradient(135deg,#c8f3ed,#61c8ce)]" /><i className="rounded-[7px] bg-[linear-gradient(135deg,#ffd6bb,#ef8c79)]" /><i className="rounded-[7px] bg-[linear-gradient(135deg,#d8c4ff,#8765d8)]" /><i className="rounded-[7px] bg-[linear-gradient(135deg,#fbefbd,#d6ad5d)]" />
-                  </div>
-                  <p className="mt-2 text-[9px] leading-4 text-white/38">只提供色彩启发，不改变提示词。</p>
+                <section className="studio-spectrum relative mt-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+                  <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-semibold text-white">灵感光谱</p><span className="text-[9px] text-white/35">界面色彩</span></div>
+                  <ThemeSelector className="mt-2.5" compact />
+                  <p className="mt-2 text-[9px] leading-4 text-white/38">选择浅色、暗色或彩色界面。</p>
                 </section>
               </aside>
 
@@ -309,14 +301,14 @@ export function StudioPage() {
 
             <footer className={STUDIO_ACTION_BAR_CLASS_NAME}>
               <div className="min-w-0"><p className="truncate text-xs font-semibold text-white">{shortModeLabel(activeMode.label)} · {count} 张 · {resolution.toUpperCase()}</p><p className="mt-1 text-[9px] text-white/38">预计消耗 {cost} 积分</p></div>
-              <button disabled={busy} className="inline-flex h-11 min-w-[220px] items-center justify-center gap-2 rounded-[13px] bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,.24)] transition hover:-translate-y-0.5 hover:brightness-110 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-75" onClick={submit} type="button">
+              <button disabled={busy} className="studio-generate-button inline-flex h-11 min-w-[220px] items-center justify-center gap-2 rounded-[13px] bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,.24)] transition hover:-translate-y-0.5 hover:brightness-110 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-75" onClick={submit} type="button">
                 {busy ? <LoaderCircle className="animate-spin" size={17} /> : <Sparkles size={17} />}{busy ? "生成中" : "生成"}
               </button>
             </footer>
           </div>
         </section>
 
-        <StudioPreview aspectRatio={aspectRatio} busy={busy} count={count} error={generationError} resolution={resolution} results={result} startedAt={generationStartedAt} />
+        <StudioPreview aspectRatio={aspectRatio} busy={busy} count={task?.count || count} error={generationError} resolution={resolution} results={resultUrls} startedAt={generationStartedAt} />
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { GenerationProvider } from "@/components/commercial/generation-provider";
+import { ThemeSelector } from "@/components/theme-selector";
 import { DEFAULT_SITE_INFO, fetchSiteInfo } from "@/lib/site-info";
 import { logoutLocalUser } from "@/lib/storage/local-session";
 import { useSessionUser } from "@/lib/storage/session-hooks";
@@ -43,51 +45,54 @@ export function CommercialShell() {
   }
 
   return (
-    <div className="min-h-screen bg-[#eef3f7] text-[#17202a] selection:bg-[#28465f]/12">
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_12%_8%,rgba(126,171,196,.32),transparent_30%),radial-gradient(circle_at_86%_12%,rgba(220,231,236,.9),transparent_28%),linear-gradient(180deg,#f8fbfc,#e8eef3)]" />
-      <header className="sticky top-0 z-40 border-b border-[#1d3346]/10 bg-[#f8fbfc]/86 backdrop-blur-xl">
-        <div className={`mx-auto flex h-18 items-center justify-between px-4 ${studioRoute ? "max-w-[1240px]" : "max-w-[1500px]"}`}>
-          <NavLink to="/" className="flex items-center gap-3 font-semibold tracking-tight">
-            <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] bg-[#142536] text-lg text-white shadow-[0_18px_40px_rgba(20,37,54,.22)]">
+    <div className="commercial-shell min-h-screen selection:bg-[#28465f]/12">
+      <div className="commercial-ambient pointer-events-none fixed inset-0 -z-10" />
+      <header className="commercial-header sticky top-0 z-40 border-b backdrop-blur-xl">
+        <div className={`mx-auto flex h-18 items-center justify-between gap-3 px-4 ${studioRoute ? "max-w-[1240px]" : "max-w-[1500px]"}`}>
+          <NavLink to="/" className="commercial-brand flex shrink-0 items-center gap-3 font-semibold tracking-tight">
+            <span className="commercial-logo grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] text-lg shadow-[0_18px_40px_rgba(20,37,54,.22)]">
               {siteInfo.logoUrl ? <img alt="" className="h-full w-full object-cover" src={siteInfo.logoUrl} /> : "星"}
             </span>
             <span className="hidden text-lg sm:inline">{siteInfo.name}</span>
           </NavLink>
-          <nav className="hidden items-center gap-1 rounded-full border border-[#1d3346]/10 bg-white/72 p-1 shadow-sm md:flex">
+          <nav className="commercial-nav hidden items-center gap-1 rounded-full border p-1 shadow-sm md:flex">
             {nav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) =>
-                  `inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition ${isActive ? "bg-[#142536] text-white shadow-lg" : "text-[#1d3346]/70 hover:bg-[#1d3346]/6 hover:text-[#142536]"}`
-                }
+                className={({ isActive }) => `commercial-nav-link inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition ${isActive ? "is-active shadow-lg" : ""}`}
               >
                 <item.icon size={16} />
                 {item.label}
               </NavLink>
             ))}
           </nav>
-          {user ? (
-            <div className="flex items-center gap-2 rounded-full border border-[#1d3346]/10 bg-white/80 px-2 py-2 text-sm shadow-sm sm:px-4">
-              <span className="hidden font-semibold sm:inline">{user.unlimitedCredits ? "无限配额" : `${user.credits} 积分`}</span>
-              {!user.unlimitedCredits && <NavLink to="/billing" className="rounded-full bg-[#2d6f82] px-3 py-1.5 font-semibold text-white">充值</NavLink>}
-              <button className="rounded-full p-1.5 text-[#1d3346]/58 hover:bg-[#1d3346]/8" onClick={logout} type="button" title="退出登录">
-                <LogOut size={16} />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm">
-              <NavLink to="/login" className="rounded-full px-4 py-2 text-[#1d3346]/72 hover:bg-white/72">登录</NavLink>
-              <NavLink to="/register" className="rounded-full bg-[#142536] px-4 py-2 font-semibold text-white shadow-lg">注册</NavLink>
-            </div>
-          )}
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeSelector />
+            {user ? (
+              <div className="commercial-user-pill flex items-center gap-2 rounded-full border px-2 py-2 text-sm shadow-sm sm:px-4">
+                <span className="hidden font-semibold sm:inline">{user.unlimitedCredits ? "无限配额" : `${user.credits} 积分`}</span>
+                {!user.unlimitedCredits && <NavLink to="/billing" className="commercial-credit-button rounded-full px-3 py-1.5 font-semibold">充值</NavLink>}
+                <button className="commercial-icon-button rounded-full p-1.5" onClick={logout} type="button" title="退出登录">
+                  <LogOut size={16} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-sm sm:gap-2">
+                <NavLink to="/login" className="commercial-login-link rounded-full px-3 py-2 sm:px-4">登录</NavLink>
+                <NavLink to="/register" className="commercial-register-link rounded-full px-3 py-2 font-semibold shadow-lg sm:px-4">注册</NavLink>
+              </div>
+            )}
+          </div>
         </div>
       </header>
-      <main className={studioRoute ? "w-full" : "mx-auto max-w-[1500px] px-4 py-6"}>
-        <Outlet />
+      <main className={`commercial-main ${studioRoute ? "w-full" : "mx-auto max-w-[1500px] px-4 py-6"}`}>
+        <GenerationProvider userId={user?.id}>
+          <Outlet />
+        </GenerationProvider>
       </main>
       {!studioRoute && (siteInfo.footer || siteInfo.contactEmail || siteInfo.docsUrl) ? (
-        <footer className="mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 pb-7 text-xs text-[#294258]/52">
+        <footer className="commercial-footer mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 pb-7 text-xs">
           <span>{siteInfo.footer || siteInfo.description}</span>
           <span className="flex items-center gap-4">
             {siteInfo.contactEmail ? <a href={`mailto:${siteInfo.contactEmail}`}>联系邮箱</a> : null}

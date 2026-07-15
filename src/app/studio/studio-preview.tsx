@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent } from "react";
 
+import { ThemeSelector } from "@/components/theme-selector";
 import type { ResolutionTier } from "@/lib/billing/pricing";
 import type { StudioAspectRatio } from "@/lib/image2api/size-presets";
 
@@ -113,18 +114,18 @@ export function StudioPreview({
           <p className="mt-0.5 text-[11px] text-slate-500">完整显示、不裁切；生成后可缩放并打开原图</p>
         </div>
         <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
-          <span className="rounded-[10px] border border-[#dce3ec] bg-[#f8fafc] px-3 py-2">
+          <span className="studio-preview-chip rounded-[10px] border border-[#dce3ec] bg-[#f8fafc] px-3 py-2">
             {busy ? "生成中" : results.length ? `${results.length} 张结果` : error ? "生成失败" : "空闲"}
           </span>
-          <span className="rounded-[10px] border border-[#dce3ec] bg-[#f8fafc] px-3 py-2">
+          <span className="studio-preview-chip rounded-[10px] border border-[#dce3ec] bg-[#f8fafc] px-3 py-2">
             {aspectRatio} · {resolution.toUpperCase()}
           </span>
         </div>
       </header>
 
-      <div className="relative grid min-h-0 gap-3 bg-[linear-gradient(145deg,#eef3f7,#f2f0f6)] p-3.5 lg:grid-cols-[minmax(0,1fr)_148px]">
+      <div className="studio-preview-body relative grid min-h-0 gap-3 bg-[linear-gradient(145deg,#eef3f7,#f2f0f6)] p-3.5 lg:grid-cols-[minmax(0,1fr)_148px]">
         <div
-          className="relative grid h-full min-h-[430px] place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-[radial-gradient(circle_at_14%_10%,rgba(46,211,211,.07),transparent_28%),radial-gradient(circle_at_88%_92%,rgba(142,85,240,.07),transparent_30%),linear-gradient(45deg,#f0f3f7_25%,transparent_25%),linear-gradient(-45deg,#f0f3f7_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f3f7_75%),linear-gradient(-45deg,transparent_75%,#f0f3f7_75%)] bg-[length:auto,auto,24px_24px,24px_24px,24px_24px,24px_24px] bg-[position:0_0,0_0,0_0,0_12px,12px_-12px,-12px_0] shadow-inner shadow-slate-300/25"
+          className="studio-preview-canvas relative grid h-full min-h-[430px] place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-[radial-gradient(circle_at_14%_10%,rgba(46,211,211,.07),transparent_28%),radial-gradient(circle_at_88%_92%,rgba(142,85,240,.07),transparent_30%),linear-gradient(45deg,#f0f3f7_25%,transparent_25%),linear-gradient(-45deg,#f0f3f7_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f3f7_75%),linear-gradient(-45deg,transparent_75%,#f0f3f7_75%)] bg-[length:auto,auto,24px_24px,24px_24px,24px_24px,24px_24px] bg-[position:0_0,0_0,0_0,0_12px,12px_-12px,-12px_0] shadow-inner shadow-slate-300/25"
           onWheel={handleWheel}
         >
           {results.length === 1 && !busy ? (
@@ -213,13 +214,13 @@ export function StudioPreview({
         </div>
 
         <aside className="grid content-start gap-2.5 sm:grid-cols-2 lg:grid-cols-1" aria-label="本次生成信息">
-          <section className="rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
+          <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
             <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">当前引擎</p>
             <p className="mt-1.5 text-xs font-semibold text-[#1e2d43]">GPT Image 2.0</p>
             <p className="mt-2 inline-flex items-center gap-2 text-[9px] text-slate-500"><i className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_0_4px_rgba(20,184,166,.1)]" />服务可用</p>
           </section>
 
-          <section className="rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
+          <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
             <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">输出参数</p>
             <dl className="mt-2.5 grid gap-2 text-[9px] text-slate-500">
               <div className="flex justify-between gap-2"><dt>比例</dt><dd className="font-semibold text-[#27364b]">{aspectRatio}</dd></div>
@@ -228,18 +229,16 @@ export function StudioPreview({
             </dl>
           </section>
 
-          <section className="rounded-2xl border border-[#e3daf8] bg-[linear-gradient(145deg,rgba(244,240,255,.94),rgba(255,255,255,.88))] p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)]">
+          <section className="studio-info-card rounded-2xl border border-[#e3daf8] bg-[linear-gradient(145deg,rgba(244,240,255,.94),rgba(255,255,255,.88))] p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)]">
             <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#ebe3ff] text-xs text-[#7651c7]">▣</span>
             <p className="mt-2 text-[9px] font-bold tracking-[0.16em] text-slate-400">作品同步</p>
             <p className={`mt-1.5 text-xs font-semibold ${error ? "text-rose-600" : results.length ? "text-emerald-700" : busy ? "text-violet-700" : "text-[#1e2d43]"}`}>{syncTitle}</p>
             <p className="mt-1 text-[9px] leading-4 text-slate-500">{syncNote}</p>
           </section>
 
-          <section className="rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
+          <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
             <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">灵感色板</p>
-            <div className="mt-2.5 flex gap-1.5" aria-label="青色、珊瑚色、紫色、金色">
-              {['#6fcfd0', '#ef9a82', '#8d71d9', '#e0bd69'].map((color) => <i key={color} className="h-5 w-5 rounded-[7px] border-2 border-white shadow-sm" style={{ backgroundColor: color }} />)}
-            </div>
+            <ThemeSelector className="mt-2.5" compact />
           </section>
         </aside>
       </div>

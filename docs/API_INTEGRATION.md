@@ -13,7 +13,7 @@
 
 ```text
 接入契约版本: 2026-07-14.account-evidence.3
-后端契约 Commit: d186edfaceaf6a910501e3a73153beb3ba4fb40b
+后端契约 Commit: 60730731081f18f48224d1f15fca0d0d0318c878
 后端实现基线 Commit: 5ad504907dc499ba0e4714fbf875e4e965cb104c
 ```
 
@@ -39,11 +39,11 @@
 | 登录 | `POST /api/auth/login` | `src/lib/storage/local-session.ts` | 已接入 |
 | 退出 | `POST /api/auth/logout` | `src/lib/storage/local-session.ts` | 已接入 |
 | 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送 `code` |
-| 获取作品 | `GET /api/gallery` | `src/lib/storage/local-session.ts` | 已接入 |
+| 获取作品 | `GET /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/page.tsx` | 已接入，按当前用户加载；活跃任务期间轮询，成功后立即刷新 |
 | 清空作品 | `DELETE /api/gallery` | `src/lib/storage/local-session.ts` | 已接入 |
-| 同步生图 | `POST /api/image/generate` | `src/lib/image2api/client.ts`、`src/app/studio/page.tsx` | 已接入，含生成中、失败、单图和多图结果状态 |
+| 同步生图 | `POST /api/image/generate` | `src/lib/image2api/client.ts` | 保留兼容客户端，当前商业 `/studio` 不再使用 |
 | 站点公开信息 | `GET /api/public/site-info` | `src/lib/site-info.ts`、`src/components/commercial/app-shell.tsx` | 已接入，驱动品牌名称、Logo、页脚、联系方式和文档入口 |
-| 异步图片任务 | `/api/image/tasks*` | `src/lib/api.ts`、`src/app/image/*` | 有旧实现，但当前商业路由未启用 |
+| 异步图片任务 | `POST/GET /api/image/tasks` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx`、`src/app/studio/page.tsx` | 商业 `/studio` 已接入；跨路由保留状态，刷新后按当前用户恢复 |
 
 ## 前端依赖的关键字段
 
@@ -68,15 +68,21 @@ type RegistrationPolicy = {
 
 ### 生图
 
-同步生图依赖 `ok`、`taskId`、`imageUrls`、`user`、`creditsCost`。失败提示按 `message`、`error`、HTTP 状态降级。提交后右侧立即按请求 `n` 渲染加载占位和等待时间；成功后完整消费 `imageUrls`，单图进入可缩放画布，多图按双列网格展示且不裁切。右侧任务信息栏同步展示模型、比例、分辨率、数量和作品保存状态。
+商业创作页使用异步请求字段 `taskId`、`conversationId`、`turnId`、`mode`、`prompt`、`model`、`count`、`size`、`quality`、`sourceImages`。固定 `conversationId=commercial-studio`，客户端 ID 仅用于幂等；源图和遮罩按契约映射为 `sourceImages[].role=image|mask`。
 
-2026-07-15 通过前端同源入口 `http://127.0.0.1:18100/api/image/generate` 完成真实 1K 单图验证：HTTP 200，38 秒返回 1 张 PNG，`creditsCost=1`，积分从 19 更新为 18；返回的 `/p/img/*` 签名图片经前端代理访问为 HTTP 200。另一次直连后端验证在 48 秒返回 1 张图片。临时账号及对应作品、任务记录已清理。
+前端消费 `queued`、`running`、`cancel_requested`、`succeeded`、`failed`、`cancelled` 六种状态。全局 Provider 位于 `CommercialShell` 与路由 `Outlet` 之间，因此子页面卸载不会清除任务；登录用户变化时立即清空上一账号任务，再读取当前账号最近任务。成功图片只读取 `task.images[].url`，失败原因优先显示 `task.error`。
+
+作品页依赖后端 `GET /api/gallery` 的用户隔离结果。页面进入、手动刷新、活跃任务轮询、任务成功事件都会重新请求后端；账号变化先清空旧卡片，避免短暂显示上一用户作品。
+
+2026-07-15 前端自动化验证覆盖：异步请求字段、任务列表恢复、跨路由 loading 状态、成功后恢复全部图片、成功后作品自动刷新、失败原因恢复、用户切换清空旧作品、浅色/暗色/彩色主题持久化。浏览器模拟成功链路结果为 `galleryCards=1`、`resultCards=1`、返回创作页 `data-preview-state=results`。
+
+同日通过真实后端提交两次异步 1K 单图任务，均完成 `queued -> running -> failed` 状态同步；150 秒后后端返回 `image_timeout`，积分从 19 自动退回 20，作品保持为空。该结果证明前端跨页跟踪、失败恢复和退款后用户状态同步正常；真实图片成功受当前后端上游账号链路状态影响，不在前端伪造成功作品。
 
 ## 已发现的接口缺口
 
 1. 后端契约没有“发送短信验证码”接口。启用 `smsRequired` 后，前端只能显示验证码输入框，无法主动发送验证码。
 2. 积分页展示了充值套餐，但契约没有创建订单、支付、查询订单或支付回调对应的用户接口，当前套餐只能展示。
-3. 当前商业 `/studio` 使用同步生图。批量任务、排队进度、取消、断线恢复尚未迁移到已文档化的异步任务接口。
+3. 当前商业 `/studio` 已接入异步创建和轮询恢复；契约提供取消接口与 SSE，但当前页面尚未增加取消按钮和完整任务列表。
 
 ## 变更流程
 
