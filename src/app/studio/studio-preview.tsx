@@ -233,12 +233,6 @@ export function StudioPreview({
               <p className="mt-2 text-sm leading-6 text-slate-500">{t("preview.waitingHelp")}</p>
             </div>
           )}
-          <div className="absolute inset-x-4 bottom-4 z-30 rounded-2xl border border-[#dce3ec] bg-white/95 p-2.5 shadow-[0_14px_34px_rgba(38,49,65,.14)] backdrop-blur-xl">
-            <div className="flex items-end gap-2">
-              <textarea aria-label={t("studio.promptLabel")} className="min-h-11 max-h-24 min-w-0 flex-1 resize-y rounded-xl border border-violet-200 bg-violet-50/45 px-3 py-2.5 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} />
-              <span className="shrink-0 pb-2 px-1 text-[9px] text-slate-400">{prompt.length}/4000</span>
-            </div>
-          </div>
         </div>
 
         <aside className="grid content-start gap-2.5 sm:grid-cols-2 lg:grid-cols-1" aria-label={t("preview.info")}>
@@ -283,12 +277,17 @@ export function StudioPreview({
         </aside>
       </div>
 
-      <footer className="flex min-h-[42px] items-center justify-between gap-3 border-t border-[#e3e8ef] bg-white px-4 text-[10px] text-slate-500">
-        <span className="inline-flex items-center gap-2">
-          <i className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-[#a855f7] shadow-[0_0_0_4px_#f1ebff]" : error ? "bg-rose-500 shadow-[0_0_0_4px_#ffe4e6]" : results.length ? "bg-emerald-500 shadow-[0_0_0_4px_#dcfce7]" : "bg-[#a78bfa] shadow-[0_0_0_4px_#f1ebff]"}`} />
-          {busy ? t("preview.footer.processing") : error ? t("preview.footer.failed") : results.length ? t("preview.footer.complete", { count: results.length }) : t("preview.footer.ready")}
-        </span>
-        <span>{results.length === 1 ? t("preview.footer.zoomHelp") : t("preview.footer.openHelp")}</span>
+      <footer className="flex min-h-[66px] items-center gap-3 border-t border-[#e3e8ef] bg-white px-4 text-[10px] text-slate-500">
+        <div className="min-w-0 flex-1">
+          <textarea aria-label={t("studio.promptLabel")} className="h-11 w-full resize-none rounded-xl border border-violet-200 bg-violet-50/35 px-3 py-2 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} />
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+          <span className="inline-flex items-center gap-2 whitespace-nowrap">
+            <i className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-[#a855f7] shadow-[0_0_0_4px_#f1ebff]" : error ? "bg-rose-500 shadow-[0_0_0_4px_#ffe4e6]" : results.length ? "bg-emerald-500 shadow-[0_0_0_4px_#dcfce7]" : "bg-[#a78bfa] shadow-[0_0_0_4px_#f1ebff]"}`} />
+            {busy ? t("preview.footer.processing") : error ? t("preview.footer.failed") : results.length ? t("preview.footer.complete", { count: results.length }) : t("preview.footer.ready")}
+          </span>
+          <span className="hidden sm:inline">{results.length === 1 ? t("preview.footer.zoomHelp") : t("preview.footer.openHelp")}</span>
+        </div>
       </footer>
     </section>
   );
