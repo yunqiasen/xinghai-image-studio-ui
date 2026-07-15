@@ -1,10 +1,10 @@
 export type ThemeMode = "light" | "dark" | "colorful";
 
 export const themeOptions = [
-  { value: "light", label: "浅色" },
-  { value: "dark", label: "暗色" },
-  { value: "colorful", label: "彩色" },
-] as const satisfies ReadonlyArray<{ value: ThemeMode; label: string }>;
+  { value: "light", label: "浅色", englishLabel: "Light" },
+  { value: "dark", label: "暗色", englishLabel: "Dark" },
+  { value: "colorful", label: "彩色", englishLabel: "Colorful" },
+] as const satisfies ReadonlyArray<{ value: ThemeMode; label: string; englishLabel: string }>;
 
 export const THEME_STORAGE_KEY = "chatgpt-image-studio:theme";
 

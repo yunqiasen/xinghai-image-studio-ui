@@ -4,7 +4,9 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { GenerationProvider } from "@/components/commercial/generation-provider";
-import { commercialNavigation } from "@/components/commercial/navigation";
+import { getCommercialNavigation } from "@/components/commercial/navigation";
+import { LanguageSelector } from "@/components/language-selector";
+import { useLanguage } from "@/components/language-provider";
 import { ThemeSelector } from "@/components/theme-selector";
 import { DEFAULT_SITE_INFO, fetchSiteInfo } from "@/lib/site-info";
 import { logoutLocalUser } from "@/lib/storage/local-session";
@@ -13,6 +15,8 @@ import { useSessionUser } from "@/lib/storage/session-hooks";
 
 export function CommercialShell() {
   const navigate = useNavigate();
+  const { locale, t } = useLanguage();
+  const commercialNavigation = getCommercialNavigation(locale);
   const location = useLocation();
   const { user } = useSessionUser();
   const studioRoute = location.pathname === "/studio";
@@ -34,7 +38,7 @@ export function CommercialShell() {
       await logoutLocalUser();
       navigate("/");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "退出失败");
+      toast.error(error instanceof Error ? error.message : t("common.logoutFailed"));
     }
   }
 
@@ -57,24 +61,25 @@ export function CommercialShell() {
                 className={({ isActive }) => `commercial-nav-link inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition ${isActive ? "is-active shadow-lg" : ""}`}
               >
                 <item.icon size={16} />
-                {item.label}
+                <span className="commercial-nav-link-label">{item.label}</span>
               </NavLink>
             ))}
           </nav>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="commercial-preferences flex shrink-0 items-center gap-2">
+            <LanguageSelector />
             <ThemeSelector />
             {user ? (
               <div className="commercial-user-pill flex items-center gap-2 rounded-full border px-2 py-2 text-sm shadow-sm sm:px-4">
-                <span className="hidden font-semibold sm:inline">{user.unlimitedCredits ? "无限配额" : `${user.credits} 积分`}</span>
-                {!user.unlimitedCredits && <NavLink to="/billing" className="commercial-credit-button rounded-full px-3 py-1.5 font-semibold">充值</NavLink>}
-                <button className="commercial-icon-button rounded-full p-1.5" onClick={logout} type="button" title="退出登录">
+                <span className="hidden font-semibold sm:inline">{user.unlimitedCredits ? t("common.unlimited") : `${user.credits} ${t("common.credits")}`}</span>
+                {!user.unlimitedCredits && <NavLink to="/billing" className="commercial-credit-button rounded-full px-3 py-1.5 font-semibold">{t("common.recharge")}</NavLink>}
+                <button className="commercial-icon-button rounded-full p-1.5" onClick={logout} type="button" title={t("common.logout")} aria-label={t("common.logout")}>
                   <LogOut size={16} />
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-1 text-sm sm:gap-2">
-                <NavLink to="/login" className="commercial-login-link rounded-full px-3 py-2 sm:px-4">登录</NavLink>
-                <NavLink to="/register" className="commercial-register-link rounded-full px-3 py-2 font-semibold shadow-lg sm:px-4">注册</NavLink>
+                <NavLink to="/login" className="commercial-login-link rounded-full px-3 py-2 sm:px-4">{t("common.login")}</NavLink>
+                <NavLink to="/register" className="commercial-register-link rounded-full px-3 py-2 font-semibold shadow-lg sm:px-4">{t("common.register")}</NavLink>
               </div>
             )}
           </div>
@@ -89,8 +94,8 @@ export function CommercialShell() {
         <footer className="commercial-footer mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 pb-7 text-xs">
           <span>{siteInfo.footer || siteInfo.description}</span>
           <span className="flex items-center gap-4">
-            {siteInfo.contactEmail ? <a href={`mailto:${siteInfo.contactEmail}`}>联系邮箱</a> : null}
-            {siteInfo.docsUrl ? <a href={siteInfo.docsUrl} rel="noreferrer" target="_blank">使用文档</a> : null}
+            {siteInfo.contactEmail ? <a href={`mailto:${siteInfo.contactEmail}`}>{t("common.contact")}</a> : null}
+            {siteInfo.docsUrl ? <a href={siteInfo.docsUrl} rel="noreferrer" target="_blank">{t("common.docs")}</a> : null}
           </span>
         </footer>
       ) : null}

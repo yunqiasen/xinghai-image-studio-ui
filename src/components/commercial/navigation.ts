@@ -8,17 +8,24 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { createTranslator, type LanguageMode, type TranslationKey } from "@/components/language-modes";
+
 export type CommercialNavigationItem = {
   to: string;
   label: string;
   icon: LucideIcon;
 };
 
-export const commercialNavigation: CommercialNavigationItem[] = [
-  { to: "/", label: "首页", icon: Sparkles },
-  { to: "/studio", label: "创作", icon: Image },
-  { to: "/gallery", label: "作品", icon: GalleryHorizontalEnd },
-  { to: "/soul-gallery", label: "灵魂画廊", icon: WandSparkles },
-  { to: "/billing", label: "积分", icon: Wallet },
-  { to: "/account", label: "我的", icon: UserCircle },
+const navigationDefinitions: Array<Omit<CommercialNavigationItem, "label"> & { labelKey: TranslationKey }> = [
+  { to: "/", labelKey: "nav.home", icon: Sparkles },
+  { to: "/studio", labelKey: "nav.create", icon: Image },
+  { to: "/gallery", labelKey: "nav.works", icon: GalleryHorizontalEnd },
+  { to: "/soul-gallery", labelKey: "nav.soulGallery", icon: WandSparkles },
+  { to: "/billing", labelKey: "nav.credits", icon: Wallet },
+  { to: "/account", labelKey: "nav.account", icon: UserCircle },
 ];
+
+export function getCommercialNavigation(locale: LanguageMode): CommercialNavigationItem[] {
+  const t = createTranslator(locale);
+  return navigationDefinitions.map(({ labelKey, ...item }) => ({ ...item, label: t(labelKey) }));
+}

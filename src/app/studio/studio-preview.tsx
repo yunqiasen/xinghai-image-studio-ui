@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent } from "react";
 
+import { useLanguage } from "@/components/language-provider";
 import { ThemeSelector } from "@/components/theme-selector";
 import type { ResolutionTier } from "@/lib/billing/pricing";
 import type { StudioAspectRatio } from "@/lib/image2api/size-presets";
@@ -37,6 +38,7 @@ export function StudioPreview({
   error,
   startedAt,
 }: StudioPreviewProps) {
+  const { t } = useLanguage();
   const [elapsedMs, setElapsedMs] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -96,26 +98,26 @@ export function StudioPreview({
     dragOrigin.current = null;
   }
 
-  const syncTitle = busy ? "正在生成" : error ? "本次未保存" : results.length ? "已保存作品" : "等待开始";
+  const syncTitle = busy ? t("preview.sync.generatingTitle") : error ? t("preview.sync.errorTitle") : results.length ? t("preview.sync.savedTitle") : t("preview.sync.waitTitle");
   const syncNote = busy
-    ? "任务已提交，完成后自动同步"
+    ? t("preview.sync.generatingNote")
     : error
-      ? "参数已保留，可重新提交"
+      ? t("preview.sync.errorNote")
       : results.length
-        ? `${results.length} 张结果已进入作品`
-        : "生成完成后自动保存到作品";
+        ? t("preview.sync.savedNote", { count: results.length })
+        : t("preview.sync.waitNote");
 
   return (
     <section className={PREVIEW_PANEL_CLASS_NAME} data-preview-state={state}>
       <header className="flex min-h-[74px] items-center justify-between gap-4 border-b border-[#e3e8ef] px-5">
         <div>
           <p className="text-[10px] font-bold tracking-[0.24em] text-[#7c3aed]">PREVIEW</p>
-          <h2 className="mt-0.5 text-[22px] font-semibold tracking-[-0.04em] text-[#152238]">生成预览</h2>
-          <p className="mt-0.5 text-[11px] text-slate-500">完整显示、不裁切；生成后可缩放并打开原图</p>
+          <h2 className="mt-0.5 text-[22px] font-semibold tracking-[-0.04em] text-[#152238]">{t("preview.title")}</h2>
+          <p className="mt-0.5 text-[11px] text-slate-500">{t("preview.description")}</p>
         </div>
         <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
           <span className="studio-preview-chip rounded-[10px] border border-[#dce3ec] bg-[#f8fafc] px-3 py-2">
-            {busy ? "生成中" : results.length ? `${results.length} 张结果` : error ? "生成失败" : "空闲"}
+            {busy ? t("preview.status.generating") : results.length ? t(results.length === 1 ? "studio.result" : "studio.resultCount", { count: results.length }) : error ? t("preview.status.failed") : t("preview.status.idle")}
           </span>
           <span className="studio-preview-chip rounded-[10px] border border-[#dce3ec] bg-[#f8fafc] px-3 py-2">
             {aspectRatio} · {resolution.toUpperCase()}
@@ -130,11 +132,11 @@ export function StudioPreview({
         >
           {results.length === 1 && !busy ? (
             <div className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-[11px] border border-[#dce3ec] bg-white/94 p-1 text-xs text-slate-500 shadow-lg shadow-slate-900/8 backdrop-blur">
-              <button aria-label="缩小预览" className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom - 0.1)} type="button"><Minus size={14} /></button>
+              <button aria-label={t("preview.zoomOut")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom - 0.1)} type="button"><Minus size={14} /></button>
               <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
-              <button aria-label="放大预览" className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom + 0.1)} type="button"><Plus size={14} /></button>
-              <button aria-label="适应画布" className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(1)} title="适应画布" type="button"><Maximize2 size={14} /></button>
-              <a aria-label="打开原图" className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" href={results[0]} rel="noreferrer" target="_blank"><ExternalLink size={14} /></a>
+              <button aria-label={t("preview.zoomIn")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom + 0.1)} type="button"><Plus size={14} /></button>
+              <button aria-label={t("preview.fit")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(1)} title={t("preview.fit")} type="button"><Maximize2 size={14} /></button>
+              <a aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" href={results[0]} rel="noreferrer" target="_blank"><ExternalLink size={14} /></a>
             </div>
           ) : null}
 
@@ -151,8 +153,8 @@ export function StudioPreview({
                     <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,transparent_22%,rgba(139,92,246,.08)_44%,transparent_66%)] bg-[length:220%_100%]" />
                     <div className="relative text-center">
                       <LoaderCircle className="mx-auto animate-spin text-[#a855f7]" size={32} />
-                      <p className="mt-3 text-sm font-semibold text-[#17243a]">正在生成图片</p>
-                      <p className="mt-1.5 text-[11px] text-slate-500">第 {index + 1} 张 · 已等待 {formatGenerationElapsed(elapsedMs)}</p>
+                      <p className="mt-3 text-sm font-semibold text-[#17243a]">{t("preview.generatingImage")}</p>
+                      <p className="mt-1.5 text-[11px] text-slate-500">{t("preview.waited", { index: index + 1, time: formatGenerationElapsed(elapsedMs) })}</p>
                     </div>
                   </div>
                 ))}
@@ -161,9 +163,9 @@ export function StudioPreview({
           ) : error ? (
             <div className="mx-6 max-w-sm rounded-[22px] border border-rose-200 bg-white/94 px-8 py-7 text-center shadow-[0_18px_46px_rgba(51,65,85,.12)]">
               <AlertCircle className="mx-auto text-rose-500" size={34} />
-              <p className="mt-3 text-lg font-semibold text-[#17243a]">生成失败</p>
+              <p className="mt-3 text-lg font-semibold text-[#17243a]">{t("preview.status.failed")}</p>
               <p className="mt-2 text-sm leading-6 text-slate-500">{error}</p>
-              <p className="mt-3 text-xs text-slate-400">参数已保留，可直接重新生成。</p>
+              <p className="mt-3 text-xs text-slate-400">{t("preview.retryNote")}</p>
             </div>
           ) : results.length ? (
             <div className="h-full w-full overflow-auto p-5">
@@ -180,7 +182,7 @@ export function StudioPreview({
                     style={{ aspectRatio: ratio }}
                   >
                     <img
-                      alt={`生成结果 ${index + 1}`}
+                      alt={t("preview.resultAlt", { index: index + 1 })}
                       className="h-full w-full select-none object-contain transition-transform duration-150"
                       draggable={false}
                       src={url}
@@ -197,7 +199,7 @@ export function StudioPreview({
                     style={{ aspectRatio: ratio }}
                     target="_blank"
                   >
-                    <img alt={`生成结果 ${index + 1}`} className="h-full w-full object-contain transition duration-300 group-hover:scale-[1.02]" src={url} />
+                    <img alt={t("preview.resultAlt", { index: index + 1 })} className="h-full w-full object-contain transition duration-300 group-hover:scale-[1.02]" src={url} />
                     <span className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-slate-950/55 text-white opacity-0 backdrop-blur transition group-hover:opacity-100"><ExternalLink size={14} /></span>
                     <span className="absolute bottom-2 left-2 rounded-lg bg-slate-950/55 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur">{index + 1}/{results.length}</span>
                   </a>
@@ -207,37 +209,37 @@ export function StudioPreview({
           ) : (
             <div className="mx-6 max-w-xs rounded-[22px] border border-[#e0e6ee] bg-white/92 px-8 py-7 text-center shadow-[0_18px_46px_rgba(51,65,85,.1)]">
               <span className="mx-auto grid h-13 w-13 place-items-center rounded-2xl bg-[#f3edff] text-[#8b5cf6]"><WandSparkles size={25} /></span>
-              <p className="mt-3 text-lg font-semibold text-[#17243a]">等待生成</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">左侧填写提示词和参数，点击生成后会立即显示任务状态。</p>
+              <p className="mt-3 text-lg font-semibold text-[#17243a]">{t("preview.waiting")}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{t("preview.waitingHelp")}</p>
             </div>
           )}
         </div>
 
-        <aside className="grid content-start gap-2.5 sm:grid-cols-2 lg:grid-cols-1" aria-label="本次生成信息">
+        <aside className="grid content-start gap-2.5 sm:grid-cols-2 lg:grid-cols-1" aria-label={t("preview.info")}>
           <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
-            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">当前引擎</p>
+            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">{t("preview.engine")}</p>
             <p className="mt-1.5 text-xs font-semibold text-[#1e2d43]">GPT Image 2.0</p>
-            <p className="mt-2 inline-flex items-center gap-2 text-[9px] text-slate-500"><i className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_0_4px_rgba(20,184,166,.1)]" />服务可用</p>
+            <p className="mt-2 inline-flex items-center gap-2 text-[9px] text-slate-500"><i className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_0_4px_rgba(20,184,166,.1)]" />{t("preview.available")}</p>
           </section>
 
           <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
-            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">输出参数</p>
+            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">{t("preview.output")}</p>
             <dl className="mt-2.5 grid gap-2 text-[9px] text-slate-500">
-              <div className="flex justify-between gap-2"><dt>比例</dt><dd className="font-semibold text-[#27364b]">{aspectRatio}</dd></div>
-              <div className="flex justify-between gap-2"><dt>分辨率</dt><dd className="font-semibold text-[#27364b]">{resolution.toUpperCase()}</dd></div>
-              <div className="flex justify-between gap-2"><dt>数量</dt><dd className="font-semibold text-[#27364b]">{count} 张</dd></div>
+              <div className="flex justify-between gap-2"><dt>{t("studio.ratio")}</dt><dd className="font-semibold text-[#27364b]">{aspectRatio}</dd></div>
+              <div className="flex justify-between gap-2"><dt>{t("studio.resolution")}</dt><dd className="font-semibold text-[#27364b]">{resolution.toUpperCase()}</dd></div>
+              <div className="flex justify-between gap-2"><dt>{t("preview.quantity")}</dt><dd className="font-semibold text-[#27364b]">{t(count === 1 ? "common.image" : "common.images", { count })}</dd></div>
             </dl>
           </section>
 
           <section className="studio-info-card rounded-2xl border border-[#e3daf8] bg-[linear-gradient(145deg,rgba(244,240,255,.94),rgba(255,255,255,.88))] p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)]">
             <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#ebe3ff] text-xs text-[#7651c7]">▣</span>
-            <p className="mt-2 text-[9px] font-bold tracking-[0.16em] text-slate-400">作品同步</p>
+            <p className="mt-2 text-[9px] font-bold tracking-[0.16em] text-slate-400">{t("preview.sync")}</p>
             <p className={`mt-1.5 text-xs font-semibold ${error ? "text-rose-600" : results.length ? "text-emerald-700" : busy ? "text-violet-700" : "text-[#1e2d43]"}`}>{syncTitle}</p>
             <p className="mt-1 text-[9px] leading-4 text-slate-500">{syncNote}</p>
           </section>
 
           <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
-            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">灵感色板</p>
+            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">{t("preview.palette")}</p>
             <ThemeSelector className="mt-2.5" compact />
           </section>
         </aside>
@@ -246,9 +248,9 @@ export function StudioPreview({
       <footer className="flex min-h-[42px] items-center justify-between gap-3 border-t border-[#e3e8ef] bg-white px-4 text-[10px] text-slate-500">
         <span className="inline-flex items-center gap-2">
           <i className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-[#a855f7] shadow-[0_0_0_4px_#f1ebff]" : error ? "bg-rose-500 shadow-[0_0_0_4px_#ffe4e6]" : results.length ? "bg-emerald-500 shadow-[0_0_0_4px_#dcfce7]" : "bg-[#a78bfa] shadow-[0_0_0_4px_#f1ebff]"}`} />
-          {busy ? "生成任务处理中" : error ? "任务失败" : results.length ? `生成完成 · ${results.length} 张` : "准备就绪"}
+          {busy ? t("preview.footer.processing") : error ? t("preview.footer.failed") : results.length ? t("preview.footer.complete", { count: results.length }) : t("preview.footer.ready")}
         </span>
-        <span>{results.length === 1 ? "Ctrl/⌘ + 滚轮缩放 · 放大后拖拽查看" : "点击结果打开原图"}</span>
+        <span>{results.length === 1 ? t("preview.footer.zoomHelp") : t("preview.footer.openHelp")}</span>
       </footer>
     </section>
   );

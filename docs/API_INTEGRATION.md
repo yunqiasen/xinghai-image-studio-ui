@@ -77,6 +77,8 @@ type RegistrationPolicy = {
 
 灵魂画廊不属于用户作品，也不读取或写入后端业务数据。19 项目录和图片随前端静态发布；搜索、分类、详情和复制均在浏览器内完成。“带入创作”通过 React Router state 一次性填充 `/studio` 提示词，随后清除 state，不新增接口、不改变异步任务请求字段。
 
+中文 / English 语言切换与浅色 / 暗色 / 彩色外观切换均属于前端展示偏好，不新增或修改后端 API。语言状态由 `LanguageProvider` 管理，写入 `localStorage` 的 `xinghai-image-studio:language` 并同步 `<html lang>`；主题继续复用既有 `chatgpt-image-studio:theme`。两个控制均使用 Radix Select 下拉。切换语言只翻译固定界面文案，用户输入、作品内容、账号资料和后端返回错误保持原文。
+
 2026-07-15 前端自动化验证覆盖：异步请求字段、任务列表恢复、跨路由 loading 状态、成功后恢复全部图片、成功后作品自动刷新、失败原因恢复、用户切换清空旧作品、浅色/暗色/彩色主题持久化。浏览器模拟成功链路结果为 `galleryCards=1`、`resultCards=1`、返回创作页 `data-preview-state=results`。
 
 同日通过真实后端提交两次异步 1K 单图任务，均完成 `queued -> running -> failed` 状态同步；150 秒后后端返回 `image_timeout`，积分从 19 自动退回 20，作品保持为空。该结果证明前端跨页跟踪、失败恢复和退款后用户状态同步正常；真实图片成功受当前后端上游账号链路状态影响，不在前端伪造成功作品。联调结束后已清理临时用户、Session、积分记录、图片任务、作品和用量记录。

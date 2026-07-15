@@ -2,12 +2,16 @@ import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { LanguageProvider } from "@/components/language-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import type { LanguageMode } from "@/components/language-modes";
 
 import { StudioPreview } from "./studio-preview";
 
-function renderPreview(element: ReactNode) {
-  return renderToStaticMarkup(<ThemeProvider>{element}</ThemeProvider>);
+function renderPreview(element: ReactNode, locale: LanguageMode = "zh-CN") {
+  return renderToStaticMarkup(
+    <LanguageProvider initialLocale={locale}><ThemeProvider>{element}</ThemeProvider></LanguageProvider>,
+  );
 }
 
 const baseProps = {
@@ -52,6 +56,16 @@ describe("StudioPreview", () => {
 
     const complete = renderPreview(<StudioPreview {...baseProps} results={["/one.png"]} />);
     expect(complete).toContain("已保存作品");
+  });
+
+  it("renders the complete preview interface in English", () => {
+    const html = renderPreview(<StudioPreview {...baseProps} count={3} results={["/one.png", "/two.png", "/three.png"]} />, "en-US");
+
+    expect(html).toContain("Generation preview");
+    expect(html).toContain("3 results");
+    expect(html).toContain("Output settings");
+    expect(html).toContain("Saved to works");
+    expect(html).not.toContain("生成预览");
   });
 
   it("keeps a generation failure visible in the preview panel", () => {
