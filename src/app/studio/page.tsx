@@ -157,6 +157,13 @@ export function StudioPage() {
     setModePrompts((previous) => ({ ...previous, [mode]: template.prompt }));
   }
 
+  function optimizeCurrentPrompt() {
+    const prompt = currentPrompt.trim();
+    if (!prompt) return;
+    const suffix = "，主体清晰，构图平衡，光影自然，细节丰富，画面干净，高质量商业视觉";
+    if (!prompt.includes("构图平衡")) setModePrompts((previous) => ({ ...previous, [mode]: `${prompt}${suffix}`.slice(0, MAX_STUDIO_PROMPT_LENGTH) }));
+  }
+
   function handleResultEdit(url: string) {
     const source: StudioAsset = { id: `result-${Date.now()}`, name: "生成结果", dataUrl: "", url, role: "image" };
     setAssets([source]);
@@ -264,7 +271,7 @@ export function StudioPage() {
           </div>
         </section>
 
-        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={task?.count || settings.count} busy={busy} results={resultUrls} error={generationError} startedAt={generationStartedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} />
+        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={task?.count || settings.count} busy={busy} results={resultUrls} error={generationError} startedAt={generationStartedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={optimizeCurrentPrompt} promptDisabled={busy} />
       </div>
 
       <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} />

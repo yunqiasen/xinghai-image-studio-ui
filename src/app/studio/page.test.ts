@@ -23,11 +23,11 @@ import {
 } from "./layout-constants";
 
 describe("studio commercial workspace", () => {
-  it("centers a 1240px workspace with a narrow 480px editor", () => {
+  it("centers a 1240px workspace with a wider 560px editor", () => {
     expect(STUDIO_PAGE_CLASS_NAME).toContain("lg:items-center");
     expect(STUDIO_PAGE_CLASS_NAME).toContain("lg:overflow-hidden");
     expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("max-w-[1240px]");
-    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("lg:grid-cols-[480px_minmax(0,1fr)]");
+    expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("lg:grid-cols-[560px_minmax(0,1fr)]");
     expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("lg:h-[min(820px,calc(100dvh-96px))]");
     expect(EDITOR_PANEL_GRID_CLASS_NAME).toContain("lg:h-full");
     expect(CONTROLS_PANEL_CLASS_NAME).toContain("lg:grid-rows-[74px_minmax(0,1fr)_66px]");

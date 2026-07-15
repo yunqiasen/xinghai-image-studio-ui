@@ -43,7 +43,7 @@ describe("ModeSettings", () => {
     expect(html).toContain("参考强度");
     expect(html).toContain("比例");
     expect(html).toContain("分辨率");
-    expect(html).toContain("提示词");
+    expect(html).not.toContain("提示词");
     expect(html).not.toContain("提示词模板");
   });
 

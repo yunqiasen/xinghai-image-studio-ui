@@ -42,6 +42,15 @@ type ModeSettingsProps = {
 };
 
 const MODEL_VALUE = "gpt-image-2";
+function ratioIconSize(value: StudioAspectRatio): { width: number; height: number } {
+  const [wRaw, hRaw] = value.split(":").map(Number);
+  const w = Number.isFinite(wRaw) && wRaw > 0 ? wRaw : 1;
+  const h = Number.isFinite(hRaw) && hRaw > 0 ? hRaw : 1;
+  const max = 23;
+  if (w >= h) return { width: max, height: Math.max(9, Math.round(max * (h / w))) };
+  return { width: Math.max(9, Math.round(max * (w / h))), height: max };
+}
+
 
 function ControlTitle({ title, help, aside }: { title: string; help?: string; aside?: string }) {
   return (
@@ -165,7 +174,7 @@ export function ModeSettings({ mode, value, assets, onChange, onFiles, onRemoveA
         <div>
           <ControlTitle title={t("studio.ratio")} help={t("studio.chooseRatio")} aside={t("studio.canvasSync")} />
           <div className="grid grid-cols-4 gap-1.5">
-            {PRIMARY_ASPECT_RATIOS.map((item) => <button key={item} aria-label={t("studio.imageRatio", { ratio: item })} aria-pressed={value.aspectRatio === item} className={`min-h-[48px] rounded-[12px] border text-[9px] font-bold transition ${value.aspectRatio === item ? "border-[#c54bea] bg-[#c54bea]/12 text-[#e879f9]" : "border-white/8 bg-black/12 text-white/55 hover:bg-white/5"}`} onClick={() => onChange("aspectRatio", item)} type="button">{item}</button>)}
+            {PRIMARY_ASPECT_RATIOS.map((item) => <button key={item} aria-label={t("studio.imageRatio", { ratio: item })} aria-pressed={value.aspectRatio === item} className={`group flex min-h-[57px] flex-col items-center justify-center gap-1 rounded-[12px] border transition ${value.aspectRatio === item ? "border-[#c54bea] bg-[#c54bea]/12 text-[#e879f9]" : "border-transparent text-white/58 hover:bg-white/5 hover:text-white"}`} onClick={() => onChange("aspectRatio", item)} title={item} type="button"><span className="grid h-7 w-7 place-items-center"><span className="block rounded-[4px] border-2 border-current" style={ratioIconSize(item)} /></span><span className="text-[9px] font-bold leading-none">{item}</span></button>)}
           </div>
         </div>
       ) : null}
@@ -184,12 +193,7 @@ export function ModeSettings({ mode, value, assets, onChange, onFiles, onRemoveA
         </div>
       ) : null}
 
-      {has("prompt") ? (
-        <div>
-          <ControlTitle title={t("studio.prompt")} help={t("studio.modePromptHelp")} aside={`${value.prompt.length}/${MAX_STUDIO_PROMPT_LENGTH}`} />
-          <textarea aria-label={t("studio.promptLabel")} className="min-h-[92px] w-full resize-y rounded-[15px] border border-[#c54bea]/45 bg-black/24 p-3 text-[13px] leading-6 text-white outline-none selection:bg-fuchsia-300/35 placeholder:text-white/25 focus:border-[#d946ef]/70" maxLength={MAX_STUDIO_PROMPT_LENGTH} value={value.prompt} onChange={(event) => onChange("prompt", event.target.value)} />
-        </div>
-      ) : null}
+
     </div>
   );
 }
