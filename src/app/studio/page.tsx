@@ -266,15 +266,12 @@ export function StudioPage() {
 
             <footer className={STUDIO_ACTION_BAR_CLASS_NAME}>
               <div className="min-w-0 select-text"><p className="truncate text-xs font-semibold text-white">{t(currentDefinition.labelKey)} · {t(settings.count === 1 ? "common.image" : "common.images", { count: settings.count })} · {settings.resolution.toUpperCase()}</p><p className="mt-1 text-[9px] text-white/38">{t("studio.cost", { count: cost })}</p></div>
-              <div className="flex shrink-0 items-center gap-2">
-                <button aria-label={t("studio.optimizePrompt")} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[13px] border border-[#c54bea]/45 bg-[#c54bea]/10 px-3 text-xs font-bold text-[#efb5fa] transition hover:border-[#d946ef] hover:bg-[#c54bea]/18 disabled:cursor-not-allowed disabled:opacity-45" disabled={busy || !currentPrompt.trim()} onClick={optimizeCurrentPrompt} type="button"><Sparkles size={15} />{t("studio.optimizePrompt")}</button>
-                <button disabled={busy} className="studio-generate-button inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-[13px] bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,.24)] transition hover:-translate-y-0.5 hover:brightness-110 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-75" onClick={submit} type="button">{busy ? <LoaderCircle className="animate-spin" size={17} /> : <Sparkles size={17} />}{busy ? t("studio.generating") : t("studio.generate")}</button>
-              </div>
+              <div className="select-text text-right"><p className="text-[9px] text-white/38">{t("preview.engine")}</p><p className="text-xs font-semibold text-white/80">GPT Image 2.0</p></div>
             </footer>
           </div>
         </section>
 
-        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={task?.count || settings.count} busy={busy} results={resultUrls} error={generationError} startedAt={generationStartedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={optimizeCurrentPrompt} promptDisabled={busy} />
+        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={task?.count || settings.count} busy={busy} results={resultUrls} error={generationError} startedAt={generationStartedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={optimizeCurrentPrompt} onGenerate={submit} promptDisabled={busy} />
       </div>
 
       <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} />

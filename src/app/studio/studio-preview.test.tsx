@@ -44,7 +44,6 @@ describe("StudioPreview", () => {
 
   it("shows the current backend generation context in the preview information rail", () => {
     const idle = renderPreview(<StudioPreview {...baseProps} />);
-    expect(idle).toContain("GPT Image 2.0");
     expect(idle).toContain("输出参数");
     expect(idle).toContain("1:1");
     expect(idle).toContain("1K");

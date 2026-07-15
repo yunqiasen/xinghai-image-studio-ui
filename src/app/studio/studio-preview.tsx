@@ -6,12 +6,12 @@ import {
   Minus,
   Plus,
   ScanLine,
+  Sparkles,
   WandSparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent } from "react";
 
 import { useLanguage } from "@/components/language-provider";
-import { ThemeSelector } from "@/components/theme-selector";
 import type { ResolutionTier } from "@/lib/billing/pricing";
 import type { StudioAspectRatio } from "@/lib/image2api/size-presets";
 
@@ -35,6 +35,7 @@ type StudioPreviewProps = {
   prompt?: string;
   onPromptChange?: (value: string) => void;
   onOptimizePrompt?: () => void;
+  onGenerate?: () => void;
   promptDisabled?: boolean;
 };
 
@@ -55,6 +56,7 @@ export function StudioPreview({
   prompt = "",
   onPromptChange = () => undefined,
   onOptimizePrompt = () => undefined,
+  onGenerate = () => undefined,
   promptDisabled = false,
 }: StudioPreviewProps) {
   const { t } = useLanguage();
@@ -249,12 +251,6 @@ export function StudioPreview({
           </section>
 
           <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
-            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">{t("preview.engine")}</p>
-            <p className="mt-1.5 text-xs font-semibold text-[#1e2d43]">GPT Image 2.0</p>
-            <p className="mt-2 inline-flex items-center gap-2 text-[9px] text-slate-500"><i className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_0_4px_rgba(20,184,166,.1)]" />{t("preview.available")}</p>
-          </section>
-
-          <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
             <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">{t("preview.output")}</p>
             <dl className="mt-2.5 grid gap-2 text-[9px] text-slate-500">
               <div className="flex justify-between gap-2"><dt>{t("studio.ratio")}</dt><dd className="font-semibold text-[#27364b]">{aspectRatio}</dd></div>
@@ -270,23 +266,17 @@ export function StudioPreview({
             <p className="mt-1 text-[9px] leading-4 text-slate-500">{syncNote}</p>
           </section>
 
-          <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
-            <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">{t("preview.palette")}</p>
-            <ThemeSelector className="mt-2.5" compact />
-          </section>
+
         </aside>
       </div>
 
-      <footer className="flex min-h-[78px] items-center gap-3 border-t border-[#e3e8ef] bg-white px-4 text-[10px] text-slate-500">
-        <div className="min-w-0 flex-1">
-          <textarea aria-label={t("studio.promptLabel")} className="h-14 w-full resize-none rounded-xl border border-violet-200 bg-violet-50/35 px-3 py-2 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} />
+      <footer className="grid min-h-[78px] grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 border-t border-[#e3e8ef] bg-white px-3 text-[10px] text-slate-500">
+        <div className="min-w-0"><textarea aria-label={t("studio.promptLabel")} className="h-14 w-full resize-none rounded-xl border border-violet-200 bg-violet-50/35 px-3 py-2 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} /></div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button aria-label={t("studio.optimizePrompt")} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[13px] border border-violet-200 bg-violet-50 px-3 text-xs font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-45" disabled={promptDisabled || !prompt.trim()} onClick={onOptimizePrompt} type="button"><WandSparkles size={15} />{t("studio.optimizePrompt")}</button>
+          <button aria-label={t("studio.generate")} className="inline-flex h-11 items-center justify-center gap-2 rounded-[13px] bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,.24)] disabled:cursor-not-allowed disabled:opacity-60" disabled={promptDisabled} onClick={onGenerate} type="button"><Sparkles size={16} />{t("studio.generate")}</button>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-          <span className="inline-flex items-center gap-2 whitespace-nowrap text-[10px]">
-            <i className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-[#a855f7] shadow-[0_0_0_4px_#f1ebff]" : error ? "bg-rose-500 shadow-[0_0_0_4px_#ffe4e6]" : results.length ? "bg-emerald-500 shadow-[0_0_0_4px_#dcfce7]" : "bg-[#a78bfa] shadow-[0_0_0_4px_#f1ebff]"}`} />
-            {busy ? t("preview.footer.processing") : error ? t("preview.footer.failed") : results.length ? t("preview.footer.complete", { count: results.length }) : t("preview.footer.ready")}
-          </span>
-        </div>
+        <span className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap pr-1"><i className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-[#a855f7]" : error ? "bg-rose-500" : results.length ? "bg-emerald-500" : "bg-[#a78bfa]"}`} />{busy ? t("preview.footer.processing") : error ? t("preview.footer.failed") : results.length ? t("preview.footer.complete", { count: results.length }) : t("preview.footer.ready")}</span>
       </footer>
     </section>
   );
