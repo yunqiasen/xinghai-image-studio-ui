@@ -71,7 +71,7 @@ type RegistrationPolicy = {
 
 商业创作页使用异步请求字段 `taskId`、`conversationId`、`turnId`、`mode`、`prompt`、`model`、`count`、`size`、`quality`、`sourceImages`。固定 `conversationId=commercial-studio`，客户端 ID 仅用于幂等；ID 生成优先使用 `crypto.randomUUID()`，在内网 HTTP 等缺少该函数的浏览器环境自动回退到 `crypto.getRandomValues()`，避免创建任务前中断。源图和遮罩按契约映射为 `sourceImages[].role=image|mask`。
 
-提示词输入位于右侧预览画布底部，文生图模板在右侧模板卡片中按分类展示；比例选择保留原版比例示意图标。前端“优化提示词”只做本地快捷补全，不调用新接口。
+提示词输入位于右侧预览画布底部，文生图模板在右侧模板卡片中按分类展示；比例选择保留原版比例示意图标。“优化提示词”按钮与生成按钮位于左侧底部同一水平线，只做本地快捷补全，不调用新接口。
 
 创作分类的差异化设置由前端状态和现有请求字段承载，不新增接口：`text` 使用文生图设置，`image` 增加参考强度、构图保持和参考图，`edit` 使用图片与 `role=mask` 遮罩，`remove-bg` 映射为图片编辑并提供五个编辑动作，`upscale` 提供 2×/4×、变体、老照片修复和人脸增强，`batch` 提供一致性和构图变化设置。右侧模板按分类过滤，点击后写入该分类的提示词；结果图的局部编辑入口复用现有 `ImageEditModal` 并直接传入结果 URL。以上是前端交互分层，后端尚未为图片编辑和超分提供专用执行分支，暂不把这些 UI 动作宣称为后端能力。
 

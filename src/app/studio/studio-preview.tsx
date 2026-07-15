@@ -236,10 +236,7 @@ export function StudioPreview({
           <div className="absolute inset-x-4 bottom-4 z-30 rounded-2xl border border-[#dce3ec] bg-white/95 p-2.5 shadow-[0_14px_34px_rgba(38,49,65,.14)] backdrop-blur-xl">
             <div className="flex items-end gap-2">
               <textarea aria-label={t("studio.promptLabel")} className="min-h-11 max-h-24 min-w-0 flex-1 resize-y rounded-xl border border-violet-200 bg-violet-50/45 px-3 py-2.5 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} />
-              <div className="flex shrink-0 flex-col gap-1.5">
-                <button aria-label={t("studio.optimizePrompt")} className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-violet-200 px-2.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-45" disabled={promptDisabled || !prompt.trim()} onClick={onOptimizePrompt} type="button"><WandSparkles size={13} />{t("studio.optimizePrompt")}</button>
-                <span className="px-1 text-right text-[9px] text-slate-400">{prompt.length}/4000</span>
-              </div>
+              <span className="shrink-0 pb-2 px-1 text-[9px] text-slate-400">{prompt.length}/4000</span>
             </div>
           </div>
         </div>
