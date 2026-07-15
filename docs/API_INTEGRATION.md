@@ -12,9 +12,9 @@
 `API.md` 是人工可读契约，`openapi-studio.yaml` 是机器可读契约。两者不一致时停止接入，由后端代理先修正文档。
 
 ```text
-接入契约版本: 2026-07-14.account-evidence.3
-后端契约 Commit: 60730731081f18f48224d1f15fca0d0d0318c878
-后端实现基线 Commit: 5ad504907dc499ba0e4714fbf875e4e965cb104c
+接入契约版本: 2026-07-15.sentinel-compat.1
+后端契约 Commit: dd6e4fc135255fc6bf3fb6bde3b406689b91fb5c
+后端实现基线 Commit: bc2f84dd5af7add5174ab7ad18adaee83b764ece
 ```
 
 本次接入已确认实现基线是后端当前 `origin/main` 的祖先，`API.md`、OpenAPI 与 `API_CHANGELOG.md` 版本一致。
@@ -40,6 +40,7 @@
 | 退出 | `POST /api/auth/logout` | `src/lib/storage/local-session.ts` | 已接入 |
 | 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送 `code` |
 | 获取作品 | `GET /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/page.tsx` | 已接入，按当前用户加载；活跃任务期间轮询，成功后立即刷新 |
+| 灵魂画廊模板 | 无新增接口，本地静态素材 | `src/app/soul-gallery/*`、`public/soul-gallery/*` | 已接入 19 项；搜索、分类、复制和带入创作均在前端完成 |
 | 清空作品 | `DELETE /api/gallery` | `src/lib/storage/local-session.ts` | 已接入 |
 | 同步生图 | `POST /api/image/generate` | `src/lib/image2api/client.ts` | 保留兼容客户端，当前商业 `/studio` 不再使用 |
 | 站点公开信息 | `GET /api/public/site-info` | `src/lib/site-info.ts`、`src/components/commercial/app-shell.tsx` | 已接入，驱动品牌名称、Logo、页脚、联系方式和文档入口 |
@@ -73,6 +74,8 @@ type RegistrationPolicy = {
 前端消费 `queued`、`running`、`cancel_requested`、`succeeded`、`failed`、`cancelled` 六种状态。全局 Provider 位于 `CommercialShell` 与路由 `Outlet` 之间，因此子页面卸载不会清除任务；登录用户变化时立即清空上一账号任务，再读取当前账号最近任务。成功图片只读取 `task.images[].url`，失败原因优先显示 `task.error`。
 
 作品页依赖后端 `GET /api/gallery` 的用户隔离结果。页面进入、手动刷新、活跃任务轮询、任务成功事件都会重新请求后端；账号变化先清空旧卡片，避免短暂显示上一用户作品。
+
+灵魂画廊不属于用户作品，也不读取或写入后端业务数据。19 项目录和图片随前端静态发布；搜索、分类、详情和复制均在浏览器内完成。“带入创作”通过 React Router state 一次性填充 `/studio` 提示词，随后清除 state，不新增接口、不改变异步任务请求字段。
 
 2026-07-15 前端自动化验证覆盖：异步请求字段、任务列表恢复、跨路由 loading 状态、成功后恢复全部图片、成功后作品自动刷新、失败原因恢复、用户切换清空旧作品、浅色/暗色/彩色主题持久化。浏览器模拟成功链路结果为 `galleryCards=1`、`resultCards=1`、返回创作页 `data-preview-state=results`。
 

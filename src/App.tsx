@@ -5,6 +5,7 @@ import { RegisterPage } from "@/app/auth/register/page";
 import { BillingPage } from "@/app/billing/page";
 import { GalleryPage } from "@/app/gallery/page";
 import { LandingPage } from "@/app/landing/page";
+import { SoulGalleryPage } from "@/app/soul-gallery/page";
 import { StudioPage } from "@/app/studio/page";
 import { CommercialShell } from "@/components/commercial/app-shell";
 
@@ -15,6 +16,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/studio" element={<StudioPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/soul-gallery" element={<SoulGalleryPage />} />
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/login" element={<LoginPage />} />

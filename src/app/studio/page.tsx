@@ -14,8 +14,8 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { useGeneration } from "@/components/commercial/generation-context";
@@ -44,6 +44,7 @@ import {
   STUDIO_PARAMETER_SCROLL_CLASS_NAME,
   STUDIO_WORKSPACE_GRID_CLASS_NAME,
 } from "./layout-constants";
+import { MAX_STUDIO_PROMPT_LENGTH, readStudioRoutePrompt } from "./route-prompt";
 import { StudioPreview } from "./studio-preview";
 
 type UploadedAsset = { id: string; name: string; dataUrl: string; role: "image" | "mask" };
@@ -52,7 +53,6 @@ type PromptTemplate = { name: string; prompt: string };
 
 const DEFAULT_PROMPT = "流星雨划过澄澈夜空，远处山脊与湖面倒影，真实摄影，广角构图";
 const MODEL_VALUE = "gpt-image-2";
-const MAX_PROMPT_LENGTH = 1000;
 
 const uploadModes: StudioMode[] = ["image", "edit", "remove-bg", "upscale", "background"];
 const modeIcons: Record<StudioMode, LucideIcon> = {
@@ -109,11 +109,14 @@ function ratioIconSize(value: StudioAspectRatio): RatioIconSize {
 }
 
 export function StudioPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const importedPrompt = readStudioRoutePrompt(location.state);
   const [mode, setMode] = useState<StudioMode>("text");
   const [selectedModel, setSelectedModel] = useState(MODEL_VALUE);
   const [resolution, setResolution] = useState<ResolutionTier>("1k");
   const [aspectRatio, setAspectRatio] = useState<StudioAspectRatio>("1:1");
-  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
+  const [prompt, setPrompt] = useState(importedPrompt ?? DEFAULT_PROMPT);
   const [count, setCount] = useState(1);
   const [showAllTemplates, setShowAllTemplates] = useState(false);
   const [assets, setAssets] = useState<UploadedAsset[]>([]);
@@ -130,6 +133,11 @@ export function StudioPage() {
     return PRIMARY_ASPECT_RATIOS.map((value) => optionByValue.get(value)).filter(Boolean) as typeof studioAspectRatioOptions;
   }, []);
   const visiblePromptTemplates = showAllTemplates ? promptTemplates : promptTemplates.slice(0, PROMPT_TEMPLATE_COLLAPSED_COUNT);
+
+  useEffect(() => {
+    if (!importedPrompt) return;
+    navigate(location.pathname, { replace: true, state: null });
+  }, [importedPrompt, location.pathname, navigate]);
 
   async function appendFiles(files: FileList | null, role: "image" | "mask") {
     if (!files?.length) return;
@@ -186,7 +194,7 @@ export function StudioPage() {
 
   return (
     <div className={STUDIO_PAGE_CLASS_NAME}>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_34%_46%_at_-4%_28%,rgba(32,211,218,.22),transparent_68%),radial-gradient(ellipse_31%_45%_at_104%_18%,rgba(255,119,129,.2),transparent_67%),radial-gradient(ellipse_30%_42%_at_91%_104%,rgba(145,92,246,.18),transparent_68%),radial-gradient(ellipse_28%_40%_at_8%_102%,rgba(254,190,86,.13),transparent_68%),linear-gradient(138deg,#edf4f7_0%,#f7f4fa_50%,#edf3f7_100%)]" />
+      <div className="studio-ambient-mesh pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_34%_46%_at_-4%_28%,rgba(32,211,218,.22),transparent_68%),radial-gradient(ellipse_31%_45%_at_104%_18%,rgba(255,119,129,.2),transparent_67%),radial-gradient(ellipse_30%_42%_at_91%_104%,rgba(145,92,246,.18),transparent_68%),radial-gradient(ellipse_28%_40%_at_8%_102%,rgba(254,190,86,.13),transparent_68%),linear-gradient(138deg,#edf4f7_0%,#f7f4fa_50%,#edf3f7_100%)]" />
       <div className="pointer-events-none absolute -left-48 top-[34%] h-[370px] w-[370px] rounded-full border border-cyan-400/15" />
       <div className="pointer-events-none absolute -bottom-44 -right-56 h-[430px] w-[430px] rounded-full border border-violet-400/15" />
 
@@ -293,8 +301,8 @@ export function StudioPage() {
                 </div>
 
                 <div>
-                  <div className="mb-1.5 flex items-end justify-between"><div><p className="text-sm font-semibold text-white">提示词</p><p className="mt-1 text-[10px] text-white/38">输入提示词即可生成图片。</p></div><span className="text-[9px] text-white/34">{prompt.length}/{MAX_PROMPT_LENGTH}</span></div>
-                  <textarea aria-label="图片生成提示词" className="min-h-[92px] w-full resize-none rounded-[15px] border border-[#c54bea]/45 bg-black/24 p-3 text-[13px] leading-6 text-white outline-none placeholder:text-white/25 focus:border-[#d946ef]/70" maxLength={MAX_PROMPT_LENGTH} value={prompt} onChange={(event) => setPrompt(event.target.value)} />
+                  <div className="mb-1.5 flex items-end justify-between"><div><p className="text-sm font-semibold text-white">提示词</p><p className="mt-1 text-[10px] text-white/38">输入提示词即可生成图片。</p></div><span className="text-[9px] text-white/34">{prompt.length}/{MAX_STUDIO_PROMPT_LENGTH}</span></div>
+                  <textarea aria-label="图片生成提示词" className="min-h-[92px] w-full resize-none rounded-[15px] border border-[#c54bea]/45 bg-black/24 p-3 text-[13px] leading-6 text-white outline-none placeholder:text-white/25 focus:border-[#d946ef]/70" maxLength={MAX_STUDIO_PROMPT_LENGTH} value={prompt} onChange={(event) => setPrompt(event.target.value)} />
                 </div>
               </div>
             </div>

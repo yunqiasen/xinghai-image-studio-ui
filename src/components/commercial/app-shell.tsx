@@ -1,21 +1,15 @@
-import { GalleryHorizontalEnd, Image, LogOut, Sparkles, UserCircle, Wallet } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { GenerationProvider } from "@/components/commercial/generation-provider";
+import { commercialNavigation } from "@/components/commercial/navigation";
 import { ThemeSelector } from "@/components/theme-selector";
 import { DEFAULT_SITE_INFO, fetchSiteInfo } from "@/lib/site-info";
 import { logoutLocalUser } from "@/lib/storage/local-session";
 import { useSessionUser } from "@/lib/storage/session-hooks";
 
-const nav = [
-  { to: "/", label: "首页", icon: Sparkles },
-  { to: "/studio", label: "创作", icon: Image },
-  { to: "/gallery", label: "作品", icon: GalleryHorizontalEnd },
-  { to: "/billing", label: "积分", icon: Wallet },
-  { to: "/account", label: "我的", icon: UserCircle },
-];
 
 export function CommercialShell() {
   const navigate = useNavigate();
@@ -56,7 +50,7 @@ export function CommercialShell() {
             <span className="hidden text-lg sm:inline">{siteInfo.name}</span>
           </NavLink>
           <nav className="commercial-nav hidden items-center gap-1 rounded-full border p-1 shadow-sm md:flex">
-            {nav.map((item) => (
+            {commercialNavigation.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
