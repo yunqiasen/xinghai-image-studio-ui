@@ -4,7 +4,7 @@
 
 **Goal:** 将创作工作台改为按创作类型切换独立设置，并支持右侧模板填充和结果图回流局部编辑。
 
-**Architecture:** 新增纯配置模块描述七类模式的设置、模板和子选项；StudioPage 负责模式状态、源图状态和任务提交，ModeSettings 只渲染当前模式控件；StudioPreview 负责右侧模板卡片和结果图编辑入口。继续使用现有异步任务字段，不新增后端接口。
+**Architecture:** 新增纯配置模块描述六类模式的设置、模板和子选项；StudioPage 负责模式状态、源图状态和任务提交，ModeSettings 只渲染当前模式控件；StudioPreview 负责右侧模板卡片和结果图编辑入口。继续使用现有异步任务字段，不新增后端接口。
 
 **Tech Stack:** React 19, TypeScript, Tailwind CSS, Vitest, Lucide React, 现有 ImageEditModal。
 
@@ -17,7 +17,7 @@
 - Create: `src/app/studio/mode-config.test.ts`
 - Modify: `src/lib/billing/pricing.ts`
 
-- [ ] 写失败测试：断言七类模式名称、图片编辑五个子类型、超分四个选项、图生图包含分辨率/模板/提示词。
+- [ ] 写失败测试：断言六类模式名称、图片编辑五个子类型、超分四个选项、图生图包含分辨率/模板/提示词。
 - [ ] 运行 `npm run test -- src/app/studio/mode-config.test.ts`，确认因模块不存在失败。
 - [ ] 实现模式配置、分类模板和专属选项类型；将 `remove-bg` 显示名称改为“图片编辑”，将 `upscale` 显示名称改为“超分”。
 - [ ] 保留现有 `StudioMode` 值，避免任务历史和后端 mode 字段变化。

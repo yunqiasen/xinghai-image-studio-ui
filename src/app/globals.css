@@ -619,6 +619,19 @@
   .soul-gallery-primary-action { transition: none; }
 }
 
+.commercial-shell {
+  user-select: text;
+  -webkit-user-select: text;
+}
+.commercial-shell button,
+.commercial-shell [role="button"],
+.commercial-shell input[type="range"],
+.commercial-shell img,
+.commercial-shell canvas {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 @media (min-width: 1024px) {
   .commercial-shell {
     height: 100%;

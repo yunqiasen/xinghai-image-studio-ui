@@ -71,6 +71,8 @@ type RegistrationPolicy = {
 
 商业创作页使用异步请求字段 `taskId`、`conversationId`、`turnId`、`mode`、`prompt`、`model`、`count`、`size`、`quality`、`sourceImages`。固定 `conversationId=commercial-studio`，客户端 ID 仅用于幂等；ID 生成优先使用 `crypto.randomUUID()`，在内网 HTTP 等缺少该函数的浏览器环境自动回退到 `crypto.getRandomValues()`，避免创建任务前中断。源图和遮罩按契约映射为 `sourceImages[].role=image|mask`。
 
+创作分类的差异化设置由前端状态和现有请求字段承载，不新增接口：`text` 使用文生图设置，`image` 增加参考强度、构图保持和参考图，`edit` 使用图片与 `role=mask` 遮罩，`remove-bg` 映射为图片编辑并提供五个编辑动作，`upscale` 提供 2×/4×、变体、老照片修复和人脸增强，`batch` 提供一致性和构图变化设置。右侧模板按分类过滤，点击后写入该分类的提示词；结果图的局部编辑入口复用现有 `ImageEditModal` 并直接传入结果 URL。以上是前端交互分层，后端尚未为图片编辑和超分提供专用执行分支，暂不把这些 UI 动作宣称为后端能力。
+
 前端消费 `queued`、`running`、`cancel_requested`、`succeeded`、`failed`、`cancelled` 六种状态。全局 Provider 位于 `CommercialShell` 与路由 `Outlet` 之间，因此子页面卸载不会清除任务；登录用户变化时立即清空上一账号任务，再读取当前账号最近任务。成功图片只读取 `task.images[].url`，失败原因优先显示 `task.error`。
 
 作品页依赖后端 `GET /api/gallery` 的用户隔离结果。页面进入、手动刷新、活跃任务轮询、任务成功事件都会重新请求后端；账号变化先清空旧卡片，避免短暂显示上一用户作品。
