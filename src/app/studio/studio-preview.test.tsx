@@ -39,6 +39,7 @@ describe("StudioPreview", () => {
     expect(html).toContain('data-preview-state="results"');
     expect(html).toContain("3 张结果");
     expect((html.match(/data-result-card=/g) || []).length).toBe(3);
+    expect(html).toContain("object-contain");
     expect(html).toContain('src="/three.png"');
   });
 

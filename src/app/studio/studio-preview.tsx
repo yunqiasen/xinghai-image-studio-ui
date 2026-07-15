@@ -214,10 +214,10 @@ export function StudioPreview({
                   >
                     <img
                       alt={t("preview.resultAlt", { index: index + 1 })}
-                      className="max-h-full max-w-full select-none object-contain transition-transform duration-150"
+                      className="absolute inset-0 h-full w-full select-none object-contain transition-transform duration-150"
                       draggable={false}
                       src={url}
-                      style={zoom <= 1 ? { width: `${zoom * 100}%`, height: `${zoom * 100}%` } : { width: "100%", height: "100%", transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}
+                      style={{ objectFit: "contain", objectPosition: "center", transformOrigin: "center center", transform: zoom <= 1 ? `scale(${zoom})` : `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}
                     />
                   </div>
                 ) : (
