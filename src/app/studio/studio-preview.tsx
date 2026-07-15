@@ -200,11 +200,11 @@ export function StudioPreview({
             </div>
           ) : results.length ? (
             <div className="h-full w-full overflow-hidden p-1.5">
-              <div className={`${resultGridClass(results.length)} mx-auto h-full max-w-none content-center`}>
+              <div className={results.length === 1 ? "mx-auto grid h-full min-h-0 w-full max-w-none grid-cols-1 grid-rows-[minmax(0,1fr)]" : `${resultGridClass(results.length)} mx-auto h-full max-w-none content-center`}>
                 {results.map((url, index) => results.length === 1 ? (
                   <div
                     key={url}
-                    className={`relative mx-auto grid h-full max-h-full w-full max-w-none touch-none place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-white shadow-[0_22px_50px_rgba(38,49,65,.15)] ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"}`}
+                    className={`relative mx-auto grid h-full min-h-0 max-h-full w-full max-w-none touch-none place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-white shadow-[0_22px_50px_rgba(38,49,65,.15)] ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"}`}
                     data-result-card={index + 1}
                     onClick={() => { if (zoom <= 1) setPreviewUrl(url); }}
                     onPointerCancel={stopDragging}
