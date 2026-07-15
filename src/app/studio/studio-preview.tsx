@@ -277,16 +277,15 @@ export function StudioPreview({
         </aside>
       </div>
 
-      <footer className="flex min-h-[66px] items-center gap-3 border-t border-[#e3e8ef] bg-white px-4 text-[10px] text-slate-500">
+      <footer className="flex min-h-[78px] items-center gap-3 border-t border-[#e3e8ef] bg-white px-4 text-[10px] text-slate-500">
         <div className="min-w-0 flex-1">
-          <textarea aria-label={t("studio.promptLabel")} className="h-11 w-full resize-none rounded-xl border border-violet-200 bg-violet-50/35 px-3 py-2 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} />
+          <textarea aria-label={t("studio.promptLabel")} className="h-14 w-full resize-none rounded-xl border border-violet-200 bg-violet-50/35 px-3 py-2 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} />
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-          <span className="inline-flex items-center gap-2 whitespace-nowrap">
+          <span className="inline-flex items-center gap-2 whitespace-nowrap text-[10px]">
             <i className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-[#a855f7] shadow-[0_0_0_4px_#f1ebff]" : error ? "bg-rose-500 shadow-[0_0_0_4px_#ffe4e6]" : results.length ? "bg-emerald-500 shadow-[0_0_0_4px_#dcfce7]" : "bg-[#a78bfa] shadow-[0_0_0_4px_#f1ebff]"}`} />
             {busy ? t("preview.footer.processing") : error ? t("preview.footer.failed") : results.length ? t("preview.footer.complete", { count: results.length }) : t("preview.footer.ready")}
           </span>
-          <span className="hidden sm:inline">{results.length === 1 ? t("preview.footer.zoomHelp") : t("preview.footer.openHelp")}</span>
         </div>
       </footer>
     </section>

@@ -11,8 +11,8 @@ export const PRIMARY_ASPECT_RATIOS: StudioAspectRatio[] = ["1:1", "16:9", "3:2",
 export const STUDIO_PAGE_CLASS_NAME = "studio-page relative min-h-[calc(100dvh-72px)] overflow-x-hidden bg-[#eef2f7] px-3 py-3 text-[#111827] sm:px-4 lg:flex lg:h-[calc(100dvh-72px)] lg:min-h-0 lg:items-center lg:overflow-hidden lg:px-6";
 export const STUDIO_WORKSPACE_GRID_CLASS_NAME = "relative z-10 mx-auto grid w-full max-w-[1240px] gap-3 lg:h-[min(820px,calc(100dvh-96px))] lg:grid-cols-[440px_minmax(0,1fr)]";
 export const EDITOR_PANEL_GRID_CLASS_NAME = "min-w-0 lg:h-full lg:min-h-0";
-export const CONTROLS_PANEL_CLASS_NAME = "studio-controls overflow-hidden rounded-[26px] border border-white/10 bg-[linear-gradient(145deg,#1a1829,#211d34_55%,#191727)] text-white shadow-[0_20px_60px_rgba(36,43,64,.14)] lg:grid lg:h-full lg:min-h-0 lg:grid-rows-[74px_minmax(0,1fr)_66px]";
-export const PREVIEW_PANEL_CLASS_NAME = "studio-preview grid min-h-[620px] min-w-0 grid-rows-[74px_minmax(0,1fr)_66px] overflow-hidden rounded-[26px] border border-[#dfe5ee] bg-[#fbfcfe] text-[#111827] shadow-[0_20px_60px_rgba(36,43,64,.1)] lg:h-full lg:min-h-0";
+export const CONTROLS_PANEL_CLASS_NAME = "studio-controls overflow-hidden rounded-[26px] border border-white/10 bg-[linear-gradient(145deg,#1a1829,#211d34_55%,#191727)] text-white shadow-[0_20px_60px_rgba(36,43,64,.14)] lg:grid lg:h-full lg:min-h-0 lg:grid-rows-[74px_minmax(0,1fr)_78px]";
+export const PREVIEW_PANEL_CLASS_NAME = "studio-preview grid min-h-[620px] min-w-0 grid-rows-[74px_minmax(0,1fr)_78px] overflow-hidden rounded-[26px] border border-[#dfe5ee] bg-[#fbfcfe] text-[#111827] shadow-[0_20px_60px_rgba(36,43,64,.1)] lg:h-full lg:min-h-0";
 
 export const STUDIO_EDITOR_BODY_CLASS_NAME = "min-h-0 lg:grid lg:grid-cols-[176px_minmax(0,1fr)]";
 export const STUDIO_MODE_RAIL_CLASS_NAME = "studio-mode-rail border-b border-white/10 bg-black/10 p-3 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r";

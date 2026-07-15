@@ -30,8 +30,8 @@ describe("studio commercial workspace", () => {
     expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("lg:grid-cols-[440px_minmax(0,1fr)]");
     expect(STUDIO_WORKSPACE_GRID_CLASS_NAME).toContain("lg:h-[min(820px,calc(100dvh-96px))]");
     expect(EDITOR_PANEL_GRID_CLASS_NAME).toContain("lg:h-full");
-    expect(CONTROLS_PANEL_CLASS_NAME).toContain("lg:grid-rows-[74px_minmax(0,1fr)_66px]");
-    expect(PREVIEW_PANEL_CLASS_NAME).toContain("grid-rows-[74px_minmax(0,1fr)_66px]");
+    expect(CONTROLS_PANEL_CLASS_NAME).toContain("lg:grid-rows-[74px_minmax(0,1fr)_78px]");
+    expect(PREVIEW_PANEL_CLASS_NAME).toContain("grid-rows-[74px_minmax(0,1fr)_78px]");
   });
 
   it("keeps the mode rail visible while parameters scroll and the action bar stays fixed", () => {
