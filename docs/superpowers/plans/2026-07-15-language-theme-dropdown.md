@@ -2,13 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add persistent Chinese/English UI switching, convert language and appearance controls to accessible dropdowns, and make the colorful theme visually distinct.
+**Goal:** Add persistent Chinese/English UI switching, convert language and appearance controls to accessible dropdowns, and retain the original restrained colorful aurora palette.
 
-**Architecture:** A lightweight locale context owns language state and translation lookup. Reusable Radix Select components consume locale/theme context; commercial pages translate fixed UI copy while preserving dynamic user and backend content. CSS variables and theme-specific selectors deepen the colorful appearance without changing layout or business flows.
+**Architecture:** A lightweight locale context owns language state and translation lookup. Reusable Radix Select components consume locale/theme context; commercial pages translate fixed UI copy while preserving dynamic user and backend content. Theme selectors keep the existing layout and business flows, while colorful mode uses the original restrained CSS palette.
 
 **Tech Stack:** React 19, TypeScript, Vite, Vitest, Radix Select, Tailwind CSS.
 
-**后续视觉调整（2026-07-15）：** 用户取消高饱和彩色增强，当前实现恢复到增强前的克制极光配色；Task 4 中的高饱和方案只保留为历史执行记录，不代表当前运行效果。
+**最终视觉状态（2026-07-15）：** 彩色主题使用增强前的克制极光配色；导航、注册按钮和生成按钮不叠加高饱和渐变。
 
 ---
 
@@ -60,15 +60,15 @@
 - [ ] Replace fixed copy with `t()` and locale-aware title/category formatting; preserve prompts and backend messages.
 - [ ] Re-run focused and full tests.
 
-### Task 4: Colorful theme differentiation and responsive polish
+### Task 4: Colorful theme restoration and responsive polish
 
 **Files:**
 - Modify: `src/app/globals.css`
 - Test: `src/components/theme-provider.test.ts`
 
-- [ ] Add failing source assertions for colorful gradient tokens and dropdown-only selector classes.
-- [ ] Run the focused test and confirm expected failure.
-- [ ] Add saturated aurora variables, glass borders, gradient active states, compact mobile selectors, focus rings, and reduced-motion behavior.
+- [ ] Add source assertions for the original restrained colorful palette, dropdown-only selector classes, and absence of saturated theme overrides.
+- [ ] Run the focused test and confirm the assertions describe the intended final state.
+- [ ] Keep compact mobile selectors, focus rings, and reduced-motion behavior; restore the original colorful variables and restrained navigation/button styles.
 - [ ] Re-run tests and build.
 
 ### Task 5: Browser QA, documentation, release, and deployment

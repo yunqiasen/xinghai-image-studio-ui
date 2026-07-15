@@ -1,8 +1,8 @@
-# 灵魂画廊与主题深化 Implementation Plan
+# 灵魂画廊与主题视觉 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
-**Goal:** 为星海图像增加 19 项本地精选素材的灵魂画廊，并深化暗色和彩色主题。
+**Goal:** 为星海图像增加 19 项本地精选素材的灵魂画廊，深化暗色主题，并保持彩色主题原有的克制极光配色。
 
 **Architecture:** 静态目录数据与素材跟随前端构建发布；画廊页面负责搜索、分类和详情交互；React Router location state 只负责把提示词一次性传到现有创作页。所有用户作品、生图任务和积分仍由既有后端接口管理。
 
@@ -55,14 +55,14 @@
 - [x] **Step 4: 接入创作页**：使用 `useLocation`/`useNavigate` 读取一次提示词，设置后 `navigate('/studio', { replace: true, state: null })` 清除 state。
 - [x] **Step 5: 验证 GREEN**：运行路由提示词测试和现有 studio 测试，预期全部通过。
 
-### Task 4: 深化主题
+### Task 4: 调整主题视觉
 
 **Files:**
 - Modify: `src/app/globals.css`
 - Modify: `src/app/studio/page.tsx`
 
 - [x] **Step 1: 调整暗色 token**：将商业背景和 studio 面板改为深蓝黑/深靛蓝，并增加青蓝、浅紫和玫紫径向渐变。
-- [x] **Step 2: 调整彩色 token**：在浅色 Aurora 基础上增加青、珊瑚、紫、金边缘光晕，中心保持低饱和。
+- [x] **Step 2: 确认彩色 token**：沿用增强前的浅灰蓝底色与青、珊瑚、紫、金四色边缘光晕，不为导航和主要按钮增加高饱和渐变。
 - [x] **Step 3: 降低内联背景阻碍**：给 studio 首层背景增加主题可覆盖类名，分别定义 dark/colorful 强度。
 - [x] **Step 4: 运行主题与 studio 测试**：预期无回归。
 
