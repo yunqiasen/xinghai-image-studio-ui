@@ -7,19 +7,15 @@ import {
   didReachTerminalStatus,
   isActiveImageTask,
   selectStudioTask,
-  taskErrorMessage,
-  taskImageUrls,
 } from "@/lib/image-tasks/state";
 import type { ImageTask } from "@/lib/image-tasks/types";
 import { loadCurrentUser } from "@/lib/storage/local-session";
 
 import { GenerationContext, type GenerationContextValue } from "./generation-context";
+import { createInitialGenerationStates, isAnyGenerationActive, updateGenerationState, type StudioGenerationStates } from "./generation-state";
 
 export function GenerationProvider({ children, userId }: { children: ReactNode; userId?: string }) {
-  const [task, setTask] = useState<ImageTask>();
-  const [starting, setStarting] = useState(false);
-  const [startedAt, setStartedAt] = useState<number>();
-  const [requestError, setRequestError] = useState<string>();
+  const [generationStates, setGenerationStates] = useState<StudioGenerationStates>(createInitialGenerationStates);
   const [galleryRevision, setGalleryRevision] = useState(0);
   const userScopeRef = useRef(0);
   const statusesRef = useRef(new Map<string, ImageTask["status"]>());
@@ -28,20 +24,23 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
     if (scope !== userScopeRef.current) return undefined;
     let completed = false;
     let reachedTerminal = false;
-    for (const item of items) {
-      const previous = statusesRef.current.get(item.id);
-      if (previous && previous !== "succeeded" && item.status === "succeeded") completed = true;
-      if (didReachTerminalStatus(previous, item.status)) reachedTerminal = true;
-      statusesRef.current.set(item.id, item.status);
-    }
+    setGenerationStates((previous) => {
+      let next = previous;
+      const latestByMode = new Map<string, ImageTask>();
+      for (const item of items) {
+        const oldStatus = statusesRef.current.get(item.id);
+        if (oldStatus && oldStatus !== "succeeded" && item.status === "succeeded") completed = true;
+        if (didReachTerminalStatus(oldStatus, item.status)) reachedTerminal = true;
+        statusesRef.current.set(item.id, item.status);
+        const current = latestByMode.get(item.mode);
+        if (!current || Date.parse(item.createdAt) > Date.parse(current.createdAt)) latestByMode.set(item.mode, item);
+      }
+      for (const item of latestByMode.values()) next = updateGenerationState(next, item);
+      return next;
+    });
     if (completed) setGalleryRevision((value) => value + 1);
     if (reachedTerminal) void loadCurrentUser().catch(() => undefined);
     const selected = selectStudioTask(items);
-    setTask(selected);
-    if (selected) {
-      setStartedAt(Date.parse(selected.startedAt || selected.createdAt));
-      setRequestError(undefined);
-    }
     return selected;
   }, []);
 
@@ -55,10 +54,7 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
   useEffect(() => {
     userScopeRef.current += 1;
     statusesRef.current.clear();
-    setTask(undefined);
-    setStartedAt(undefined);
-    setRequestError(undefined);
-    setStarting(false);
+    setGenerationStates(createInitialGenerationStates());
     if (!userId) return;
     const scope = userScopeRef.current;
     listImageTasks()
@@ -71,20 +67,18 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
   }, [applyTaskList, userId]);
 
   useEffect(() => {
-    if (!userId || !isActiveImageTask(task)) return;
+    if (!userId || !isAnyGenerationActive(generationStates)) return;
     const timer = window.setInterval(() => {
       void refreshTasks().catch(() => undefined);
     }, 2000);
     return () => window.clearInterval(timer);
-  }, [refreshTasks, task, userId]);
+  }, [generationStates, refreshTasks, userId]);
 
   const startGeneration = useCallback<GenerationContextValue["startGeneration"]>(async (input) => {
     if (!userId) throw new Error("请先登录后再创作");
     const requestedAt = Date.now();
-    setStarting(true);
-    setStartedAt(requestedAt);
-    setTask(undefined);
-    setRequestError(undefined);
+    const mode = input.mode as keyof StudioGenerationStates;
+    setGenerationStates((previous) => ({ ...previous, [mode]: { ...previous[mode], starting: true, startedAt: requestedAt, error: undefined } }));
     try {
       const payload = await createImageTask({
         taskId: createClientId("web"),
@@ -99,29 +93,31 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
         sourceImages: input.sourceImages,
       });
       statusesRef.current.set(payload.task.id, payload.task.status);
-      setTask(payload.task);
-      setStartedAt(Date.parse(payload.task.startedAt || payload.task.createdAt) || requestedAt);
+      setGenerationStates((previous) => updateGenerationState(previous, payload.task));
       void loadCurrentUser().catch(() => undefined);
       return payload.task;
     } catch (error) {
       const message = error instanceof Error ? error.message : "创建图片任务失败";
-      setRequestError(message);
+      setGenerationStates((previous) => ({ ...previous, [mode]: { ...previous[mode], starting: false, error: message } }));
       throw error;
-    } finally {
-      setStarting(false);
     }
   }, [userId]);
 
-  const value = useMemo<GenerationContextValue>(() => ({
-    task,
-    busy: starting || isActiveImageTask(task),
-    startedAt,
-    resultUrls: taskImageUrls(task),
-    error: requestError || taskErrorMessage(task),
-    galleryRevision,
-    startGeneration,
-    refreshTasks,
-  }), [galleryRevision, refreshTasks, requestError, startGeneration, startedAt, starting, task]);
+  const value = useMemo<GenerationContextValue>(() => {
+    const textState = generationStates.text;
+    return {
+      states: generationStates,
+      getGenerationState: (mode) => generationStates[mode],
+      task: textState.task,
+      busy: textState.starting || isActiveImageTask(textState.task),
+      startedAt: textState.startedAt,
+      resultUrls: textState.resultUrls,
+      error: textState.error,
+      galleryRevision,
+      startGeneration,
+      refreshTasks,
+    };
+  }, [generationStates, galleryRevision, refreshTasks, startGeneration]);
 
   return <GenerationContext.Provider value={value}>{children}</GenerationContext.Provider>;
 }

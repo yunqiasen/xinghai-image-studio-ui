@@ -53,6 +53,10 @@ const modeIcons: Record<StudioMode, typeof FileImage> = {
   batch: Repeat2,
 };
 
+function emptyModeAssets(): Record<StudioMode, StudioAsset[]> {
+  return { text: [], image: [], edit: [], "remove-bg": [], upscale: [], background: [], batch: [] };
+}
+
 function emptyModePrompts(defaultPrompt: string): Record<StudioMode, string> {
   return {
     text: defaultPrompt,
@@ -89,14 +93,17 @@ export function StudioPage() {
     overlayText: "",
   });
   const [modePrompts, setModePrompts] = useState<Record<StudioMode, string>>(() => emptyModePrompts(t("studio.defaultPrompt")));
-  const [assets, setAssets] = useState<StudioAsset[]>([]);
+  const [modeAssets, setModeAssets] = useState<Record<StudioMode, StudioAsset[]>>(emptyModeAssets);
+  const [modeModels, setModeModels] = useState<Record<StudioMode, string>>(() => Object.fromEntries(studioVisibleModes.map((item) => [item, "gpt-image-2"])) as Record<StudioMode, string>);
   const [editorImageSrc, setEditorImageSrc] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const { user } = useSessionUser();
-  const { busy, error: generationError, resultUrls, startGeneration, startedAt: generationStartedAt, task } = useGeneration();
+  const { states: generationStates, startGeneration } = useGeneration();
 
+  const currentGeneration = generationStates[mode];
+  const assets = modeAssets[mode];
   const currentPrompt = modePrompts[mode];
-  const currentSettings: StudioSettingsValue = { ...settings, prompt: currentPrompt };
+  const currentSettings: StudioSettingsValue = { ...settings, model: modeModels[mode], prompt: currentPrompt };
   const cost = estimateCredits(mode, settings.resolution, settings.count);
   const currentDefinition = studioModeDefinitions[mode];
   const sourceAssets = assets.filter((item) => item.role === "image");
@@ -111,6 +118,10 @@ export function StudioPage() {
   function changeSetting<K extends keyof StudioSettingsValue>(key: K, value: StudioSettingsValue[K]) {
     if (key === "prompt") {
       setModePrompts((previous) => ({ ...previous, [mode]: String(value) }));
+      return;
+    }
+    if (key === "model") {
+      setModeModels((previous) => ({ ...previous, [mode]: String(value) }));
       return;
     }
     setSettings((previous) => ({ ...previous, [key]: value }));
@@ -135,11 +146,11 @@ export function StudioPage() {
       next.push({ id: createLocalId(), name: file.name || t("studio.sourceImage"), dataUrl, url: "", role });
     }
     if (!next.length) return;
-    setAssets((previous) => role === "mask"
-      ? [...previous.filter((item) => item.role !== "mask"), next[0]]
+    setModeAssets((previous) => ({ ...previous, [mode]: role === "mask"
+      ? [...previous[mode].filter((item) => item.role !== "mask"), next[0]]
       : mergeReferences
-        ? mergePastedImageAssets(previous, next)
-        : [...previous.filter((item) => item.role !== "image" || mode === "image" || mode === "batch"), ...next].slice(0, 4));
+        ? mergePastedImageAssets(previous[mode], next)
+        : [...previous[mode].filter((item) => item.role !== "image" || mode === "image" || mode === "batch"), ...next].slice(0, 4) }));
   }
 
   async function appendFiles(files: FileList | null, role: StudioAsset["role"]) {
@@ -153,7 +164,7 @@ export function StudioPage() {
   }
 
   function removeAsset(id: string) {
-    setAssets((previous) => previous.filter((item) => item.id !== id));
+    setModeAssets((previous) => ({ ...previous, [mode]: previous[mode].filter((item) => item.id !== id) }));
   }
 
   function openMaskEditor(source = sourceAssets[0]) {
@@ -179,7 +190,7 @@ export function StudioPage() {
 
   function handleResultEdit(url: string) {
     const source: StudioAsset = { id: `result-${Date.now()}`, name: "生成结果", dataUrl: "", url, role: "image" };
-    setAssets([source]);
+    setModeAssets((previous) => ({ ...previous, edit: [source] }));
     setMode("edit");
     setEditorImageSrc(url);
     setEditorOpen(true);
@@ -198,7 +209,7 @@ export function StudioPage() {
     await startGeneration({
       mode: targetMode,
       prompt,
-      model: settings.model,
+      model: modeModels[targetMode],
       count: settings.count,
       size: sizeFromStudioPreset(settings.aspectRatio, settings.resolution),
       quality: "",
@@ -228,7 +239,7 @@ export function StudioPage() {
     if (!source) return;
     const mask: StudioAsset = { id: createLocalId(), name: "mask.png", dataUrl: payload.mask.previewDataUrl, url: "", role: "mask" };
     const nextAssets = [source, mask];
-    setAssets(nextAssets);
+    setModeAssets((previous) => ({ ...previous, edit: nextAssets }));
     setModePrompts((previous) => ({ ...previous, edit: payload.prompt }));
     setEditorOpen(false);
     try {
@@ -284,7 +295,7 @@ export function StudioPage() {
           </div>
         </section>
 
-        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={task?.count || settings.count} busy={busy} results={resultUrls} error={generationError} startedAt={generationStartedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={optimizeCurrentPrompt} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={busy} />
+        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={currentGeneration.starting || Boolean(currentGeneration.task && ["queued", "running", "cancel_requested"].includes(currentGeneration.task.status))} results={currentGeneration.resultUrls} error={currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={optimizeCurrentPrompt} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={currentGeneration.starting || Boolean(currentGeneration.task && ["queued", "running", "cancel_requested"].includes(currentGeneration.task.status))} />
       </div>
 
       <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} />

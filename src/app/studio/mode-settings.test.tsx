@@ -47,6 +47,12 @@ describe("ModeSettings", () => {
     expect(html).not.toContain("提示词模板");
   });
 
+  it("puts the model selector at the top of every category", () => {
+    const html = renderMode("image");
+    expect(html.indexOf("模型")).toBeLessThan(html.indexOf("上传参考图"));
+    expect(html).toContain("GPT Image 2.0");
+  });
+
   it("renders image editing operations without resolution settings", () => {
     const html = renderMode("remove-bg");
     for (const label of ["去背景", "换背景", "换衣服", "换脸", "加文字"]) {

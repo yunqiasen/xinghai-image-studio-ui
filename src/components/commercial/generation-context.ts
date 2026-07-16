@@ -1,6 +1,9 @@
 import { createContext, useContext } from "react";
 
+import type { StudioMode } from "@/lib/billing/pricing";
 import type { ImageTask, ImageTaskSource } from "@/lib/image-tasks/types";
+
+import type { StudioGenerationState, StudioGenerationStates } from "./generation-state";
 
 type StartGenerationInput = {
   mode: string;
@@ -13,6 +16,9 @@ type StartGenerationInput = {
 };
 
 export type GenerationContextValue = {
+  states: StudioGenerationStates;
+  getGenerationState: (mode: StudioMode) => StudioGenerationState;
+  /** Legacy text-mode projection used by gallery and other non-studio pages. */
   task?: ImageTask;
   busy: boolean;
   startedAt?: number;

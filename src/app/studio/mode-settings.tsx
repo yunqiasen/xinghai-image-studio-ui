@@ -4,8 +4,8 @@ import { useLanguage } from "@/components/language-provider";
 import type { ResolutionTier, StudioMode } from "@/lib/billing/pricing";
 import type { StudioAspectRatio } from "@/lib/image2api/size-presets";
 
-import { imageEditActions, studioModeDefinitions, superResolutionActions } from "./mode-config";
-import { MODEL_SELECTOR_CLASS_NAME, PRIMARY_ASPECT_RATIOS, STUDIO_MODEL_LABEL } from "./layout-constants";
+import { imageEditActions, studioModeDefinitions, studioModeModels, superResolutionActions } from "./mode-config";
+import { MODEL_SELECTOR_CLASS_NAME, PRIMARY_ASPECT_RATIOS } from "./layout-constants";
 import { MAX_STUDIO_PROMPT_LENGTH } from "./route-prompt";
 
 export type StudioAsset = {
@@ -41,7 +41,6 @@ type ModeSettingsProps = {
   onOpenMaskEditor: () => void;
 };
 
-const MODEL_VALUE = "gpt-image-2";
 function ratioIconSize(value: StudioAspectRatio): { width: number; height: number } {
   const [wRaw, hRaw] = value.split(":").map(Number);
   const w = Number.isFinite(wRaw) && wRaw > 0 ? wRaw : 1;
@@ -102,9 +101,18 @@ export function ModeSettings({ mode, value, assets, onChange, onFiles, onRemoveA
   const controls = studioModeDefinitions[mode].controls;
   const sourceAssets = assets.filter((item) => item.role === "image");
   const has = (control: (typeof controls)[number]) => controls.includes(control);
+  const models = studioModeModels[mode];
 
   return (
     <div className="space-y-3">
+      <div>
+        <ControlTitle title={t("studio.model")} help={t("studio.chooseModel")} aside={t("studio.currentModel")} />
+        <label className={`${MODEL_SELECTOR_CLASS_NAME} relative cursor-pointer`}>
+          <span className="flex min-w-0 items-center gap-2.5"><span className="grid h-8 w-8 place-items-center rounded-[10px] bg-[#d946ef]/16 text-[#f0abfc]"><Sparkles size={16} /></span><span className="truncate text-sm font-semibold text-white">{models.find((item) => item.value === value.model)?.label || models[0].label}</span></span>
+          <ChevronDown className="shrink-0 text-white/48" size={16} />
+          <select aria-label={t("studio.model")} className="absolute inset-0 cursor-pointer opacity-0" value={value.model} onChange={(event) => onChange("model", event.target.value)}>{models.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+        </label>
+      </div>
       {has("source") ? (
         <section className="rounded-[16px] border border-dashed border-[#a78bfa]/30 bg-[#a78bfa]/8 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -156,17 +164,6 @@ export function ModeSettings({ mode, value, assets, onChange, onFiles, onRemoveA
         <div className="grid gap-2 sm:grid-cols-2">
           <RangeControl label={t("studio.characterConsistency")} value={value.consistency} minLabel={t("studio.loose")} maxLabel={t("studio.locked")} onChange={(next) => onChange("consistency", next)} />
           <RangeControl label={t("studio.compositionVariation")} value={value.variation} minLabel={t("studio.stable")} maxLabel={t("studio.varied")} onChange={(next) => onChange("variation", next)} />
-        </div>
-      ) : null}
-
-      {has("model") ? (
-        <div>
-          <ControlTitle title={t("studio.model")} help={t("studio.chooseModel")} aside={t("studio.currentModel")} />
-          <label className={`${MODEL_SELECTOR_CLASS_NAME} relative cursor-pointer`}>
-            <span className="flex min-w-0 items-center gap-2.5"><span className="grid h-8 w-8 place-items-center rounded-[10px] bg-[#d946ef]/16 text-[#f0abfc]"><Sparkles size={16} /></span><span className="truncate text-sm font-semibold text-white">{STUDIO_MODEL_LABEL}</span></span>
-            <ChevronDown className="shrink-0 text-white/48" size={16} />
-            <select aria-label={t("studio.model")} className="absolute inset-0 cursor-pointer opacity-0" value={value.model} onChange={(event) => onChange("model", event.target.value)}><option value={MODEL_VALUE}>{STUDIO_MODEL_LABEL}</option></select>
-          </label>
         </div>
       ) : null}
 

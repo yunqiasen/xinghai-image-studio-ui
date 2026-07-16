@@ -21,6 +21,8 @@ export type StudioPromptTemplate = {
   prompt: string;
 };
 
+export type StudioModelOption = { value: string; label: string };
+
 type StudioModeDefinition = {
   label: string;
   labelKey: TranslationKey;
@@ -87,6 +89,16 @@ export const superResolutionActions = [
 ] as const;
 
 export const studioVisibleModes: StudioMode[] = ["text", "image", "edit", "remove-bg", "upscale", "batch"];
+
+export const studioModeModels: Record<StudioMode, StudioModelOption[]> = {
+  text: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
+  image: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
+  edit: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
+  "remove-bg": [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
+  upscale: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
+  background: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
+  batch: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
+};
 
 export const studioModeDefinitions: Record<StudioMode, StudioModeDefinition> = {
   text: { label: "文生图", labelKey: "studio.mode.text.short", descriptionKey: "studio.mode.text.description", controls: ["model", "aspect", "count", "resolution", "prompt"], templates: textTemplates },
