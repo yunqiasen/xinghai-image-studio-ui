@@ -25,6 +25,7 @@ import { useSessionUser } from "@/lib/storage/session-hooks";
 
 import { studioModeDefinitions, studioVisibleModes, type StudioPromptTemplate } from "./mode-config";
 import { buildModePrompt } from "./mode-request";
+import { mergePastedImageAssets } from "./prompt-paste";
 import {
   CONTROLS_PANEL_CLASS_NAME,
   EDITOR_PANEL_GRID_CLASS_NAME,
@@ -120,10 +121,10 @@ export function StudioPage() {
     setMode(nextMode);
   }
 
-  async function appendFiles(files: FileList | null, role: StudioAsset["role"]) {
-    if (!files?.length) return;
+  async function appendImageFiles(files: File[], role: StudioAsset["role"], mergeReferences = false) {
+    if (!files.length) return;
     const next: StudioAsset[] = [];
-    for (const file of Array.from(files).slice(0, role === "mask" ? 1 : 4)) {
+    for (const file of files.slice(0, role === "mask" ? 1 : 4)) {
       if (!file.type.startsWith("image/")) continue;
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -131,12 +132,24 @@ export function StudioPage() {
         reader.onerror = () => reject(new Error(t("studio.error.readImage")));
         reader.readAsDataURL(file);
       });
-      next.push({ id: createLocalId(), name: file.name, dataUrl, url: "", role });
+      next.push({ id: createLocalId(), name: file.name || t("studio.sourceImage"), dataUrl, url: "", role });
     }
     if (!next.length) return;
     setAssets((previous) => role === "mask"
       ? [...previous.filter((item) => item.role !== "mask"), next[0]]
-      : [...previous.filter((item) => item.role !== "image" || mode === "image" || mode === "batch"), ...next].slice(0, 4));
+      : mergeReferences
+        ? mergePastedImageAssets(previous, next)
+        : [...previous.filter((item) => item.role !== "image" || mode === "image" || mode === "batch"), ...next].slice(0, 4));
+  }
+
+  async function appendFiles(files: FileList | null, role: StudioAsset["role"]) {
+    await appendImageFiles(files ? Array.from(files) : [], role);
+  }
+
+  async function handlePromptImagePaste(files: File[]) {
+    setModePrompts((previous) => ({ ...previous, image: currentPrompt }));
+    setMode("image");
+    await appendImageFiles(files, "image", true);
   }
 
   function removeAsset(id: string) {
@@ -271,7 +284,7 @@ export function StudioPage() {
           </div>
         </section>
 
-        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={task?.count || settings.count} busy={busy} results={resultUrls} error={generationError} startedAt={generationStartedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={optimizeCurrentPrompt} onGenerate={submit} promptDisabled={busy} />
+        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={task?.count || settings.count} busy={busy} results={resultUrls} error={generationError} startedAt={generationStartedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={optimizeCurrentPrompt} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={busy} />
       </div>
 
       <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} />

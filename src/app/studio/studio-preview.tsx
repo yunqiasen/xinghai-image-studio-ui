@@ -19,6 +19,7 @@ import { PREVIEW_PANEL_CLASS_NAME } from "./layout-constants";
 import type { StudioPromptTemplate } from "./mode-config";
 import type { StudioMode } from "@/lib/billing/pricing";
 import { aspectRatioCss, formatGenerationElapsed, resultGridClass } from "./preview-layout";
+import { clipboardImageFiles } from "./prompt-paste";
 
 type StudioPreviewProps = {
   mode: StudioMode;
@@ -36,6 +37,7 @@ type StudioPreviewProps = {
   onPromptChange?: (value: string) => void;
   onOptimizePrompt?: () => void;
   onGenerate?: () => void;
+  onPasteImages?: (files: File[]) => void;
   promptDisabled?: boolean;
 };
 
@@ -57,6 +59,7 @@ export function StudioPreview({
   onPromptChange = () => undefined,
   onOptimizePrompt = () => undefined,
   onGenerate = () => undefined,
+  onPasteImages = () => undefined,
   promptDisabled = false,
 }: StudioPreviewProps) {
   const { t } = useLanguage();
@@ -280,7 +283,7 @@ export function StudioPreview({
       </div>
 
       <footer className="grid min-h-[78px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-[#e3e8ef] bg-white px-3 text-[10px] text-slate-500">
-        <div className="min-w-0"><textarea aria-label={t("studio.promptLabel")} className="h-14 w-full resize-none rounded-xl border border-violet-200 bg-violet-50/35 px-3 py-2 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} /></div>
+        <div className="min-w-0"><textarea aria-label={t("studio.promptLabel")} className="h-14 w-full resize-none rounded-xl border border-violet-200 bg-violet-50/35 px-3 py-2 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} onPaste={(event) => { const files = clipboardImageFiles(event.clipboardData); if (!files.length) return; event.preventDefault(); onPasteImages(files); }} /></div>
         <div className="flex shrink-0 items-center gap-1.5">
           <button aria-label={t("studio.optimizePrompt")} className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-violet-200 bg-violet-50 px-2.5 text-[11px] font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-45" disabled={promptDisabled || !prompt.trim()} onClick={onOptimizePrompt} type="button"><WandSparkles size={14} />{t("studio.optimizePrompt")}</button>
           <button aria-label={t("studio.generate")} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-4 text-xs font-bold text-white shadow-[0_10px_24px_rgba(124,58,237,.22)] disabled:cursor-not-allowed disabled:opacity-60" disabled={promptDisabled} onClick={onGenerate} type="button"><Sparkles size={15} />{t("studio.generate")}</button>
