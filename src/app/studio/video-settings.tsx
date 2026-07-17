@@ -8,9 +8,9 @@ import { studioModeModels } from "./mode-config";
 import type { StudioAsset } from "./mode-settings";
 
 export type VideoStudioMode = "video-text" | "video-image";
-export type VideoAspectRatio = "16:9" | "9:16" | "1:1";
-export type VideoDuration = 5 | 10;
-export type VideoResolution = "720p" | "1080p";
+export type VideoAspectRatio = "16:9" | "9:16" | "1:1" | "4:3" | "3:4";
+export type VideoDuration = 5 | 10 | 18;
+export type VideoResolution = "480p" | "720p" | "1080p";
 export type VideoMotion = "gentle" | "balanced" | "dynamic";
 
 export type VideoSettingsValue = {
@@ -28,11 +28,13 @@ type VideoSettingsProps = {
   onChange: <K extends keyof VideoSettingsValue>(key: K, value: VideoSettingsValue[K]) => void;
   onFiles: (files: FileList | null, role: StudioAsset["role"]) => void;
   onRemoveAsset: (id: string) => void;
+  modelOptions?: Array<{value:string;label:string}>;
+  durations?: VideoDuration[]; resolutions?: VideoResolution[]; ratios?: VideoAspectRatio[];
 };
 
-const VIDEO_RATIOS: VideoAspectRatio[] = ["16:9", "9:16", "1:1"];
-const VIDEO_DURATIONS: VideoDuration[] = [5, 10];
-const VIDEO_RESOLUTIONS: VideoResolution[] = ["720p", "1080p"];
+const VIDEO_RATIOS: VideoAspectRatio[] = ["16:9", "9:16", "1:1", "4:3", "3:4"];
+const VIDEO_DURATIONS: VideoDuration[] = [5, 10, 18];
+const VIDEO_RESOLUTIONS: VideoResolution[] = ["480p", "720p", "1080p"];
 
 function ControlTitle({ title, help, aside }: { title: string; help?: string; aside?: string }) {
   return (
@@ -63,9 +65,9 @@ function ChoiceButton({ active, children, onClick }: { active: boolean; children
   );
 }
 
-export function VideoSettings({ mode, value, assets, onChange, onFiles, onRemoveAsset }: VideoSettingsProps) {
+export function VideoSettings({ mode, value, assets, onChange, onFiles, onRemoveAsset, modelOptions, durations=VIDEO_DURATIONS, resolutions=VIDEO_RESOLUTIONS, ratios=VIDEO_RATIOS }: VideoSettingsProps) {
   const { t } = useLanguage();
-  const models = studioModeModels[mode];
+  const models = modelOptions?.length ? modelOptions : studioModeModels[mode];
   const source = assets.find((item) => item.role === "image");
   const motionOptions: Array<{ value: VideoMotion; label: string }> = [
     { value: "gentle", label: t("studio.videoMotion.gentle") },
@@ -103,7 +105,7 @@ export function VideoSettings({ mode, value, assets, onChange, onFiles, onRemove
       <div>
         <ControlTitle title={t("studio.videoRatio")} help={t("studio.chooseVideoRatio")} />
         <div className="grid grid-cols-3 gap-1.5">
-          {VIDEO_RATIOS.map((ratio) => (
+          {ratios.map((ratio) => (
             <button key={ratio} aria-label={`${t("studio.videoRatio")} ${ratio}`} aria-pressed={value.aspectRatio === ratio} className={`flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[13px] border transition ${value.aspectRatio === ratio ? "border-[#c54bea] bg-[#c54bea]/14 text-[#f0c5fa]" : "border-white/10 bg-black/18 text-white/55 hover:bg-white/7 hover:text-white"}`} onClick={() => onChange("aspectRatio", ratio)} type="button">
               <span className="grid h-7 w-8 place-items-center"><span className="block rounded-[3px] border-2 border-current" style={ratioIconSize(ratio)} /></span>
               <span className="text-[9px] font-bold">{ratio}</span>
@@ -114,12 +116,12 @@ export function VideoSettings({ mode, value, assets, onChange, onFiles, onRemove
 
       <div>
         <ControlTitle title={t("studio.videoDuration")} help={t("studio.videoDurationHelp")} />
-        <div className="grid grid-cols-2 gap-1.5">{VIDEO_DURATIONS.map((duration) => <ChoiceButton key={duration} active={value.duration === duration} onClick={() => onChange("duration", duration)}>{t("studio.seconds", { count: duration })}</ChoiceButton>)}</div>
+        <div className="grid grid-cols-2 gap-1.5">{durations.map((duration) => <ChoiceButton key={duration} active={value.duration === duration} onClick={() => onChange("duration", duration)}>{t("studio.seconds", { count: duration })}</ChoiceButton>)}</div>
       </div>
 
       <div>
         <ControlTitle title={t("studio.videoResolution")} help={t("studio.videoResolutionHelp")} />
-        <div className="grid grid-cols-2 gap-1.5">{VIDEO_RESOLUTIONS.map((resolution) => <ChoiceButton key={resolution} active={value.resolution === resolution} onClick={() => onChange("resolution", resolution)}>{resolution.toUpperCase()}</ChoiceButton>)}</div>
+        <div className="grid grid-cols-2 gap-1.5">{resolutions.map((resolution) => <ChoiceButton key={resolution} active={value.resolution === resolution} onClick={() => onChange("resolution", resolution)}>{resolution.toUpperCase()}</ChoiceButton>)}</div>
       </div>
 
       <div>

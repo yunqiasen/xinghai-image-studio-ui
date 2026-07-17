@@ -8,7 +8,7 @@ export function isVideoStudioMode(mode: StudioMode): mode is VideoStudioMode {
 
 export function createInitialVideoSettings(): Record<VideoStudioMode, VideoSettingsValue> {
   return {
-    "video-text": { model: "gpt-video-placeholder", aspectRatio: "16:9", duration: 5, resolution: "1080p", motion: "balanced" },
-    "video-image": { model: "gpt-video-placeholder", aspectRatio: "16:9", duration: 5, resolution: "1080p", motion: "balanced" },
+    "video-text": { model: "Agnes-Video-V2.0", aspectRatio: "16:9", duration: 5, resolution: "1080p", motion: "balanced" },
+    "video-image": { model: "Agnes-Video-V2.0", aspectRatio: "16:9", duration: 5, resolution: "1080p", motion: "balanced" },
   };
 }

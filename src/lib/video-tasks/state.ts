@@ -1,0 +1,1 @@
+import type{VideoTask}from'./types';export const isActiveVideoTask=(t?:VideoTask|null)=>Boolean(t&&['queued','submitting','in_progress'].includes(t.status));export function videoTaskError(t?:VideoTask|null){return t?.status==='failed'?(t.error||'视频生成失败，积分已退回'):undefined}

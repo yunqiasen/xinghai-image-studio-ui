@@ -12,12 +12,12 @@
 `API.md` 是人工可读契约，`openapi-studio.yaml` 是机器可读契约。两者不一致时停止接入，由后端代理先修正文档。
 
 ```text
-接入契约版本: 2026-07-15.sentinel-compat.1
-后端契约 Commit: dd6e4fc135255fc6bf3fb6bde3b406689b91fb5c
-后端实现基线 Commit: bc2f84dd5af7add5174ab7ad18adaee83b764ece
+接入契约版本: 2026-07-17.agnes-video.1
+后端契约 Commit: 48b4ae2f4943db6e808b4a210e4490d0dbbcb684
+后端实现基线 Commit: c83b99cd0d7cad1fac7dda761775b80db663a0af
 ```
 
-本次接入已确认实现基线是后端当前 `origin/main` 的祖先，`API.md`、OpenAPI 与 `API_CHANGELOG.md` 版本一致。
+本次接入已确认实现基线 `c83b99c...` 是后端契约提交 `48b4ae2...` 的祖先，`API.md`、OpenAPI 与 `API_CHANGELOG.md` 版本一致且 OpenAPI `$ref` 校验通过。
 
 接口未进入后端契约时，前端不允许自行伪造路径、请求字段、响应字段、Mock 业务数据或临时 BFF。字段变化必须由后端先更新两份契约，前端再更新类型和页面。
 
@@ -45,6 +45,9 @@
 | 同步生图 | `POST /api/image/generate` | `src/lib/image2api/client.ts` | 保留兼容客户端，当前商业 `/studio` 不再使用 |
 | 站点公开信息 | `GET /api/public/site-info` | `src/lib/site-info.ts`、`src/components/commercial/app-shell.tsx` | 已接入，驱动品牌名称、Logo、页脚、联系方式和文档入口 |
 | 异步图片任务 | `POST/GET /api/image/tasks` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx`、`src/app/studio/page.tsx` | 商业 `/studio` 已接入；跨路由保留状态，刷新后按当前用户恢复 |
+| 工作流提示词优化 | `POST /api/prompt/optimize` | `src/lib/prompt-optimizer/*`、`src/app/studio/prompt-profile.ts`、`src/app/studio/page.tsx` | 已接入四套方案和图片上下文；失败时使用后端原词回退 |
+| 视频模型目录 | `GET /api/models?type=video` | `src/lib/model-catalog/*`、`src/app/studio/page.tsx` | 已接入动态模型、时长、清晰度、画幅和积分 |
+| 视频任务 | `POST/GET /api/video/tasks`、`GET /api/video/tasks/:task_id` | `src/lib/video-tasks/*`、`src/app/studio/page.tsx`、`video-preview.tsx` | 已接入创建、3 秒轮询、刷新恢复、播放与失败退款提示 |
 
 ## 前端依赖的关键字段
 
@@ -71,7 +74,7 @@ type RegistrationPolicy = {
 
 商业创作页使用异步请求字段 `taskId`、`conversationId`、`turnId`、`mode`、`prompt`、`model`、`count`、`size`、`quality`、`sourceImages`。固定 `conversationId=commercial-studio`，客户端 ID 仅用于幂等；ID 生成优先使用 `crypto.randomUUID()`，在内网 HTTP 等缺少该函数的浏览器环境自动回退到 `crypto.getRandomValues()`，避免创建任务前中断。源图和遮罩按契约映射为 `sourceImages[].role=image|mask`。
 
-提示词输入位于右侧预览底部状态栏，与左侧操作栏保持同一水平线，文生图模板在右侧模板卡片中按分类展示；比例选择保留原版比例示意图标。“优化提示词”按钮与生成按钮位于右侧提示词框旁并保持同一水平线，当前引擎信息移动到左侧底部，只做本地快捷补全，不调用新接口。
+提示词输入位于右侧预览底部状态栏，与左侧操作栏保持同一水平线，文生图模板在右侧模板卡片中按分类展示；比例选择保留原版比例示意图标。“优化提示词”按钮调用 `POST /api/prompt/optimize`，按当前模式选择 `text_to_image`、`image_to_image`、`text_to_video` 或 `image_to_video`；有源图时发送 `sourceImage`。后端失败会返回原提示词，前端不再用固定后缀冒充 LLM 优化。
 
 前端 nginx 对 `/api/*` 请求设置 `client_max_body_size 32m`，与后端图片请求体上限一致；缺少该配置时，约 1 MiB 以上的 Base64 参考图会在前端代理层直接返回 HTTP 413，后端不会收到请求。
 
@@ -117,4 +120,4 @@ type RegistrationPolicy = {
 
 ## 视频创作入口
 
-普通用户工作台目前展示两个视频分类：文生视频和图生视频。视频模式使用独立的 `VideoSettings` 与 `VideoPreview`：参数为视频模型、画幅、时长、清晰度和运动强度，图生视频额外接收一张起始图片；右侧为视频播放器、播放按钮、时间轴和视频输出信息，不渲染图片缩放、原图入口、局部编辑、提示词模板或图片数量。文生视频和图生视频分别保存参数、提示词和起始图片。当前点击“生成视频”只显示即将上线提示，不提交 `/api/image/tasks`，也不伪造视频后端响应。后续接入视频 API 时，应新增独立契约，不复用图片任务字段猜测视频行为。
+普通用户工作台展示文生视频和图生视频。登录后先读取 `GET /api/models?type=video`，视频模型、5/10/18 秒、480p/720p/1080p、画幅和积分都以后端能力与价格为准；Agnes 当前最高 1080p。点击“生成视频”调用 `POST /api/video/tasks`，图生视频把一张起始图片作为 `sourceImage`。页面每 3 秒读取 `GET /api/video/tasks/:task_id`，刷新或重新登录后通过任务列表恢复最近任务；成功用 `<video controls>` 播放，失败显示后端原因和退款提示。视频请求不复用图片任务字段。

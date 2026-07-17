@@ -100,8 +100,8 @@ export const studioModeModels: Record<StudioMode, StudioModelOption[]> = {
   upscale: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
   background: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
   batch: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
-  "video-text": [{ value: "gpt-video-placeholder", label: "GPT Video（即将上线）" }],
-  "video-image": [{ value: "gpt-video-placeholder", label: "GPT Video（即将上线）" }],
+  "video-text": [{ value: "Agnes-Video-V2.0", label: "Agnes Video V2.0" }],
+  "video-image": [{ value: "Agnes-Video-V2.0", label: "Agnes Video V2.0" }],
 };
 
 export const studioModeDefinitions: Record<StudioMode, StudioModeDefinition> = {

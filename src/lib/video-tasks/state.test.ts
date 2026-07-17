@@ -1,0 +1,1 @@
+import{describe,expect,it}from'vitest';import{isActiveVideoTask,videoTaskError}from'./state';describe('video state',()=>{it('normalizes terminal refund message',()=>{expect(isActiveVideoTask({status:'in_progress'} as never)).toBe(true);expect(videoTaskError({status:'failed'} as never)).toContain('积分已退回')})})

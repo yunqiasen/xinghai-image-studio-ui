@@ -19,9 +19,16 @@ import { createLocalId } from "@/lib/client-id";
 import { estimateCredits, type StudioMode } from "@/lib/billing/pricing";
 import { sizeFromStudioPreset } from "@/lib/image2api/size-presets";
 import { useSessionUser } from "@/lib/storage/session-hooks";
+import { loadCurrentUser } from "@/lib/storage/local-session";
+import { listVideoModels, type VideoModel } from "@/lib/model-catalog/client";
+import { createVideoTask, getVideoTask, listVideoTasks } from "@/lib/video-tasks/client";
+import { optimizePrompt } from "@/lib/prompt-optimizer/client";
+import { isActiveVideoTask, videoTaskError } from "@/lib/video-tasks/state";
+import type { VideoTask } from "@/lib/video-tasks/types";
 
 import { imageModes, studioModeDefinitions, studioModeModels, studioVisibleModes, videoModes, type StudioPromptTemplate } from "./mode-config";
 import { buildModePrompt } from "./mode-request";
+import { promptProfileForStudioMode } from "./prompt-profile";
 import { mergePastedImageAssets } from "./prompt-paste";
 import {
   CONTROLS_PANEL_CLASS_NAME,
@@ -101,7 +108,11 @@ export function StudioPage() {
   const [videoSettings, setVideoSettings] = useState(createInitialVideoSettings);
   const [editorImageSrc, setEditorImageSrc] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
+  const [videoModels, setVideoModels] = useState<VideoModel[]>([]);
+  const [videoTask, setVideoTask] = useState<VideoTask | null>(null);
+  const [videoError, setVideoError] = useState("");
   const { user } = useSessionUser();
+  const videoUserId = user?.id;
   const { states: generationStates, startGeneration } = useGeneration();
 
   const currentGeneration = generationStates[mode];
@@ -111,10 +122,40 @@ export function StudioPage() {
   const currentVideoSettings = videoMode ? videoSettings[videoMode] : null;
   const currentModelValue = currentVideoSettings?.model || modeModels[mode];
   const currentSettings: StudioSettingsValue = { ...settings, model: modeModels[mode], prompt: currentPrompt };
-  const cost = videoMode ? 0 : estimateCredits(mode, settings.resolution, settings.count);
-  const currentModelLabel = studioModeModels[mode].find((item) => item.value === currentModelValue)?.label || studioModeModels[mode][0].label;
+  const selectedVideoModel = videoModels.find((item) => item.slug === currentModelValue) || videoModels[0];
+  const cost = videoMode ? (selectedVideoModel?.pricing.duration_costs[String(currentVideoSettings?.duration || 5)] || 0) : estimateCredits(mode, settings.resolution, settings.count);
+  const currentModelLabel = videoMode ? (selectedVideoModel?.name || "Agnes Video V2.0") : (studioModeModels[mode].find((item) => item.value === currentModelValue)?.label || studioModeModels[mode][0].label);
   const currentDefinition = studioModeDefinitions[mode];
   const sourceAssets = assets.filter((item) => item.role === "image");
+
+  useEffect(() => {
+    let active = true;
+    setVideoTask(null);
+    setVideoError("");
+    if (!videoUserId) { setVideoModels([]); return () => { active = false; }; }
+    listVideoModels().then((items) => {
+      if (!active) return;
+      setVideoModels(items);
+      const first = items[0];
+      if (first) setVideoSettings((previous) => ({ "video-text": { ...previous["video-text"], model: first.slug }, "video-image": { ...previous["video-image"], model: first.slug } }));
+    }).catch((error) => { if (active) setVideoError(error instanceof Error ? error.message : "读取视频模型失败"); });
+    listVideoTasks().then((items) => {
+      if (!active || !items[0]) return;
+      setVideoTask(items[0]);
+      if (items[0].status === "failed") setVideoError(videoTaskError(items[0]) || "视频生成失败");
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [videoUserId]);
+
+  useEffect(() => {
+    if (!videoTask || !isActiveVideoTask(videoTask)) return;
+    const timer = window.setInterval(() => getVideoTask(videoTask.id).then((next) => {
+      setVideoTask(next);
+      if (next.status === "failed") setVideoError(videoTaskError(next) || "视频生成失败");
+      if (!isActiveVideoTask(next)) void loadCurrentUser().catch(() => undefined);
+    }).catch(() => undefined), 3000);
+    return () => window.clearInterval(timer);
+  }, [videoTask]);
 
   useEffect(() => {
     if (!importedPrompt) return;
@@ -194,14 +235,22 @@ export function StudioPage() {
     setModePrompts((previous) => ({ ...previous, [mode]: template.prompt }));
   }
 
-  function optimizeCurrentPrompt() {
+  async function optimizeCurrentPrompt() {
     const prompt = currentPrompt.trim();
     if (!prompt) return;
-    const suffix = videoMode
-      ? "，镜头运动自然，主体动作连贯，节奏清晰，光影稳定，画面流畅，电影感"
-      : "，主体清晰，构图平衡，光影自然，细节丰富，画面干净，高质量商业视觉";
-    const marker = videoMode ? "镜头运动自然" : "构图平衡";
-    if (!prompt.includes(marker)) setModePrompts((previous) => ({ ...previous, [mode]: `${prompt}${suffix}`.slice(0, MAX_STUDIO_PROMPT_LENGTH) }));
+    try {
+      const source = sourceAssets[0];
+      const result = await optimizePrompt({
+        profile: promptProfileForStudioMode(mode),
+        prompt,
+        mode,
+        sourceImage: source ? displaySource(source) : undefined,
+        duration: currentVideoSettings?.duration,
+        resolution: currentVideoSettings?.resolution || settings.resolution,
+        motion: currentVideoSettings?.motion,
+      });
+      setModePrompts((previous) => ({ ...previous, [mode]: result.optimizedPrompt.slice(0, MAX_STUDIO_PROMPT_LENGTH) }));
+    } catch (error) { toast.error(error instanceof Error ? error.message : "提示词优化失败"); }
   }
 
   function handleResultEdit(url: string) {
@@ -235,7 +284,14 @@ export function StudioPage() {
 
   async function submit() {
     if (isVideoStudioMode(mode)) {
-      toast.info(t("studio.videoComingSoon"));
+      if (!user) { toast.error(t("studio.error.login")); return; }
+      if (!currentVideoSettings || !currentPrompt.trim()) { toast.error(t("studio.error.prompt")); return; }
+      if (mode === "video-image" && !sourceAssets[0]) { toast.error(t("studio.error.upload")); return; }
+      setVideoError("");
+      try {
+        const task = await createVideoTask({ model: currentVideoSettings.model, prompt: currentPrompt.trim(), sourceImage: sourceAssets[0] ? displaySource(sourceAssets[0]) : undefined, aspectRatio: currentVideoSettings.aspectRatio, resolution: currentVideoSettings.resolution, duration: currentVideoSettings.duration, motion: currentVideoSettings.motion });
+        setVideoTask(task); void loadCurrentUser().catch(() => undefined); toast.success(t("studio.submitted"));
+      } catch (error) { const message = error instanceof Error ? error.message : "创建视频任务失败"; setVideoError(message); toast.error(message); }
       return;
     }
     if (mode !== "text" && !sourceAssets.length) {
@@ -309,20 +365,20 @@ export function StudioPage() {
               <div className={STUDIO_PARAMETER_SCROLL_CLASS_NAME}>
                 {!user ? <div className="rounded-2xl border border-[#60a5fa]/20 bg-[#60a5fa]/10 px-3 py-2.5 text-xs text-[#dbeafe] select-text">{t(videoMode ? "studio.videoLoginNotice" : "studio.loginNotice")}<Link to="/login" className="ml-2 font-semibold text-white underline underline-offset-4">{t("studio.goLogin")}</Link></div> : null}
                 {videoMode && currentVideoSettings
-                  ? <VideoSettings mode={videoMode} value={currentVideoSettings} assets={assets} onChange={changeVideoSetting} onFiles={appendFiles} onRemoveAsset={removeAsset} />
+                  ? <VideoSettings mode={videoMode} value={currentVideoSettings} assets={assets} onChange={changeVideoSetting} onFiles={appendFiles} onRemoveAsset={removeAsset} modelOptions={videoModels.map((item) => ({ value: item.slug, label: item.name }))} durations={(selectedVideoModel?.capabilities.durations.map((item) => item.seconds) || [5,10,18]) as Array<5|10|18>} resolutions={(selectedVideoModel?.capabilities.resolutions || ["480p","720p","1080p"]) as Array<"480p"|"720p"|"1080p">} ratios={(selectedVideoModel?.capabilities.aspect_ratios || ["16:9","9:16","1:1","4:3","3:4"]) as Array<"16:9"|"9:16"|"1:1"|"4:3"|"3:4">} />
                   : <ModeSettings mode={mode} value={currentSettings} assets={assets} onChange={changeSetting} onFiles={appendFiles} onRemoveAsset={removeAsset} onOpenMaskEditor={() => openMaskEditor()} />}
               </div>
             </div>
 
             <footer className={STUDIO_ACTION_BAR_CLASS_NAME}>
-              <div className="min-w-0 select-text"><p className="truncate text-xs font-semibold text-white">{videoMode && currentVideoSettings ? `${t(currentDefinition.labelKey)} · ${t("studio.seconds", { count: currentVideoSettings.duration })} · ${currentVideoSettings.resolution.toUpperCase()}` : `${t(currentDefinition.labelKey)} · ${t(settings.count === 1 ? "common.image" : "common.images", { count: settings.count })} · ${settings.resolution.toUpperCase()}`}</p><p className="mt-1 text-[9px] text-white/38">{videoMode ? t("studio.videoCostPending") : t("studio.cost", { count: cost })}</p></div>
+              <div className="min-w-0 select-text"><p className="truncate text-xs font-semibold text-white">{videoMode && currentVideoSettings ? `${t(currentDefinition.labelKey)} · ${t("studio.seconds", { count: currentVideoSettings.duration })} · ${currentVideoSettings.resolution.toUpperCase()}` : `${t(currentDefinition.labelKey)} · ${t(settings.count === 1 ? "common.image" : "common.images", { count: settings.count })} · ${settings.resolution.toUpperCase()}`}</p><p className="mt-1 text-[9px] text-white/38">{t("studio.cost", { count: cost })}</p></div>
               <div className="select-text text-right"><p className="text-[9px] text-white/38">{t("preview.engine")}</p><p className="text-xs font-semibold text-white/80">{currentModelLabel}</p></div>
             </footer>
           </div>
         </section>
 
         {videoMode && currentVideoSettings
-          ? <VideoPreview aspectRatio={currentVideoSettings.aspectRatio} duration={currentVideoSettings.duration} motion={currentVideoSettings.motion} prompt={currentPrompt} resolution={currentVideoSettings.resolution} sourceUrl={sourceAssets[0] ? displaySource(sourceAssets[0]) : ""} onGenerate={submit} onOptimizePrompt={optimizeCurrentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} />
+          ? <VideoPreview aspectRatio={currentVideoSettings.aspectRatio} duration={currentVideoSettings.duration} motion={currentVideoSettings.motion} prompt={currentPrompt} resolution={currentVideoSettings.resolution} sourceUrl={sourceAssets[0] ? displaySource(sourceAssets[0]) : ""} task={videoTask} error={videoError} onGenerate={submit} onOptimizePrompt={optimizeCurrentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} />
           : <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={currentGeneration.starting || Boolean(currentGeneration.task && ["queued", "running", "cancel_requested"].includes(currentGeneration.task.status))} results={currentGeneration.resultUrls} error={currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={optimizeCurrentPrompt} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={currentGeneration.starting || Boolean(currentGeneration.task && ["queued", "running", "cancel_requested"].includes(currentGeneration.task.status))} />}
       </div>
 
