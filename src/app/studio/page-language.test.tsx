@@ -15,11 +15,9 @@ describe("StudioPage language", () => {
         <GenerationProvider><StudioPage /></GenerationProvider>
       </MemoryRouter></ThemeProvider></LanguageProvider>,
     );
-    expect(html).toContain("Creation Workbench");
+    expect(html).toContain("Image Creation");
     expect(html).toContain("Image creation type");
-    expect(html).toContain("Video creation type");
-    expect(html).toContain("Text to video");
-    expect(html).toContain("Image to video");
+    expect(html).not.toContain("Video creation type");
     expect(html).not.toContain("Inspiration spectrum");
     expect(html).toContain("Aspect ratio");
     expect(html).toContain("Prompt templates");

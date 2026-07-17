@@ -1,10 +1,4 @@
-import type { StudioMode } from "@/lib/billing/pricing";
-
 import type { VideoSettingsValue, VideoStudioMode } from "./video-settings";
-
-export function isVideoStudioMode(mode: StudioMode): mode is VideoStudioMode {
-  return mode === "video-text" || mode === "video-image";
-}
 
 export function createInitialVideoSettings(): Record<VideoStudioMode, VideoSettingsValue> {
   return {
@@ -12,3 +6,8 @@ export function createInitialVideoSettings(): Record<VideoStudioMode, VideoSetti
     "video-image": { model: "gpt-video-placeholder", aspectRatio: "16:9", duration: 5, resolution: "1080p", motion: "balanced" },
   };
 }
+
+export const videoModeModels: Record<VideoStudioMode, Array<{ value: string; label: string }>> = {
+  "video-text": [{ value: "gpt-video-placeholder", label: "GPT Video（即将上线）" }],
+  "video-image": [{ value: "gpt-video-placeholder", label: "GPT Video（即将上线）" }],
+};

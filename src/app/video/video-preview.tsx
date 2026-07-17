@@ -2,7 +2,7 @@ import { CircleGauge, Film, Maximize2, Play, Sparkles, Volume2, WandSparkles } f
 
 import { useLanguage } from "@/components/language-provider";
 
-import { PREVIEW_PANEL_CLASS_NAME } from "./layout-constants";
+import { PREVIEW_PANEL_CLASS_NAME } from "../studio/layout-constants";
 import type { VideoAspectRatio, VideoDuration, VideoMotion, VideoResolution } from "./video-settings";
 
 type VideoPreviewProps = {

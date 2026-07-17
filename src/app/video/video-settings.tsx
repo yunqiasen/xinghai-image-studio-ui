@@ -3,9 +3,8 @@ import type { ReactNode } from "react";
 
 import { useLanguage } from "@/components/language-provider";
 
-import { MODEL_SELECTOR_CLASS_NAME } from "./layout-constants";
-import { studioModeModels } from "./mode-config";
-import type { StudioAsset } from "./mode-settings";
+import { MODEL_SELECTOR_CLASS_NAME } from "../studio/layout-constants";
+import { videoModeModels } from "./video-settings-state";
 
 export type VideoStudioMode = "video-text" | "video-image";
 export type VideoAspectRatio = "16:9" | "9:16" | "1:1";
@@ -21,12 +20,20 @@ export type VideoSettingsValue = {
   motion: VideoMotion;
 };
 
+export type VideoAsset = {
+  id: string;
+  name: string;
+  dataUrl: string;
+  url: string;
+  role: "image";
+};
+
 type VideoSettingsProps = {
   mode: VideoStudioMode;
   value: VideoSettingsValue;
-  assets: StudioAsset[];
+  assets: VideoAsset[];
   onChange: <K extends keyof VideoSettingsValue>(key: K, value: VideoSettingsValue[K]) => void;
-  onFiles: (files: FileList | null, role: StudioAsset["role"]) => void;
+  onFiles: (files: FileList | null, role: VideoAsset["role"]) => void;
   onRemoveAsset: (id: string) => void;
 };
 
@@ -65,7 +72,7 @@ function ChoiceButton({ active, children, onClick }: { active: boolean; children
 
 export function VideoSettings({ mode, value, assets, onChange, onFiles, onRemoveAsset }: VideoSettingsProps) {
   const { t } = useLanguage();
-  const models = studioModeModels[mode];
+  const models = videoModeModels[mode];
   const source = assets.find((item) => item.role === "image");
   const motionOptions: Array<{ value: VideoMotion; label: string }> = [
     { value: "gentle", label: t("studio.videoMotion.gentle") },

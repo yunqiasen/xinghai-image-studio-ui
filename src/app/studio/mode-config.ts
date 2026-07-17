@@ -89,8 +89,7 @@ export const superResolutionActions = [
 ] as const;
 
 export const imageModes: StudioMode[] = ["text", "image", "edit", "remove-bg", "upscale", "batch"];
-export const videoModes: StudioMode[] = ["video-text", "video-image"];
-export const studioVisibleModes: StudioMode[] = [...imageModes, ...videoModes];
+export const studioVisibleModes: StudioMode[] = imageModes;
 
 export const studioModeModels: Record<StudioMode, StudioModelOption[]> = {
   text: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
@@ -100,8 +99,6 @@ export const studioModeModels: Record<StudioMode, StudioModelOption[]> = {
   upscale: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
   background: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
   batch: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],
-  "video-text": [{ value: "gpt-video-placeholder", label: "GPT Video（即将上线）" }],
-  "video-image": [{ value: "gpt-video-placeholder", label: "GPT Video（即将上线）" }],
 };
 
 export const studioModeDefinitions: Record<StudioMode, StudioModeDefinition> = {
@@ -112,6 +109,4 @@ export const studioModeDefinitions: Record<StudioMode, StudioModeDefinition> = {
   upscale: { label: "超分", labelKey: "studio.mode.upscale.short", descriptionKey: "studio.mode.upscale.description", controls: ["source", "super-resolution-action", "prompt"], templates: superTemplates },
   background: { label: "换背景", labelKey: "studio.mode.background.short", descriptionKey: "studio.mode.background.description", controls: ["source", "prompt"], templates: imageEditTemplates.filter((item) => item.id === "replace-background") },
   batch: { label: "批量一致性", labelKey: "studio.mode.batch.short", descriptionKey: "studio.mode.batch.description", controls: ["source", "consistency", "aspect", "count", "resolution", "prompt"], templates: batchTemplates },
-  "video-text": { label: "文生视频", labelKey: "studio.mode.videoText.short", descriptionKey: "studio.mode.videoText.description", controls: ["model", "prompt"], templates: [] },
-  "video-image": { label: "图生视频", labelKey: "studio.mode.videoImage.short", descriptionKey: "studio.mode.videoImage.description", controls: ["model", "source", "prompt"], templates: [] },
 };

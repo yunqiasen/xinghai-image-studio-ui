@@ -1,7 +1,9 @@
 import {
+  AudioWaveform,
   GalleryHorizontalEnd,
   Image,
   Sparkles,
+  Video,
   UserCircle,
   Wallet,
   WandSparkles,
@@ -18,7 +20,9 @@ export type CommercialNavigationItem = {
 
 const navigationDefinitions: Array<Omit<CommercialNavigationItem, "label"> & { labelKey: TranslationKey }> = [
   { to: "/", labelKey: "nav.home", icon: Sparkles },
-  { to: "/studio", labelKey: "nav.create", icon: Image },
+  { to: "/studio", labelKey: "nav.imageCreate", icon: Image },
+  { to: "/video", labelKey: "nav.videoCreate", icon: Video },
+  { to: "/audio", labelKey: "nav.audioCreate", icon: AudioWaveform },
   { to: "/gallery", labelKey: "nav.works", icon: GalleryHorizontalEnd },
   { to: "/soul-gallery", labelKey: "nav.soulGallery", icon: WandSparkles },
   { to: "/billing", labelKey: "nav.credits", icon: Wallet },

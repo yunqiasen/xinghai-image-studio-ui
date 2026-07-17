@@ -19,7 +19,7 @@ export function CommercialShell() {
   const commercialNavigation = getCommercialNavigation(locale);
   const location = useLocation();
   const { user } = useSessionUser();
-  const studioRoute = location.pathname === "/studio";
+  const creationWorkspaceRoute = location.pathname === "/studio" || location.pathname === "/video";
   const [siteInfo, setSiteInfo] = useState(DEFAULT_SITE_INFO);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function CommercialShell() {
     <div className="commercial-shell min-h-screen selection:bg-[#28465f]/12">
       <div className="commercial-ambient pointer-events-none fixed inset-0 -z-10" />
       <header className="commercial-header sticky top-0 z-40 border-b backdrop-blur-xl">
-        <div className={`mx-auto flex h-18 items-center justify-between gap-3 px-4 ${studioRoute ? "max-w-[1240px]" : "max-w-[1500px]"}`}>
+        <div className={`mx-auto flex h-18 items-center justify-between gap-3 px-4 ${creationWorkspaceRoute ? "max-w-[1240px]" : "max-w-[1500px]"}`}>
           <NavLink to="/" className="commercial-brand flex shrink-0 items-center gap-3 font-semibold tracking-tight">
             <span className="commercial-logo grid h-11 w-11 place-items-center overflow-hidden rounded-[18px] text-lg shadow-[0_18px_40px_rgba(20,37,54,.22)]">
               {siteInfo.logoUrl ? <img alt="" className="h-full w-full object-cover" src={siteInfo.logoUrl} /> : "星"}
@@ -85,12 +85,12 @@ export function CommercialShell() {
           </div>
         </div>
       </header>
-      <main className={`commercial-main ${studioRoute ? "w-full" : "mx-auto max-w-[1500px] px-4 py-6"}`}>
+      <main className={`commercial-main ${creationWorkspaceRoute ? "w-full" : "mx-auto max-w-[1500px] px-4 py-6"}`}>
         <GenerationProvider userId={user?.id}>
           <Outlet />
         </GenerationProvider>
       </main>
-      {!studioRoute && (siteInfo.footer || siteInfo.contactEmail || siteInfo.docsUrl) ? (
+      {!creationWorkspaceRoute && (siteInfo.footer || siteInfo.contactEmail || siteInfo.docsUrl) ? (
         <footer className="commercial-footer mx-auto flex w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 pb-7 text-xs">
           <span>{siteInfo.footer || siteInfo.description}</span>
           <span className="flex items-center gap-4">
