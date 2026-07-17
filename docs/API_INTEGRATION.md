@@ -12,12 +12,12 @@
 `API.md` 是人工可读契约，`openapi-studio.yaml` 是机器可读契约。两者不一致时停止接入，由后端代理先修正文档。
 
 ```text
-接入契约版本: 2026-07-17.agnes-video.1
-后端契约 Commit: 48b4ae2f4943db6e808b4a210e4490d0dbbcb684
-后端实现基线 Commit: c83b99cd0d7cad1fac7dda761775b80db663a0af
+接入契约版本: 2026-07-17.video-duration.1
+后端契约 Commit: 54b817ab9298de8b4ddf8491c5f499f9ed168d6c
+后端实现基线 Commit: a7788142629c9b1c40fa6217443a0a5f12154330
 ```
 
-本次接入已确认实现基线 `c83b99c...` 是后端契约提交 `48b4ae2...` 的祖先，`API.md`、OpenAPI 与 `API_CHANGELOG.md` 版本一致且 OpenAPI `$ref` 校验通过。
+本次接入已确认实现基线 `a778814...` 是后端契约提交 `54b817a...` 的祖先，`API.md`、OpenAPI 与 `API_CHANGELOG.md` 版本一致且 OpenAPI `$ref` 校验通过。
 
 接口未进入后端契约时，前端不允许自行伪造路径、请求字段、响应字段、Mock 业务数据或临时 BFF。字段变化必须由后端先更新两份契约，前端再更新类型和页面。
 
