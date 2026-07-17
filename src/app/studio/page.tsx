@@ -8,6 +8,8 @@ import {
   Repeat2,
   ScanLine,
   Sparkles,
+  Film,
+  Clapperboard,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -17,13 +19,12 @@ import { ImageEditModal } from "@/components/image-edit-modal";
 import { useGeneration } from "@/components/commercial/generation-context";
 import { useLanguage } from "@/components/language-provider";
 import type { TranslationKey } from "@/components/language-modes";
-import { ThemeSelector } from "@/components/theme-selector";
 import { createLocalId } from "@/lib/client-id";
 import { estimateCredits, type ResolutionTier, type StudioMode } from "@/lib/billing/pricing";
 import { sizeFromStudioPreset, type StudioAspectRatio } from "@/lib/image2api/size-presets";
 import { useSessionUser } from "@/lib/storage/session-hooks";
 
-import { studioModeDefinitions, studioVisibleModes, type StudioPromptTemplate } from "./mode-config";
+import { imageModes, studioModeDefinitions, studioModeModels, studioVisibleModes, videoModes, type StudioPromptTemplate } from "./mode-config";
 import { buildModePrompt } from "./mode-request";
 import { mergePastedImageAssets } from "./prompt-paste";
 import {
@@ -51,10 +52,12 @@ const modeIcons: Record<StudioMode, typeof FileImage> = {
   upscale: Maximize2,
   background: ScanLine,
   batch: Repeat2,
+  "video-text": Film,
+  "video-image": Clapperboard,
 };
 
 function emptyModeAssets(): Record<StudioMode, StudioAsset[]> {
-  return { text: [], image: [], edit: [], "remove-bg": [], upscale: [], background: [], batch: [] };
+  return { text: [], image: [], edit: [], "remove-bg": [], upscale: [], background: [], batch: [], "video-text": [], "video-image": [] };
 }
 
 function emptyModePrompts(defaultPrompt: string): Record<StudioMode, string> {
@@ -66,6 +69,8 @@ function emptyModePrompts(defaultPrompt: string): Record<StudioMode, string> {
     upscale: "",
     background: "",
     batch: "",
+    "video-text": "",
+    "video-image": "",
   };
 }
 
@@ -105,6 +110,7 @@ export function StudioPage() {
   const currentPrompt = modePrompts[mode];
   const currentSettings: StudioSettingsValue = { ...settings, model: modeModels[mode], prompt: currentPrompt };
   const cost = estimateCredits(mode, settings.resolution, settings.count);
+  const currentModelLabel = studioModeModels[mode].find((item) => item.value === modeModels[mode])?.label || studioModeModels[mode][0].label;
   const currentDefinition = studioModeDefinitions[mode];
   const sourceAssets = assets.filter((item) => item.role === "image");
 
@@ -218,6 +224,10 @@ export function StudioPage() {
   }
 
   async function submit() {
+    if (videoModes.includes(mode)) {
+      toast.info(t("studio.videoComingSoon"));
+      return;
+    }
     if (mode !== "text" && !sourceAssets.length) {
       toast.error(t("studio.error.upload"));
       return;
@@ -266,20 +276,24 @@ export function StudioPage() {
 
             <div className={STUDIO_EDITOR_BODY_CLASS_NAME}>
               <aside className={STUDIO_MODE_RAIL_CLASS_NAME}>
-                <p className="text-sm font-semibold text-white/90 select-text">{t("studio.creationType")}</p>
-                <p className="mt-1 text-[11px] text-white/40 select-text">{t("studio.chooseFeature")}</p>
+                <div className="flex items-baseline justify-between gap-2 select-text"><p className="text-sm font-semibold text-white/90">{t("studio.imageCreationType")}</p><span className="text-[10px] text-white/40">{t("studio.chooseFeature")}</span></div>
                 <div className="mt-3 grid grid-cols-2 gap-1.5 lg:grid-cols-1">
-                  {studioVisibleModes.map((studioMode) => {
+                  {imageModes.map((studioMode) => {
                     const Icon = modeIcons[studioMode];
                     const active = mode === studioMode;
                     return <button key={studioMode} aria-pressed={active} className={`${MODE_OPTION_CLASS_NAME} ${active ? "border-[#c54bea] bg-[linear-gradient(135deg,rgba(112,32,133,.66),rgba(77,30,91,.58))] text-white shadow-[0_0_0_1px_rgba(197,75,234,.2),0_10px_26px_rgba(144,45,171,.14)]" : "border-white/9 bg-white/[0.045] text-white/72 hover:border-white/18 hover:bg-white/[0.075]"}`} onClick={() => changeMode(studioMode)} title={t(studioModeDefinitions[studioMode].descriptionKey)} type="button"><span className={`grid h-8.5 w-8.5 shrink-0 place-items-center rounded-[11px] ${active ? "bg-[#ca49ee]/20 text-[#efc6fb]" : "bg-white/7 text-white/55"}`}><Icon size={16} /></span><span className="min-w-0"><b className="block text-[13px] leading-4.5">{t(studioModeDefinitions[studioMode].labelKey)}</b><span className="mt-0.5 block truncate text-[9.5px] text-white/42">{t(studioModeDefinitions[studioMode].descriptionKey)}</span></span></button>;
                   })}
                 </div>
-                <section className="studio-spectrum relative mt-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.045] p-3">
-                  <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-semibold text-white select-text">{t("studio.spectrum")}</p><span className="text-[9px] text-white/35 select-text">{t("studio.interfaceColor")}</span></div>
-                  <ThemeSelector className="mt-2.5" compact />
-                  <p className="mt-2 text-[9px] leading-4 text-white/38 select-text">{t("studio.spectrumHelp")}</p>
-                </section>
+                <div className="mt-4 border-t border-white/10 pt-3">
+                  <div className="flex items-baseline justify-between gap-2 select-text"><p className="text-sm font-semibold text-white/90">{t("studio.videoCreationType")}</p><span className="text-[10px] text-white/40">{t("studio.chooseFeature")}</span></div>
+                  <div className="mt-3 grid grid-cols-2 gap-1.5 lg:grid-cols-1">
+                    {videoModes.map((studioMode) => {
+                      const Icon = modeIcons[studioMode];
+                      const active = mode === studioMode;
+                      return <button key={studioMode} aria-pressed={active} className={`${MODE_OPTION_CLASS_NAME} ${active ? "border-[#c54bea] bg-[linear-gradient(135deg,rgba(112,32,133,.66),rgba(77,30,91,.58))] text-white shadow-[0_0_0_1px_rgba(197,75,234,.2),0_10px_26px_rgba(144,45,171,.14)]" : "border-white/9 bg-white/[0.045] text-white/72 hover:border-white/18 hover:bg-white/[0.075]"}`} onClick={() => changeMode(studioMode)} title={t(studioModeDefinitions[studioMode].descriptionKey)} type="button"><span className={`grid h-8.5 w-8.5 shrink-0 place-items-center rounded-[11px] ${active ? "bg-[#ca49ee]/20 text-[#efc6fb]" : "bg-white/7 text-white/55"}`}><Icon size={16} /></span><span className="min-w-0"><b className="block text-[13px] leading-4.5">{t(studioModeDefinitions[studioMode].labelKey)}</b><span className="mt-0.5 block truncate text-[9.5px] text-white/42">{t(studioModeDefinitions[studioMode].descriptionKey)}</span></span></button>;
+                    })}
+                  </div>
+                </div>
               </aside>
 
               <div className={STUDIO_PARAMETER_SCROLL_CLASS_NAME}>
@@ -290,7 +304,7 @@ export function StudioPage() {
 
             <footer className={STUDIO_ACTION_BAR_CLASS_NAME}>
               <div className="min-w-0 select-text"><p className="truncate text-xs font-semibold text-white">{t(currentDefinition.labelKey)} · {t(settings.count === 1 ? "common.image" : "common.images", { count: settings.count })} · {settings.resolution.toUpperCase()}</p><p className="mt-1 text-[9px] text-white/38">{t("studio.cost", { count: cost })}</p></div>
-              <div className="select-text text-right"><p className="text-[9px] text-white/38">{t("preview.engine")}</p><p className="text-xs font-semibold text-white/80">GPT Image 2.0</p></div>
+              <div className="select-text text-right"><p className="text-[9px] text-white/38">{t("preview.engine")}</p><p className="text-xs font-semibold text-white/80">{currentModelLabel}</p></div>
             </footer>
           </div>
         </section>

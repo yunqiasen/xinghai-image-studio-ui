@@ -4,15 +4,21 @@ import {
   imageEditActions,
   studioModeDefinitions,
   studioVisibleModes,
+  imageModes,
+  videoModes,
   superResolutionActions,
 } from "./mode-config";
 
 describe("mode-specific studio configuration", () => {
   it("consolidates the studio into six distinct creation categories", () => {
-    expect(studioVisibleModes).toEqual(["text", "image", "edit", "remove-bg", "upscale", "batch"]);
+    expect(imageModes).toEqual(["text", "image", "edit", "remove-bg", "upscale", "batch"]);
+    expect(videoModes).toEqual(["video-text", "video-image"]);
+    expect(studioVisibleModes).toEqual([...imageModes, ...videoModes]);
     expect(studioModeDefinitions["remove-bg"].label).toBe("图片编辑");
     expect(studioModeDefinitions.upscale.label).toBe("超分");
     expect(studioVisibleModes).not.toContain("background");
+    expect(studioModeDefinitions["video-text"].label).toBe("文生视频");
+    expect(studioModeDefinitions["video-image"].label).toBe("图生视频");
   });
 
   it("keeps image-to-image output controls, templates and prompt", () => {

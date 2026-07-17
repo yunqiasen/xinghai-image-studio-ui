@@ -12,7 +12,7 @@ export type StudioGenerationState = {
 
 export type StudioGenerationStates = Record<StudioMode, StudioGenerationState>;
 
-export const studioModes: StudioMode[] = ["text", "image", "edit", "remove-bg", "upscale", "background", "batch"];
+export const studioModes: StudioMode[] = ["text", "image", "edit", "remove-bg", "upscale", "background", "batch", "video-text", "video-image"];
 
 export function createInitialGenerationState(): StudioGenerationState {
   return { starting: false, resultUrls: [] };
