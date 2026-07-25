@@ -26,6 +26,10 @@ export default defineConfig({
         target: "http://100.126.43.55:18080",
         changeOrigin: true,
       },
+      "/p": {
+        target: "http://100.126.43.55:18080",
+        changeOrigin: true,
+      },
     },
   },
   build: {

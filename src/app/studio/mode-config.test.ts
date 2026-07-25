@@ -11,7 +11,7 @@ import {
 describe("mode-specific studio configuration", () => {
   it("consolidates the studio into six distinct creation categories", () => {
     expect(imageModes).toEqual(["text", "image", "edit", "remove-bg", "upscale", "batch"]);
-    expect(studioVisibleModes).toEqual(imageModes);
+    expect(studioVisibleModes).toEqual(["text", "image", "remove-bg", "upscale", "batch"]);
     expect(studioModeDefinitions["remove-bg"].label).toBe("图片编辑");
     expect(studioModeDefinitions.upscale.label).toBe("超分");
     expect(studioVisibleModes).not.toContain("background");
@@ -33,5 +33,11 @@ describe("mode-specific studio configuration", () => {
     ]);
     expect(studioModeDefinitions["remove-bg"].controls).not.toContain("resolution");
     expect(studioModeDefinitions.upscale.controls).not.toContain("resolution");
+  });
+});
+
+describe("studio mode rail", () => {
+  it("does not show local edit as an independent top-level category", () => {
+    expect(studioVisibleModes).not.toContain("edit");
   });
 });

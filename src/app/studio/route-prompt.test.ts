@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_STUDIO_PROMPT_LENGTH, readStudioRoutePrompt } from "./route-prompt";
+import { MAX_STUDIO_PROMPT_LENGTH, readStudioRoutePrompt, readStudioRouteState } from "./route-prompt";
 
 describe("studio route prompt", () => {
   it("accepts a non-empty prompt from router state", () => {
@@ -17,5 +17,33 @@ describe("studio route prompt", () => {
   it("caps imported templates at the supported editor length", () => {
     expect(MAX_STUDIO_PROMPT_LENGTH).toBe(4000);
     expect(readStudioRoutePrompt({ prompt: "a".repeat(4100) })).toHaveLength(4000);
+  });
+});
+
+
+describe("studio route source state", () => {
+  it("normalizes a gallery source into image-to-image state", () => {
+    expect(readStudioRouteState({
+      mode: "image",
+      prompt: "保留主体，改变背景",
+      sourceImage: { url: "/p/img/task/0", name: "作品 1" },
+    })).toEqual({
+      mode: "image",
+      prompt: "保留主体，改变背景",
+      sourceImage: { url: "/p/img/task/0", name: "作品 1" },
+    });
+  });
+
+  it("keeps the mask-editor intent for a local edit action", () => {
+    expect(readStudioRouteState({
+      mode: "edit",
+      sourceImage: { url: "/p/img/task/0" },
+      openMaskEditor: true,
+    })).toEqual({
+      mode: "edit",
+      prompt: "",
+      sourceImage: { url: "/p/img/task/0", name: "作品" },
+      openMaskEditor: true,
+    });
   });
 });

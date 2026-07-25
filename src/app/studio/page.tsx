@@ -6,7 +6,7 @@ import {
   Repeat2,
   ScanLine,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -33,7 +33,7 @@ import {
   STUDIO_WORKSPACE_GRID_CLASS_NAME,
 } from "./layout-constants";
 import { ModeSettings, type StudioAsset, type StudioSettingsValue } from "./mode-settings";
-import { MAX_STUDIO_PROMPT_LENGTH, readStudioRoutePrompt } from "./route-prompt";
+import { MAX_STUDIO_PROMPT_LENGTH, readStudioRouteState } from "./route-prompt";
 import { StudioPreview } from "./studio-preview";
 
 
@@ -71,7 +71,7 @@ export function StudioPage() {
   const location = useLocation();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const importedPrompt = readStudioRoutePrompt(location.state);
+  const importedRoute = useMemo(() => readStudioRouteState(location.state), [location.state]);
   const [mode, setMode] = useState<StudioMode>("text");
   const [settings, setSettings] = useState<Omit<StudioSettingsValue, "prompt">>({
     model: "gpt-image-2",
@@ -88,7 +88,7 @@ export function StudioPage() {
   });
   const [modePrompts, setModePrompts] = useState<Record<StudioMode, string>>(() => emptyModePrompts(t("studio.defaultPrompt")));
   const [modeAssets, setModeAssets] = useState<Record<StudioMode, StudioAsset[]>>(emptyModeAssets);
-  const [modeModels, setModeModels] = useState<Record<StudioMode, string>>(() => Object.fromEntries(studioVisibleModes.map((item) => [item, studioModeModels[item][0].value])) as Record<StudioMode, string>);
+  const [modeModels, setModeModels] = useState<Record<StudioMode, string>>(() => Object.fromEntries(imageModes.map((item) => [item, studioModeModels[item][0].value])) as Record<StudioMode, string>);
   const [editorImageSrc, setEditorImageSrc] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const { user } = useSessionUser();
@@ -104,11 +104,26 @@ export function StudioPage() {
   const sourceAssets = assets.filter((item) => item.role === "image");
 
   useEffect(() => {
-    if (!importedPrompt) return;
-    setModePrompts((previous) => ({ ...previous, text: importedPrompt }));
-    setMode("text");
+    if (!importedRoute) return;
+    const targetMode = importedRoute.mode;
+    setMode(targetMode);
+    setModePrompts((previous) => ({ ...previous, [targetMode]: importedRoute.prompt }));
+    if (importedRoute.sourceImage) {
+      const source: StudioAsset = {
+        id: createLocalId("gallery"),
+        name: importedRoute.sourceImage.name,
+        dataUrl: importedRoute.sourceImage.dataUrl || "",
+        url: importedRoute.sourceImage.url || "",
+        role: "image",
+      };
+      setModeAssets((previous) => ({ ...previous, [targetMode]: [source] }));
+      if (importedRoute.openMaskEditor) {
+        setEditorImageSrc(displaySource(source));
+        setEditorOpen(true);
+      }
+    }
     navigate(location.pathname, { replace: true, state: null });
-  }, [importedPrompt, location.pathname, navigate]);
+  }, [importedRoute, location.pathname, navigate]);
 
   function changeSetting<K extends keyof StudioSettingsValue>(key: K, value: StudioSettingsValue[K]) {
     if (key === "prompt") {
@@ -263,7 +278,7 @@ export function StudioPage() {
               <aside className={STUDIO_MODE_RAIL_CLASS_NAME}>
                 <div className="flex items-baseline justify-between gap-2 select-text"><p className="text-sm font-semibold text-white/90">{t("studio.imageCreationType")}</p><span className="text-[10px] text-white/40">{t("studio.chooseFeature")}</span></div>
                 <div className="mt-3 grid grid-cols-2 gap-1.5 lg:grid-cols-1">
-                  {imageModes.map((studioMode) => {
+                  {studioVisibleModes.map((studioMode) => {
                     const Icon = modeIcons[studioMode];
                     const active = mode === studioMode;
                     return <button key={studioMode} aria-pressed={active} className={`${MODE_OPTION_CLASS_NAME} ${active ? "border-[#c54bea] bg-[linear-gradient(135deg,rgba(112,32,133,.66),rgba(77,30,91,.58))] text-white shadow-[0_0_0_1px_rgba(197,75,234,.2),0_10px_26px_rgba(144,45,171,.14)]" : "border-white/9 bg-white/[0.045] text-white/72 hover:border-white/18 hover:bg-white/[0.075]"}`} onClick={() => changeMode(studioMode)} title={t(studioModeDefinitions[studioMode].descriptionKey)} type="button"><span className={`grid h-8.5 w-8.5 shrink-0 place-items-center rounded-[11px] ${active ? "bg-[#ca49ee]/20 text-[#efc6fb]" : "bg-white/7 text-white/55"}`}><Icon size={16} /></span><span className="min-w-0"><b className="block text-[13px] leading-4.5">{t(studioModeDefinitions[studioMode].labelKey)}</b><span className="mt-0.5 block truncate text-[9.5px] text-white/42">{t(studioModeDefinitions[studioMode].descriptionKey)}</span></span></button>;

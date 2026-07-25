@@ -88,8 +88,9 @@ export const superResolutionActions = [
   { value: "face-enhance", labelKey: "studio.super.face" as TranslationKey },
 ] as const;
 
+// edit 仍是可执行的内部模式，但入口从作品卡片进入，不再占用一级分类。
 export const imageModes: StudioMode[] = ["text", "image", "edit", "remove-bg", "upscale", "batch"];
-export const studioVisibleModes: StudioMode[] = imageModes;
+export const studioVisibleModes: StudioMode[] = ["text", "image", "remove-bg", "upscale", "batch"];
 
 export const studioModeModels: Record<StudioMode, StudioModelOption[]> = {
   text: [{ value: "gpt-image-2", label: "GPT Image 2.0" }],

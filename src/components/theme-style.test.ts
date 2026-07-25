@@ -8,7 +8,8 @@ describe("commercial preference styling", () => {
     expect(css).toContain(".preference-select-trigger");
     expect(css).toContain(".preference-select-content");
     expect(css).toContain(".preference-select-short");
-    expect(css).not.toContain("grid-template-columns: repeat(3");
+    const preferenceStyles = css.slice(css.indexOf(".preference-select-trigger"), css.indexOf("/* 彩色主题"));
+    expect(preferenceStyles).not.toContain("grid-template-columns: repeat(3");
   });
 
   it("keeps colorful mode on the original restrained aurora palette", () => {
@@ -19,5 +20,15 @@ describe("commercial preference styling", () => {
     expect(css).not.toContain("--commercial-colorful-cyan");
     expect(css).not.toContain("saturate(1.55)");
     expect(css).not.toContain(".theme-colorful .commercial-nav-link.is-active");
+  });
+});
+
+describe("work gallery styling", () => {
+  it("keeps media complete and lays works out as a responsive grid", () => {
+    expect(css).toContain(".gallery-work-grid");
+    expect(css).toContain("grid-template-columns: repeat(4");
+    expect(css).toContain("object-fit: contain");
+    expect(css).toContain(".gallery-image-fallback");
+    expect(css).toContain(".gallery-unavailable-history");
   });
 });
