@@ -52,3 +52,27 @@ describe("commercial asynchronous image task client", () => {
     await expect(listImageTasks()).rejects.toThrow("图片任务排队已满");
   });
 });
+
+describe("image task lifecycle endpoints", () => {
+  it("reads and cancels a specific task through the documented route", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ task: queuedTask, snapshot: {} }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ task: { ...queuedTask, status: "cancel_requested" }, snapshot: {} }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getImageTask, cancelImageTask } = await import("./client");
+    await getImageTask("img_123");
+    await cancelImageTask("img_123");
+
+    expect(fetchMock.mock.calls.map(([path, options]) => [path, (options as RequestInit).method])).toEqual([
+      ["/api/image/tasks/img_123", "GET"],
+      ["/api/image/tasks/img_123", "DELETE"],
+    ]);
+  });
+
+  it("decodes init and task.upsert SSE payloads", async () => {
+    const { decodeImageTaskStreamEvent } = await import("./client");
+    expect(decodeImageTaskStreamEvent("init", JSON.stringify({ items: [queuedTask], snapshot: {} }))).toMatchObject({ type: "init", items: [queuedTask] });
+    expect(decodeImageTaskStreamEvent("message", JSON.stringify({ type: "task.upsert", task: queuedTask, snapshot: {} }))).toMatchObject({ type: "task.upsert", task: queuedTask });
+  });
+});

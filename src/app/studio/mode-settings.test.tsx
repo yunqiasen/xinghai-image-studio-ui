@@ -47,6 +47,14 @@ describe("ModeSettings", () => {
     expect(html).not.toContain("提示词模板");
   });
 
+  it("only offers backend-supported image counts", () => {
+    const html = renderMode("text");
+    expect(html).toContain('value="1"');
+    expect(html).toContain('value="2"');
+    expect(html).toContain('value="4"');
+    expect(html).not.toContain('value="3"');
+  });
+
   it("puts the model selector at the top of every category", () => {
     const html = renderMode("image");
     expect(html.indexOf("模型")).toBeLessThan(html.indexOf("上传参考图"));
@@ -67,5 +75,24 @@ describe("ModeSettings", () => {
       expect(html).toContain(label);
     }
     expect(html).not.toContain("输出清晰度");
+  });
+});
+
+describe("local image operation inputs", () => {
+  it("asks for a separate background source when replacement is selected", () => {
+    const html = renderToStaticMarkup(
+      <LanguageProvider initialLocale="zh-CN">
+        <ModeSettings
+          mode="remove-bg"
+          value={{ ...value, imageEditAction: "replace-background" }}
+          assets={[]}
+          onChange={() => undefined}
+          onFiles={() => undefined}
+          onRemoveAsset={() => undefined}
+          onOpenMaskEditor={() => undefined}
+        />
+      </LanguageProvider>,
+    );
+    expect(html).toContain("上传背景图");
   });
 });

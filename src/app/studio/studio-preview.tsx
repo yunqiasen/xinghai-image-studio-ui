@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  Download,
   ExternalLink,
   LoaderCircle,
   Maximize2,
@@ -8,6 +9,7 @@ import {
   ScanLine,
   Sparkles,
   WandSparkles,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent } from "react";
 
@@ -22,7 +24,7 @@ import { aspectRatioCss, formatGenerationElapsed, resultGridClass } from "./prev
 import { clipboardImageFiles } from "./prompt-paste";
 
 type StudioPreviewProps = {
-  mode: StudioMode;
+  mode?: StudioMode;
   aspectRatio: StudioAspectRatio;
   resolution: ResolutionTier;
   count: number;
@@ -31,20 +33,25 @@ type StudioPreviewProps = {
   error?: string;
   startedAt?: number;
   templates?: StudioPromptTemplate[];
-  onTemplateSelect: (template: StudioPromptTemplate) => void;
-  onEditResult: (url: string) => void;
+  onTemplateSelect?: (template: StudioPromptTemplate) => void;
+  onEditResult?: (url: string) => void;
   prompt?: string;
   onPromptChange?: (value: string) => void;
   onOptimizePrompt?: () => void;
+  optimizing?: boolean;
   onGenerate?: () => void;
   onPasteImages?: (files: File[]) => void;
   promptDisabled?: boolean;
+  onCancel?: () => void;
+  cancelDisabled?: boolean;
+  localResult?: boolean;
+  generateLabel?: string;
 };
 
 type DragOrigin = { pointerX: number; pointerY: number; offsetX: number; offsetY: number };
 
 export function StudioPreview({
-  mode,
+  mode = "text",
   aspectRatio,
   resolution,
   count,
@@ -58,9 +65,14 @@ export function StudioPreview({
   prompt = "",
   onPromptChange = () => undefined,
   onOptimizePrompt = () => undefined,
+  optimizing = false,
   onGenerate = () => undefined,
   onPasteImages = () => undefined,
   promptDisabled = false,
+  onCancel,
+  cancelDisabled = false,
+  localResult = false,
+  generateLabel,
 }: StudioPreviewProps) {
   const { t } = useLanguage();
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -130,13 +142,13 @@ export function StudioPreview({
     dragOrigin.current = null;
   }
 
-  const syncTitle = busy ? t("preview.sync.generatingTitle") : error ? t("preview.sync.errorTitle") : results.length ? t("preview.sync.savedTitle") : t("preview.sync.waitTitle");
+  const syncTitle = busy ? t("preview.sync.generatingTitle") : error ? t("preview.sync.errorTitle") : results.length ? (localResult ? t("preview.sync.localTitle") : t("preview.sync.savedTitle")) : t("preview.sync.waitTitle");
   const syncNote = busy
     ? t("preview.sync.generatingNote")
     : error
       ? t("preview.sync.errorNote")
       : results.length
-        ? t("preview.sync.savedNote", { count: results.length })
+        ? (localResult ? t("preview.sync.localNote") : t("preview.sync.savedNote", { count: results.length }))
         : t("preview.sync.waitNote");
 
   return (
@@ -153,15 +165,16 @@ export function StudioPreview({
               <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
               <button aria-label={t("preview.zoomIn")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom + 0.1)} type="button"><Plus size={14} /></button>
               <button aria-label={t("preview.fit")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(1)} title={t("preview.fit")} type="button"><Maximize2 size={14} /></button>
-              <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[#7651c7] hover:bg-violet-50" onClick={() => onEditResult(results[0])} title={t("studio.localEdit")} type="button"><ScanLine size={14} /><span className="hidden xl:inline">{t("studio.localEdit")}</span></button>
+              <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[#7651c7] hover:bg-violet-50" onClick={() => onEditResult?.(results[0])} title={t("studio.localEdit")} type="button"><ScanLine size={14} /><span className="hidden xl:inline">{t("studio.localEdit")}</span></button>
               <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => setPreviewUrl(results[0])} title={t("preview.openOriginal")} type="button"><ExternalLink size={14} /></button>
+              <a aria-label={t("preview.download")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" download="xinghai-result.png" href={results[0]} title={t("preview.download")}><Download size={14} /></a>
             </div>
         ) : null}
 
 
         <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
           <span className="studio-preview-chip rounded-[10px] border border-[#dce3ec] bg-[#f8fafc] px-3 py-2">
-            {busy ? t("preview.status.generating") : results.length ? t(results.length === 1 ? "studio.result" : "studio.resultCount", { count: results.length }) : error ? t("preview.status.failed") : t("preview.status.idle")}
+            {optimizing ? t("studio.optimizing") : busy ? t("preview.status.generating") : results.length ? t(results.length === 1 ? "studio.result" : "studio.resultCount", { count: results.length }) : error ? t("preview.status.failed") : t("preview.status.idle")}
           </span>
           <span className="studio-preview-chip rounded-[10px] border border-[#dce3ec] bg-[#f8fafc] px-3 py-2">
             {aspectRatio} · {resolution.toUpperCase()}
@@ -232,7 +245,7 @@ export function StudioPreview({
                   >
                     <img alt={t("preview.resultAlt", { index: index + 1 })} className="h-full w-full cursor-zoom-in select-none object-contain transition duration-300 group-hover:scale-[1.02]" draggable={false} onClick={() => setPreviewUrl(url)} src={url} />
                     <div className="absolute right-2 top-2 flex gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                      <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-950/65 px-2.5 text-[10px] font-semibold text-white backdrop-blur hover:bg-violet-700" onClick={() => onEditResult(url)} type="button"><ScanLine size={13} />{t("studio.localEdit")}</button>
+                      <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-950/65 px-2.5 text-[10px] font-semibold text-white backdrop-blur hover:bg-violet-700" onClick={() => onEditResult?.(url)} type="button"><ScanLine size={13} />{t("studio.localEdit")}</button>
                       <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950/65 text-white backdrop-blur hover:bg-slate-950/80" onClick={() => setPreviewUrl(url)} type="button"><ExternalLink size={14} /></button>
                     </div>
                     <span className="absolute bottom-2 left-2 rounded-lg bg-slate-950/55 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur">{index + 1}/{results.length}</span>
@@ -255,7 +268,7 @@ export function StudioPreview({
             <p className="mt-1 text-[9px] leading-4 text-slate-500">{t("studio.templateHelp")}</p>
             <div className="mt-2.5 grid gap-1.5">
               {templates.map((template) => (
-                <button key={template.id} className="group/template rounded-xl border border-violet-100 bg-white/78 px-2.5 py-2 text-left text-[10px] font-semibold text-[#27364b] transition hover:-translate-y-px hover:border-violet-300 hover:bg-white hover:text-[#7651c7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" onClick={() => onTemplateSelect(template)} title={template.prompt} type="button">
+                <button key={template.id} className="group/template rounded-xl border border-violet-100 bg-white/78 px-2.5 py-2 text-left text-[10px] font-semibold text-[#27364b] transition hover:-translate-y-px hover:border-violet-300 hover:bg-white hover:text-[#7651c7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" onClick={() => onTemplateSelect?.(template)} title={template.prompt} type="button">
                   <span className="line-clamp-2 leading-4">{t(template.nameKey)}</span>
                 </button>
               ))}
@@ -285,8 +298,8 @@ export function StudioPreview({
       <footer className="grid min-h-[78px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-[#e3e8ef] bg-white px-3 text-[10px] text-slate-500">
         <div className="min-w-0"><textarea aria-label={t("studio.promptLabel")} className="h-14 w-full resize-none rounded-xl border border-violet-200 bg-violet-50/35 px-3 py-2 text-sm leading-5 text-[#27364b] outline-none placeholder:text-slate-400 focus:border-violet-400" placeholder={t("studio.promptLabel")} value={prompt} onChange={(event) => onPromptChange(event.target.value)} onPaste={(event) => { const files = clipboardImageFiles(event.clipboardData); if (!files.length) return; event.preventDefault(); onPasteImages(files); }} /></div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <button aria-label={t("studio.optimizePrompt")} className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-violet-200 bg-violet-50 px-2.5 text-[11px] font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-45" disabled={promptDisabled || !prompt.trim()} onClick={onOptimizePrompt} type="button"><WandSparkles size={14} />{t("studio.optimizePrompt")}</button>
-          <button aria-label={t("studio.generate")} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-4 text-xs font-bold text-white shadow-[0_10px_24px_rgba(124,58,237,.22)] disabled:cursor-not-allowed disabled:opacity-60" disabled={promptDisabled} onClick={onGenerate} type="button"><Sparkles size={15} />{t("studio.generate")}</button>
+          <button aria-label={t("studio.optimizePrompt")} className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-violet-200 bg-violet-50 px-2.5 text-[11px] font-bold text-violet-700 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-45" disabled={promptDisabled || optimizing || !prompt.trim()} onClick={onOptimizePrompt} type="button"><WandSparkles size={14} />{optimizing ? t("studio.optimizing") : t("studio.optimizePrompt")}</button>
+          {busy && onCancel ? <button aria-label={t("studio.cancelTask")} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60" disabled={cancelDisabled} onClick={onCancel} type="button"><XCircle size={15} />{cancelDisabled ? t("studio.cancelRequested") : t("studio.cancelTask")}</button> : <button aria-label={generateLabel || t("studio.generate")} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-4 text-xs font-bold text-white shadow-[0_10px_24px_rgba(124,58,237,.22)] disabled:cursor-not-allowed disabled:opacity-60" disabled={promptDisabled} onClick={onGenerate} type="button"><Sparkles size={15} />{generateLabel || t("studio.generate")}</button>}
         </div>
       </footer>
       {previewUrl ? (

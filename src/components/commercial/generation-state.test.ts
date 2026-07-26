@@ -26,4 +26,31 @@ describe("generation state by studio mode", () => {
     expect(states.image.task?.status).toBe("running");
     expect(states.text.task).toBeUndefined();
   });
+
+  it("keeps the rendered result URL stable when SSE only rotates its signature", () => {
+    const initial = {
+      ...task("text"),
+      images: [{ url: "/p/img/text-task/0?exp=100&sig=old", sourceStatus: "available" as const }],
+    };
+    const rotated = {
+      ...initial,
+      images: [{ url: "/p/img/text-task/0?exp=200&sig=new", sourceStatus: "available" as const }],
+    };
+
+    const withResult = updateGenerationState(createInitialGenerationStates(), initial);
+    const afterHeartbeat = updateGenerationState(withResult, rotated);
+
+    expect(afterHeartbeat.text.resultUrls).toEqual(["/p/img/text-task/0?exp=100&sig=old"]);
+  });
+
+  it("ignores stale SSE events for an older task in the same category", () => {
+    const newer = { ...task("text", "running"), id: "newer", createdAt: "2026-07-16T02:00:00.000Z" };
+    const older = { ...task("text", "succeeded"), id: "older", createdAt: "2026-07-16T01:00:00.000Z" };
+
+    const withNewer = updateGenerationState(createInitialGenerationStates(), newer);
+    const afterStaleEvent = updateGenerationState(withNewer, older);
+
+    expect(afterStaleEvent.text.task?.id).toBe("newer");
+    expect(afterStaleEvent.text.task?.status).toBe("running");
+  });
 });

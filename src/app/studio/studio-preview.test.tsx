@@ -75,4 +75,26 @@ describe("StudioPreview", () => {
     expect(html).toContain("生成失败");
     expect(html).toContain("图片生成超时，请稍后重试");
   });
+
+  it("does not present prompt optimization as an image generation task", () => {
+    const html = renderPreview(<StudioPreview {...baseProps} optimizing />);
+
+    expect(html).toContain('data-preview-state="empty"');
+    expect(html).toContain("优化中");
+    expect(html).not.toContain("正在生成图片");
+  });
+
+  it("keeps the accessible action label aligned with local processing", () => {
+    const html = renderPreview(<StudioPreview {...baseProps} generateLabel="处理图片" />);
+
+    expect(html).toContain('aria-label="处理图片"');
+    expect(html).not.toContain('aria-label="生成"');
+  });
+});
+
+describe("StudioPreview task controls", () => {
+  it("exposes cancellation while an image task is active", () => {
+    const html = renderPreview(<StudioPreview {...baseProps} busy startedAt={Date.now()} onCancel={() => undefined} />);
+    expect(html).toContain("取消任务");
+  });
 });

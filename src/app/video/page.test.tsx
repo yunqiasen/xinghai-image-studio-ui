@@ -32,6 +32,8 @@ describe("VideoPage", () => {
     expect(html).toContain("运动强度");
     expect(html).toContain("视频预览");
     expect(html).toContain("生成视频");
+    expect(html).not.toContain("即将上线");
+    expect(html).not.toContain("功能预览");
   });
 
   it("does not render image creation categories or image output controls", () => {

@@ -21,11 +21,23 @@ export type ImageTaskResult = {
   sourceStatus?: "available" | "unavailable" | "unknown";
 };
 
+export type ImageTaskBlocker = {
+  code?: string;
+  detail?: string;
+};
+
 export type ImageTask = {
   id: string;
   conversationId?: string;
   turnId?: string;
   mode: string;
+  model?: string;
+  prompt?: string;
+  style?: string;
+  background?: string;
+  resolution?: "1K" | "2K" | "4K";
+  parentTaskId?: string;
+  parentImageIndex?: number;
   status: ImageTaskStatus;
   createdAt: string;
   startedAt?: string;
@@ -33,6 +45,7 @@ export type ImageTask = {
   count: number;
   queuePosition?: number;
   waitingReason?: string;
+  blockers?: ImageTaskBlocker[];
   images: ImageTaskResult[];
   error?: string;
   cancelRequested?: boolean;
@@ -59,6 +72,11 @@ export type CreateImageTaskInput = {
   size: string;
   quality: string;
   sourceImages: ImageTaskSource[];
+  style?: string;
+  background?: string;
+  resolution?: "1K" | "2K" | "4K";
+  parentTaskId?: string;
+  parentImageIndex?: number;
 };
 
 export type ImageTaskPayload = {

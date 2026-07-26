@@ -1,15 +1,14 @@
 # Xinghai Studio 前端 API 接入说明
 
-## 契约来源
+## 契约来源与版本
 
-商业前端只能按后端仓库维护的契约接入：
+商业前端只按后端仓库维护的契约接入：
 
 ```text
 /home/div/1_Project_dir/AI/image/xinghai-studio-console/docs/API.md
 /home/div/1_Project_dir/AI/image/xinghai-studio-console/docs/openapi-studio.yaml
+/home/div/1_Project_dir/AI/image/xinghai-studio-console/docs/API_CHANGELOG.md
 ```
-
-`API.md` 是人工可读契约，`openapi-studio.yaml` 是机器可读契约。两者不一致时停止接入，由后端代理先修正文档。
 
 ```text
 接入契约版本: 2026-07-26.image-task-availability.1
@@ -17,108 +16,173 @@
 后端实现基线 Commit: bfab629a4c366a202c623779386a86356e1405be
 ```
 
-本次接入已确认实现基线是后端契约 Commit 的祖先，`API.md`、OpenAPI 与 `API_CHANGELOG.md` 版本一致；发布时两项后端提交必须同时进入 `origin/main`。
-
-接口未进入后端契约时，前端不允许自行伪造路径、请求字段、响应字段、Mock 业务数据或临时 BFF。字段变化必须由后端先更新两份契约，前端再更新类型和页面。
+上述两个后端提交均为完整 SHA；实现基线是契约提交的祖先。前端不根据页面需要猜路径、字段、响应或业务数据，也不新增 BFF、Mock 业务接口或本地业务数据库。
 
 ## 调用规则
 
-- 普通用户接口使用 Cookie Session，不使用 Bearer Token。
-- 请求统一使用相对路径 `/api/*`，并携带 `credentials: "include"`。
-- JSON 错误提示按 `message`、`error`、HTTP 状态依次降级。
-- 商业前端禁止调用 `/api/admin/*`、`/api/accounts*`、`/api/me/*`、`/v1/*`。
-- 前端业务数据不落本地数据库；用户、积分、作品和图片任务以后端为准。
+- 普通用户接口使用 Cookie Session，不使用管理员 JWT 或 `/v1` Bearer Key。
+- JSON 与 multipart 请求统一使用相对路径 `/api/*`，并携带 `credentials: "include"`。
+- JSON 错误展示顺序：`message` -> `error.message` / `error` -> HTTP 状态。
+- `/api/admin/*`、`/api/accounts*`、`/api/me/*`、`/v1/*` 只属于管理或兼容接口，商业用户页面不调用。
+- 用户、积分、作品、任务状态和视频结果以后端返回为准；本地 UI 状态只保存当前页面交互。
 
-## 当前接入矩阵
+## 普通用户接入矩阵
 
-| 页面/能力 | 后端接口 | 前端调用位置 | 当前状态 |
+| 页面/能力 | 后端接口 | 前端调用位置 | 状态 |
 |---|---|---|---|
-| 注册规则 | `GET /api/auth/registration-policy` | `src/lib/storage/local-session.ts`、`src/app/auth/register/page.tsx` | 已接入 |
-| 当前用户 | `GET /api/auth/me` | `src/lib/storage/local-session.ts` | 已接入 |
-| 注册 | `POST /api/auth/register` | `src/lib/storage/local-session.ts` | 已接入 |
-| 登录 | `POST /api/auth/login` | `src/lib/storage/local-session.ts` | 已接入 |
-| 退出 | `POST /api/auth/logout` | `src/lib/storage/local-session.ts` | 已接入 |
-| 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送 `code` |
-| 获取作品 | `GET /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/page.tsx` | 已接入；消费 `sourceStatus`，只渲染最多 30 条中的可查看作品，活跃任务期间轮询 |
-| 灵魂画廊模板 | 无新增接口，本地静态素材 | `src/app/soul-gallery/*`、`public/soul-gallery-assets/*` | 已接入 19 项；搜索、分类、复制和带入创作均在前端完成 |
-| 清空作品 | `DELETE /api/gallery` | `src/lib/storage/local-session.ts` | 已接入 |
-| 同步生图 | `POST /api/image/generate` | `src/lib/image2api/client.ts` | 保留兼容客户端，当前商业 `/studio` 不再使用 |
-| 站点公开信息 | `GET /api/public/site-info` | `src/lib/site-info.ts`、`src/components/commercial/app-shell.tsx` | 已接入，驱动品牌名称、Logo、页脚、联系方式和文档入口 |
-| 异步图片任务 | `POST/GET /api/image/tasks` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx`、`src/app/studio/page.tsx` | 商业 `/studio` 已接入；跨路由保留状态，恢复时过滤 `images[].sourceStatus=unavailable` |
+| 公开站点信息 | `GET /api/public/site-info` | `src/lib/site-info.ts`、`src/components/commercial/app-shell.tsx` | 已接入；失败时使用默认品牌 |
+| 注册规则 | `GET /api/auth/registration-policy` | `src/lib/storage/local-session.ts`、注册页 | 已接入 |
+| 当前用户 | `GET /api/auth/me` | `src/lib/storage/local-session.ts`、`session-hooks.ts` | 已接入 |
+| 注册/登录/退出 | `POST /api/auth/register`、`POST /api/auth/login`、`POST /api/auth/logout` | `src/lib/storage/local-session.ts` | 已接入 |
+| 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送兑换码 |
+| 作品列表/清空 | `GET /api/gallery`、`DELETE /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/*` | 已接入；最多展示后端最新 30 条中的可查看作品 |
+| 图片异步任务创建/列表/详情/取消 | `POST/GET /api/image/tasks`、`GET/DELETE /api/image/tasks/:id` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx` | 已接入 |
+| 图片任务实时流 | `GET /api/image/tasks/stream` | `src/lib/image-tasks/client.ts`、`GenerationProvider` | 已接入；SSE 断线由 2 秒轮询兜底 |
+| 提示词优化 | `POST /api/prompt/optimize` | `src/lib/prompt-optimizer/*`、图像/视频工作台 | 已接入四套 profile |
+| 图片提示词兼容接口 | `POST /api/image/prompt/optimize` | 暂无页面调用 | 保留后端兼容，不重复接入 |
+| 视频模型目录 | `GET /api/models?type=video` | `src/lib/video-tasks/client.ts`、`src/app/video/*` | 已接入，按能力动态渲染 |
+| 视频任务创建/列表/详情 | `POST/GET /api/video/tasks`、`GET /api/video/tasks/:task_id` | `src/lib/video-tasks/*`、`src/app/video/page.tsx` | 已接入 |
+| 本地去背景 | `POST /api/image/cutout` | `src/lib/image-operations/client.ts`、图像工作台 | 已接入，返回 PNG 暂存当前工作台 |
+| 本地换背景 | `POST /api/image/background-replace` | `src/lib/image-operations/client.ts`、图像工作台 | 已接入，返回 PNG 暂存当前工作台 |
+| 本地局部修复 | `POST /api/image/local-mask-edit` | `src/lib/image-operations/client.ts`、`ImageEditModal` | 已接入，返回 PNG 暂存当前工作台 |
 
-## 前端依赖的关键字段
+## 图片工作台接入行为
 
-### 注册规则
+### 请求字段
+
+`/studio` 使用异步图片任务，不再把商业页面绑定到同步等待接口。创建请求由 `GenerationProvider` 补齐：
 
 ```ts
-type RegistrationPolicy = {
-  enabled: boolean;
-  allowedEmailDomains: string[];
-  ipLimitEnabled: boolean;
-  ipAccountLimit: number;
-  phoneRequired: boolean;
-  smsRequired: boolean;
-};
+{
+  taskId,
+  conversationId: "commercial-studio",
+  turnId,
+  mode,
+  prompt,
+  model,
+  count: 1 | 2 | 4,
+  size,
+  quality,
+  resolution: "1K" | "2K" | "4K",
+  sourceImages: [{ id, role: "image" | "mask", name, dataUrl, url }]
+}
 ```
 
-注册页在规则加载完成前不得提交。`enabled=false` 时禁用注册；`allowedEmailDomains` 用于提示和前端预校验；`phoneRequired`、`smsRequired` 决定对应字段是否显示及必填。后端仍负责最终校验。
+参考图和遮罩按后端 `sourceImages[].role` 发送；背景替换的第二张背景图只用于本地 multipart 接口，不会误发到图片任务的未知 role。客户端 ID 在没有 `crypto.randomUUID()` 的内网 HTTP 环境回退到 `getRandomValues()`。
 
-### 用户
+### 分类隔离
 
-前端依赖 `id`、`name`、`email`、`phone`、`credits`、`role`、`unlimitedCredits`、`createdAt`。登录、注册、生图和积分兑换返回的新用户对象必须刷新当前会话展示。
+文生图、图生图、局部编辑、图片编辑、超分和批量一致性分别维护：
 
-### 生图
+- 提示词
+- 参考图/遮罩
+- 模型选择
+- 比例、数量、分辨率和分类专属参数
+- 图片任务状态与结果预览
 
-商业创作页使用异步请求字段 `taskId`、`conversationId`、`turnId`、`mode`、`prompt`、`model`、`count`、`size`、`quality`、`sourceImages`。固定 `conversationId=commercial-studio`，客户端 ID 仅用于幂等；ID 生成优先使用 `crypto.randomUUID()`，在内网 HTTP 等缺少该函数的浏览器环境自动回退到 `crypto.getRandomValues()`，避免创建任务前中断。源图和遮罩按契约映射为 `sourceImages[].role=image|mask`。
+切换分类只切换当前视图，不取消其他分类正在执行的任务；返回分类时显示该分类自己的任务。任务状态按后端 `task.mode` 分发，SSE 事件中的旧任务不会覆盖同分类较新的任务。每个分类的模型选择器都位于参数区顶部，当前均展示 `GPT Image 2.0`（请求值 `gpt-image-2`），后续可以按分类扩展 `studioModeModels`。
 
-提示词输入位于右侧预览底部状态栏，与左侧操作栏保持同一水平线，文生图模板在右侧模板卡片中按分类展示；比例选择保留原版比例示意图标。“优化提示词”按钮与生成按钮位于右侧提示词框旁并保持同一水平线，当前引擎信息移动到左侧底部，只做本地快捷补全，不调用新接口。
+分类控件与后端能力的对应关系：
 
-前端 nginx 对 `/api/*` 请求设置 `client_max_body_size 32m`，与后端图片请求体上限一致；缺少该配置时，约 1 MiB 以上的 Base64 参考图会在前端代理层直接返回 HTTP 413，后端不会收到请求。 开发服务器同时代理 `/api/*`、`/v1/*` 和 `/p/*` 到 `http://100.126.43.55:18080`，确保作品图片与生产路径一致。
+- `text`：模型、比例、数量、分辨率、提示词。
+- `image`：参考图、参考强度、构图保持，以及上述输出设置。
+- `edit`：结果图/参考图、AI 遮罩、编辑提示词；入口来自生成结果的“局部编辑”。
+- `remove-bg`：去背景、换背景、换衣服、换脸、加文字。去背景和换背景使用本地接口；其他动作通过已有图片任务和明确提示词执行。
+- `upscale`：2×、4×、图片变体、老照片修复、人脸增强，通过已有图片任务和明确提示词执行。
+- `batch`：参考图、角色一致性、构图变化、输出设置。
 
-提示词框粘贴图片属于纯前端交互：读取剪贴板中的 `image/*` 文件，自动切换到 `image` 模式并加入现有 `sourceImages[].role=image` 参考图列表，最多 4 张；不新增接口或请求字段。
+后端当前没有单独的换衣服、换脸、超分 API，因此前端不会伪造新路径；这些动作只复用已发布的 `/api/image/tasks` 契约。
 
-创作分类的差异化设置由前端状态和现有请求字段承载，不新增接口：`text` 使用文生图设置，`image` 增加参考强度、构图保持和参考图，`edit` 使用图片与 `role=mask` 遮罩，`remove-bg` 映射为图片编辑并提供五个编辑动作，`upscale` 提供 2×/4×、变体、老照片修复和人脸增强，`batch` 提供一致性和构图变化设置。右侧模板按分类过滤，点击后写入该分类的提示词；结果图的局部编辑入口复用现有 `ImageEditModal` 并直接传入结果 URL。以上是前端交互分层，后端尚未为图片编辑和超分提供专用执行分支，暂不把这些 UI 动作宣称为后端能力。
+### 任务生命周期
 
-前端消费 `queued`、`running`、`cancel_requested`、`succeeded`、`failed`、`cancelled` 六种状态。全局 Provider 位于 `CommercialShell` 与路由 `Outlet` 之间，因此子页面卸载不会清除任务；登录用户变化时立即清空上一账号任务，再读取当前账号最近任务。成功图片读取 `task.images[].url`，但恢复时跳过 `sourceStatus=unavailable`；字段缺失、`available` 或 `unknown` 保持兼容加载。这样旧验收任务和失效账号结果不会在进入工作台时触发破图请求。失败原因优先显示 `task.error`。
+前端消费：`queued`、`running`、`cancel_requested`、`succeeded`、`failed`、`cancelled`。
 
-作品页依赖后端 `GET /api/gallery` 的用户隔离结果。后端按 `created_at DESC, id DESC` 返回最新 30 条记录，每项携带 `sourceStatus=available|unavailable|unknown`；页面进入、手动刷新、活跃任务轮询、任务成功事件都会重新请求后端。`unavailable` 在渲染前移出网格，不发起对应 `/p/img/*` 请求，也不计入顶部“可查看”数量；`unknown` 继续尝试加载，实际失败后再隐藏。页面只保留一行“历史记录已隐藏”汇总，不展示逐条提示词、重试按钮或可操作假卡片。
+- `CommercialShell` 在路由 `Outlet` 外层挂载 `GenerationProvider`，离开 `/studio` 不会终止后端任务。
+- 首次进入或账号切换时读取当前账号最近 50 条任务；退出或切换账号会清空旧账号状态。
+- 成功结果读取 `task.images[].url`；恢复时跳过 `sourceStatus=unavailable`，缺失或 `unknown` 保持兼容加载。
+- SSE 收到 `init` 或 `task.upsert` 后立即更新；连接异常时保留状态并由活动任务轮询 `GET /api/image/tasks`。
+- 后端心跳会为同一成功图片刷新 `/p/img/*` 签名；前端按任务、图片路径和可用状态去重，保留已渲染 URL，避免每 2 秒重复下载大图。`sourceStatus` 变化时仍会更新。
+- 当前分类有活动任务时，底部按钮变为取消；调用 `DELETE /api/image/tasks/:id` 后显示 `cancel_requested`，后端最终退款并返回 `cancelled`。
+- 终态后调用 `GET /api/auth/me` 同步积分；成功任务会触发作品页刷新。
 
-可查看卡片采用图片优先布局，网格只显示完整比例图片、生成类型和时间，不渲染长提示词正文。完整提示词放进灯箱的有界滚动区；整体变化（进入图生图）、局部编辑（进入遮罩编辑器）和下载在桌面图片浮层、手机紧凑图标栏及灯箱固定操作区中提供。前 12 张卡片使用 eager 加载，第 13 张起使用 lazy 加载；图片完成前显示固定比例骨架。360px 以上手机使用双列，更窄屏单列，桌面按 2/3/4 列响应式布局，均不改变后端接口。账号变化先清空旧卡片，避免短暂显示上一用户作品。
+### 结果图操作
 
-灵魂画廊不属于用户作品，也不读取或写入后端业务数据。19 项目录和图片随前端静态发布；搜索、分类、详情和复制均在浏览器内完成。“带入创作”通过 React Router state 一次性填充 `/studio` 提示词，随后清除 state，不新增接口、不改变异步任务请求字段。
+结果图可以直接打开大图、下载或进入局部编辑。局部编辑器同时生成两份遮罩：AI 图片任务使用透明涂抹遮罩，本地修复使用黑底白色选区遮罩，避免把带涂鸦的预览图误当成 API mask。
 
-中文 / English 语言切换与浅色 / 暗色 / 彩色外观切换均属于前端展示偏好，不新增或修改后端 API。语言状态由 `LanguageProvider` 管理，写入 `localStorage` 的 `xinghai-image-studio:language` 并同步 `<html lang>`；主题继续复用既有 `chatgpt-image-studio:theme`。两个控制均使用 Radix Select 下拉。切换语言只翻译固定界面文案，用户输入、作品内容、账号资料和后端返回错误保持原文。
+作品页的“整体变化”和“局部编辑”会把签名 `/p/img/*` 源图带入工作台。该地址是浏览器同源相对路径，提交图片任务或带图优化前，前端先携带 Cookie 读取图片并转成 Data URL，再放入 `sourceImages[].dataUrl` / `sourceImage`；这样既保留作品代理鉴权，也符合后端参考图摄取只接受 Data URL、Base64 或公开 HTTP(S) URL 的契约。
 
-2026-07-15 前端自动化验证覆盖：异步请求字段、任务列表恢复、跨路由 loading 状态、成功后恢复全部图片、成功后作品自动刷新、失败原因恢复、用户切换清空旧作品、浅色/暗色/彩色主题持久化。浏览器模拟成功链路结果为 `galleryCards=1`、`resultCards=1`、返回创作页 `data-preview-state=results`。
+## 提示词优化
 
-同日通过真实后端提交两次异步 1K 单图任务，均完成 `queued -> running -> failed` 状态同步；150 秒后后端返回 `image_timeout`，积分从 19 自动退回 20，作品保持为空。该结果证明前端跨页跟踪、失败恢复和退款后用户状态同步正常；真实图片成功受当前后端上游账号链路状态影响，不在前端伪造成功作品。联调结束后已清理临时用户、Session、积分记录、图片任务、作品和用量记录。
-
-## 已发现的接口缺口
-
-1. 后端契约没有“发送短信验证码”接口。启用 `smsRequired` 后，前端只能显示验证码输入框，无法主动发送验证码。
-2. 积分页展示了充值套餐，但契约没有创建订单、支付、查询订单或支付回调对应的用户接口，当前套餐只能展示。
-3. 当前商业 `/studio` 已接入异步创建和轮询恢复；契约提供取消接口与 SSE，但当前页面尚未增加取消按钮和完整任务列表。
-
-## 变更流程
+工作台调用统一接口：
 
 ```text
-后端实现接口
-  -> 后端更新 docs/API.md
-  -> 后端更新 docs/openapi-studio.yaml
-  -> 前端核对契约差异
-  -> 前端更新类型和请求层
-  -> 前端接入页面
-  -> npm run lint && npm run test && npm run build
-  -> 更新本文件接入矩阵和缺口
+POST /api/prompt/optimize
 ```
 
+profile 映射如下：
 
-## 分类任务状态
+```text
+text       -> text_to_image
+image/edit -> image_to_image
+video-text -> text_to_video
+video-image -> image_to_video
+```
 
-前端按后端返回的图片任务 `mode` 将任务状态分发到对应创作分类。分类切换不会取消原任务，也不会把其他分类的结果显示到当前预览。该行为只属于前端状态管理，没有新增 API 路径、字段或后端契约。模型选择列表由前端按分类配置，当前各分类使用 `gpt-image-2`（展示名 `GPT Image 2.0`）。
+图片和图生视频会在有参考图时发送 `sourceImage`；视频同时发送 `duration`、`resolution`、`motion`。后端未配置或上游失败时仍返回 HTTP 200，并以 `fallback=true` 返回原提示词，前端显示降级提示但不阻断后续生成。
+提示词优化使用独立的“优化中”状态，不会把请求误显示为生图任务，也不会创建或取消图片任务；返回后只更新当前分类的提示词。
 
-## 视频与音频创作入口
+## 视频工作台接入行为
 
-`/studio` 只保留图像创作分类。视频能力迁移到独立 `/video`：文生视频和图生视频使用视频模型、画幅、时长、清晰度、运动强度、视频提示词和播放器预览，图生视频额外接收一张起始图片。两个视频分类分别保存参数、提示词和起始图片，不与图片任务状态混用。
+`/video` 只提供文生视频和图生视频，使用独立的视频任务和预览，不复用图片任务状态，也不显示图片缩放、图片数量或局部编辑控件。
 
-当前点击“生成视频”只显示即将上线提示，不提交 `/api/image/tasks`，也不伪造视频响应。`/audio` 当前仅展示文本转语音、文生音乐和接入状态，同样不新增或猜测后端接口。后续接入视频或音频 API 时，必须先由后端新增独立契约，再接入对应页面。
+- 页面登录后读取 `/api/models?type=video`，只展示 `runtimeReady=true` 且具备当前输入模式能力的模型。
+- 比例、分辨率和时长从模型 `capabilities` 动态生成；当前后端可返回 480p/720p/1080p、16:9/9:16/1:1/4:3/3:4、5/10/18 秒，前端不写死不可用选项。
+- 图生视频额外上传一张 PNG/JPEG/WebP 起始图，作为 `sourceImage` Data URL；文生视频省略该字段。
+- 创建时调用 `POST /api/video/tasks`，发送 `model`、`prompt`、`optimizedPrompt`、`aspectRatio`、`resolution`、`duration`、`motion`。
+- 活动任务每 2 秒调用 `GET /api/video/tasks/:task_id`；离开页面后后端继续执行，重新进入通过 `GET /api/video/tasks` 恢复。
+- 成功任务只在存在 `task.url` 时渲染原生 `<video controls>`，同时展示实际 `seconds`、`size`、进度、状态和动态积分。
+- 视频错误读取文档定义的嵌套结构 `error: { code, message }`，不会把对象直接渲染成 `[object Object]`。
+
+音频入口 `/audio` 目前只有界面占位。后端契约明确音频模型尚未开放普通用户执行接口，前端不提交音频任务。
+
+## 本地图片处理
+
+三个本地接口均使用 `multipart/form-data`，不消耗图片模型积分：
+
+- `cutoutImage(File)` -> `/api/image/cutout`，字段 `image`、`tolerance`、`feather`。
+- `replaceImageBackground(File, File)` -> `/api/image/background-replace`，字段 `foreground`、`background`、`auto_cutout`。
+- `localMaskEdit(File, File)` -> `/api/image/local-mask-edit`，字段 `image`、`mask`、`radius`。
+
+接口成功返回 `image/png` Blob。前端转换为 Data URL，仅保存在当前 React 工作台状态，可继续下载或送入下一步编辑；后端契约没有本地处理结果的作品落库接口，所以这些结果不会伪装成作品库记录。
+
+## 有意未接入的契约能力
+
+1. `POST /api/image/generate`：保留在兼容客户端，商业 `/studio` 使用异步任务以支持批量、取消和断线恢复。
+2. `POST /api/image/prompt/optimize`：后端兼容入口，商业页面统一使用通用 profile 接口。
+3. 短信发送：注册规则可要求 `smsCode`，但契约没有发送验证码接口，前端只按规则展示字段。
+4. 充值订单/支付：当前后端普通用户契约只有兑换码接口，积分页不伪造支付请求。
+5. 音频执行：后端目前没有普通用户音频任务接口。
+6. 管理员代理池、账号池和配置接口：只在控制台使用，不进入商业用户前端。
+
+## 验证命令
+
+前端改动收尾按以下顺序执行：
+
+```bash
+npm run lint
+npm run test
+npm run build
+npx tsc --noEmit
+git diff --check
+```
+
+运行态入口：
+
+```text
+前端健康检查: http://127.0.0.1:18100/healthz
+后端健康检查: http://127.0.0.1:18080/healthz
+前端页面: http://127.0.0.1:18100/studio
+视频页面: http://127.0.0.1:18100/video
+```
+
+登录后的端到端检查重点：登录 -> 加载模型目录/作品 -> 提示词优化 -> 创建任务 -> 状态轮询/SSE -> 结果预览 -> 取消或恢复 -> 积分同步。

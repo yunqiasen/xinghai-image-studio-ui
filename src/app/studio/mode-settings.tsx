@@ -13,7 +13,7 @@ export type StudioAsset = {
   name: string;
   dataUrl: string;
   url: string;
-  role: "image" | "mask";
+  role: "image" | "mask" | "background";
 };
 
 export type StudioSettingsValue = {
@@ -119,6 +119,7 @@ export function ModeSettings({ mode, value, assets, onChange, onFiles, onRemoveA
             <div className="select-text"><p className="text-sm font-semibold text-white">{mode === "image" ? t("studio.uploadReference") : t("studio.uploadSource")}</p><p className="mt-1 text-[10px] text-white/42">{t(studioModeDefinitions[mode].descriptionKey)}</p></div>
             <div className="flex gap-1.5">
               <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#171626] select-none"><UploadCloud size={14} /> {t("studio.uploadImage")}<input className="hidden" type="file" accept="image/*" multiple={mode === "image" || mode === "batch"} onChange={(event) => onFiles(event.target.files, "image")} /></label>
+              {mode === "remove-bg" && value.imageEditAction === "replace-background" ? <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-900 select-none"><UploadCloud size={14} /> {t("studio.uploadBackground")}<input className="hidden" type="file" accept="image/*" onChange={(event) => onFiles(event.target.files, "background")} /></label> : null}
               {mode === "edit" && sourceAssets.length ? <button className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#d946ef] px-3 py-2 text-xs font-semibold text-white" onClick={onOpenMaskEditor} type="button"><Brush size={14} />{t("studio.openMaskEditor")}</button> : null}
             </div>
           </div>
@@ -127,7 +128,7 @@ export function ModeSettings({ mode, value, assets, onChange, onFiles, onRemoveA
               {assets.map((item) => (
                 <figure key={item.id} className="relative overflow-hidden rounded-xl border border-white/10 bg-black/18">
                   <img src={item.dataUrl || item.url} alt={item.name} className="aspect-video w-full select-none object-cover" draggable={false} />
-                  <figcaption className="truncate px-2 py-1.5 text-[9px] text-white/50 select-text">{item.role === "mask" ? t("studio.mask") : t("studio.sourceImage")} · {item.name}</figcaption>
+                  <figcaption className="truncate px-2 py-1.5 text-[9px] text-white/50 select-text">{item.role === "mask" ? t("studio.mask") : item.role === "background" ? t("studio.backgroundImage") : t("studio.sourceImage")} · {item.name}</figcaption>
                   <button aria-label={t("studio.removeAsset")} className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-black/70 text-white" onClick={() => onRemoveAsset(item.id)} type="button"><X size={12} /></button>
                 </figure>
               ))}
@@ -179,7 +180,7 @@ export function ModeSettings({ mode, value, assets, onChange, onFiles, onRemoveA
       {has("count") ? (
         <div>
           <ControlTitle title={t("studio.count")} aside={t("studio.countRange")} />
-          <label className="relative block"><select aria-label={t("studio.count")} className="h-11 w-full appearance-none rounded-[14px] border border-white/10 bg-black/20 px-4 pr-10 text-sm font-bold text-white outline-none focus:border-[#d946ef]/70" value={value.count} onChange={(event) => onChange("count", Number(event.target.value))}>{[1, 2, 3, 4].map((item) => <option key={item} value={item}>{t(item === 1 ? "common.image" : "common.images", { count: item })}</option>)}</select><ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/48" size={16} /></label>
+          <label className="relative block"><select aria-label={t("studio.count")} className="h-11 w-full appearance-none rounded-[14px] border border-white/10 bg-black/20 px-4 pr-10 text-sm font-bold text-white outline-none focus:border-[#d946ef]/70" value={value.count} onChange={(event) => onChange("count", Number(event.target.value))}>{[1, 2, 4].map((item) => <option key={item} value={item}>{t(item === 1 ? "common.image" : "common.images", { count: item })}</option>)}</select><ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/48" size={16} /></label>
         </div>
       ) : null}
 

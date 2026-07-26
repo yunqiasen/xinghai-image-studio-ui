@@ -52,15 +52,26 @@ nginx Docker 静态部署
 /home/div/1_Project_dir/AI/image/xinghai-studio-console/docs/openapi-studio.yaml
 ```
 
+API 变更历史由后端维护：
+
+```text
+/home/div/1_Project_dir/AI/image/xinghai-studio-console/docs/API_CHANGELOG.md
+```
+
+`API_CHANGELOG.md` 只用于核对变更，不替代上述两份契约。
+
 前端接入规则：
 
-1. 开始接入前先读取上述两份后端契约，再核对前端 `docs/API_INTEGRATION.md`。
-2. 只调用已经进入后端契约的普通用户接口，不根据页面需求自行猜测路径、字段或响应。
-3. 后端字段变化时，后端代理必须先更新 `API.md` 和 OpenAPI；前端随后更新类型、请求函数、页面和测试。
-4. 契约缺少接口时，在 `docs/API_INTEGRATION.md` 记录缺口并交给后端代理，不得在前端伪造 BFF、Mock 业务接口或本地数据源。
-5. 普通用户接口统一使用相对路径 `/api/*` 和 Cookie Session，请求必须携带 `credentials: "include"`。
-6. `/api/admin/*`、`/api/accounts*`、`/api/me/*`、`/v1/*` 不属于商业前端接口，禁止接入用户页面。
-7. 联调完成后同步更新 `docs/API_INTEGRATION.md` 的“当前接入矩阵”和“接口缺口”。
+1. 开始接入前先读取上述两份后端契约和 `API_CHANGELOG.md`，再核对前端 `docs/API_INTEGRATION.md`。
+2. `API.md` 顶部必须提供 `后端实现基线 Commit: <40 位完整 SHA>`；缺失、使用短 SHA、指向不可解析提交时停止接入。
+3. `API.md` 契约版本必须与 OpenAPI `info.version` 及 `API_CHANGELOG.md` 对应版本一致，后端契约 CI 必须通过；任一条件不满足时停止接入。
+4. 前端必须在 `docs/API_INTEGRATION.md` 锁定 `接入契约版本`、`后端契约 Commit` 和 `后端实现基线 Commit`，两个 SHA 均使用 40 位完整 SHA。
+5. 只调用已经进入后端契约的普通用户接口，不根据页面需求自行猜测路径、字段或响应。
+6. 后端字段变化时，后端代理必须先更新 `API.md`、OpenAPI 和 `API_CHANGELOG.md`；前端随后更新类型、请求函数、页面和测试。
+7. 契约缺少接口时，在 `docs/API_INTEGRATION.md` 记录缺口并交给后端代理，不得在前端伪造 BFF、Mock 业务接口或本地数据源。
+8. 普通用户接口统一使用相对路径 `/api/*` 和 Cookie Session，请求必须携带 `credentials: "include"`。
+9. `/api/admin/*`、`/api/accounts*`、`/api/me/*`、`/v1/*` 不属于商业前端接口，禁止接入用户页面。
+10. 联调完成后同步更新 `docs/API_INTEGRATION.md` 的“当前接入矩阵”和“接口缺口”。
 
 前端代理不修改后端仓库，不回退其他代理的改动。发现工作区已有未提交文件时，只提交自己明确修改的文件。
 

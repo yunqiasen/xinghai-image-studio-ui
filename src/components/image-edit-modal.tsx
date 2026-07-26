@@ -26,8 +26,11 @@ type Stroke = {
   sizeRatio: number;
 };
 
-type MaskPayload = {
+export type MaskPayload = {
+  /** Alpha-style mask used by model editing: painted area is transparent. */
   file: File;
+  /** White-on-black mask used by the deterministic local repair endpoint. */
+  selectionFile: File;
   previewDataUrl: string;
 };
 
@@ -54,6 +57,10 @@ type ImageEditModalProps = {
   onImageResolutionTierChange?: (value: string) => void;
   onImageQualityChange?: (value: string) => void;
   onClose: () => void;
+  onLocalSubmit?: (payload: {
+    prompt: string;
+    mask: MaskPayload;
+  }) => Promise<void>;
   onSubmit: (payload: {
     prompt: string;
     mask: MaskPayload;
@@ -134,6 +141,7 @@ export function ImageEditModal({
   onImageResolutionTierChange,
   onImageQualityChange,
   onClose,
+  onLocalSubmit,
   onSubmit,
 }: ImageEditModalProps) {
   const imageRef = useRef<HTMLImageElement>(null);
@@ -460,6 +468,19 @@ export function ImageEditModal({
       renderStroke(ctx, stroke, exportCanvas.width, exportCanvas.height, "#000000");
     });
 
+    const selectionCanvas = document.createElement("canvas");
+    selectionCanvas.width = naturalSize.width;
+    selectionCanvas.height = naturalSize.height;
+    const selectionCtx = selectionCanvas.getContext("2d");
+    if (!selectionCtx) {
+      throw new Error("无法创建本地修复遮罩");
+    }
+    selectionCtx.fillStyle = "#000000";
+    selectionCtx.fillRect(0, 0, selectionCanvas.width, selectionCanvas.height);
+    strokes.forEach((stroke) => {
+      renderStroke(selectionCtx, stroke, selectionCanvas.width, selectionCanvas.height, "#ffffff");
+    });
+
     const previewCanvas = document.createElement("canvas");
     previewCanvas.width = naturalSize.width;
     previewCanvas.height = naturalSize.height;
@@ -481,9 +502,10 @@ export function ImageEditModal({
       renderStroke(previewCtx, stroke, previewCanvas.width, previewCanvas.height, "rgba(80, 120, 255, 0.42)");
     });
 
-    const blob = await canvasToBlob(exportCanvas);
+    const [blob, selectionBlob] = await Promise.all([canvasToBlob(exportCanvas), canvasToBlob(selectionCanvas)]);
     return {
       file: new File([blob], "mask.png", { type: "image/png" }),
+      selectionFile: new File([selectionBlob], "selection-mask.png", { type: "image/png" }),
       previewDataUrl: previewCanvas.toDataURL("image/png"),
     };
   };
@@ -510,6 +532,21 @@ export function ImageEditModal({
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "提交编辑失败";
+      toast.error(message);
+    }
+  };
+
+  const handleLocalSubmit = async () => {
+    if (!onLocalSubmit) return;
+    if (!hasSelection) {
+      toast.error("请先点击“选择”并涂抹需要修复的区域");
+      return;
+    }
+    try {
+      const mask = await buildMaskPayload();
+      await onLocalSubmit({ prompt: prompt.trim(), mask });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "本地修复失败";
       toast.error(message);
     }
   };
@@ -811,13 +848,15 @@ export function ImageEditModal({
                 </>
               )}
             </div>
-            <div className="absolute right-3 bottom-2.5 flex shrink-0 items-end sm:right-5 sm:bottom-4">
+            <div className="absolute right-3 bottom-2.5 flex shrink-0 items-center gap-2 sm:right-5 sm:bottom-4">
+              {onLocalSubmit ? <Button variant="outline" className="h-9 rounded-full border-cyan-200 bg-cyan-50 px-3 text-xs font-semibold text-cyan-800 hover:bg-cyan-100 sm:h-11" onClick={() => void handleLocalSubmit()} disabled={isSubmitting}>本地修复</Button> : null}
               <Button
                 size="icon"
                 className="size-9 rounded-full bg-stone-950 text-white hover:bg-stone-800 sm:size-11"
                 onClick={() => void handleSubmit()}
                 disabled={isSubmitting}
-                aria-label="提交编辑"
+                aria-label="提交 AI 编辑"
+                title="提交 AI 编辑"
               >
                 {isSubmitting ? <LoaderCircle className="size-4 animate-spin sm:size-5" /> : <ArrowUp className="size-4 sm:size-5" />}
               </Button>

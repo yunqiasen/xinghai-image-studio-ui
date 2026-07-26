@@ -5,6 +5,6 @@ export function clipboardImageFiles(data: Pick<DataTransfer, "items">): File[] {
     .filter((file): file is File => Boolean(file));
 }
 
-export function mergePastedImageAssets<T extends { role: "image" | "mask" }>(previous: T[], pasted: T[], limit = 4): T[] {
+export function mergePastedImageAssets<T extends { role: string }>(previous: T[], pasted: T[], limit = 4): T[] {
   return [...previous.filter((item) => item.role === "image"), ...pasted].slice(0, limit);
 }

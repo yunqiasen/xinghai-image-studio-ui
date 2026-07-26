@@ -26,9 +26,34 @@ function isStudioMode(mode: string): mode is StudioMode {
   return studioModes.includes(mode as StudioMode);
 }
 
+function stableImageLocation(url: string | undefined) {
+  return url?.split("?", 1)[0] || "";
+}
+
+function isRepeatedCompletedTask(current: ImageTask | undefined, next: ImageTask) {
+  if (!current || current.id !== next.id || current.status !== "succeeded" || next.status !== "succeeded") return false;
+  if (current.images.length !== next.images.length) return false;
+  return current.images.every((image, index) => {
+    const candidate = next.images[index];
+    return candidate
+      && stableImageLocation(image.url) === stableImageLocation(candidate.url)
+      && image.file_id === candidate.file_id
+      && image.error === candidate.error
+      && image.sourceStatus === candidate.sourceStatus;
+  });
+}
+
 export function updateGenerationState(states: StudioGenerationStates, task: ImageTask): StudioGenerationStates {
   if (!isStudioMode(task.mode)) return states;
   const current = states[task.mode];
+  if (isRepeatedCompletedTask(current.task, task)) return states;
+  if (current.task && current.task.id !== task.id) {
+    const currentCreatedAt = Date.parse(current.task.createdAt);
+    const nextCreatedAt = Date.parse(task.createdAt);
+    if (Number.isFinite(currentCreatedAt) && Number.isFinite(nextCreatedAt) && nextCreatedAt < currentCreatedAt) {
+      return states;
+    }
+  }
   return {
     ...states,
     [task.mode]: {
@@ -40,6 +65,10 @@ export function updateGenerationState(states: StudioGenerationStates, task: Imag
       error: taskErrorMessage(task),
     },
   };
+}
+
+export function cancelableImageTask(task: ImageTask | null | undefined): boolean {
+  return isActiveImageTask(task);
 }
 
 export function isAnyGenerationActive(states: StudioGenerationStates): boolean {

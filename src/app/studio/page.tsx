@@ -10,17 +10,20 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-import { ImageEditModal } from "@/components/image-edit-modal";
+import { ImageEditModal, type MaskPayload } from "@/components/image-edit-modal";
 import { useGeneration } from "@/components/commercial/generation-context";
 import { useLanguage } from "@/components/language-provider";
 import { createLocalId } from "@/lib/client-id";
 import { estimateCredits, type StudioMode } from "@/lib/billing/pricing";
 import { sizeFromStudioPreset } from "@/lib/image2api/size-presets";
+import { cutoutImage, localMaskEdit, replaceImageBackground } from "@/lib/image-operations/client";
+import { optimizePrompt } from "@/lib/prompt-optimizer/client";
 import { useSessionUser } from "@/lib/storage/session-hooks";
 
 import { imageModes, studioModeDefinitions, studioModeModels, studioVisibleModes, type StudioPromptTemplate } from "./mode-config";
 import { buildModePrompt } from "./mode-request";
 import { mergePastedImageAssets } from "./prompt-paste";
+import { assetToFile, blobToDataUrl, prepareImageTaskAssets } from "./local-image-runtime";
 import {
   CONTROLS_PANEL_CLASS_NAME,
   EDITOR_PANEL_GRID_CLASS_NAME,
@@ -34,6 +37,7 @@ import {
 } from "./layout-constants";
 import { ModeSettings, type StudioAsset, type StudioSettingsValue } from "./mode-settings";
 import { MAX_STUDIO_PROMPT_LENGTH, readStudioRouteState } from "./route-prompt";
+import { createInitialStudioSettings, type StudioModeSettings } from "./studio-settings-state";
 import { StudioPreview } from "./studio-preview";
 
 
@@ -67,41 +71,41 @@ function displaySource(asset: StudioAsset) {
   return asset.dataUrl || asset.url;
 }
 
+type LocalOperationState = { busy: boolean; resultUrl?: string; error?: string };
+
+function emptyLocalOperations(): Partial<Record<StudioMode, LocalOperationState>> {
+  return {};
+}
+
 export function StudioPage() {
   const location = useLocation();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const importedRoute = useMemo(() => readStudioRouteState(location.state), [location.state]);
   const [mode, setMode] = useState<StudioMode>("text");
-  const [settings, setSettings] = useState<Omit<StudioSettingsValue, "prompt">>({
-    model: "gpt-image-2",
-    aspectRatio: "1:1",
-    count: 1,
-    resolution: "1k",
-    imageEditAction: "remove-background",
-    superAction: "2x",
-    referenceStrength: 70,
-    preserveComposition: true,
-    consistency: 80,
-    variation: 30,
-    overlayText: "",
-  });
+  const [modeSettings, setModeSettings] = useState(createInitialStudioSettings);
   const [modePrompts, setModePrompts] = useState<Record<StudioMode, string>>(() => emptyModePrompts(t("studio.defaultPrompt")));
   const [modeAssets, setModeAssets] = useState<Record<StudioMode, StudioAsset[]>>(emptyModeAssets);
-  const [modeModels, setModeModels] = useState<Record<StudioMode, string>>(() => Object.fromEntries(imageModes.map((item) => [item, studioModeModels[item][0].value])) as Record<StudioMode, string>);
   const [editorImageSrc, setEditorImageSrc] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
+  const [optimizingMode, setOptimizingMode] = useState<StudioMode | null>(null);
+  const [localOperations, setLocalOperations] = useState<Partial<Record<StudioMode, LocalOperationState>>>(emptyLocalOperations);
   const { user } = useSessionUser();
-  const { states: generationStates, startGeneration } = useGeneration();
+  const { states: generationStates, startGeneration, cancelGeneration } = useGeneration();
 
   const currentGeneration = generationStates[mode];
   const assets = modeAssets[mode];
   const currentPrompt = modePrompts[mode];
-  const currentSettings: StudioSettingsValue = { ...settings, model: modeModels[mode], prompt: currentPrompt };
+  const settings = modeSettings[mode];
+  const currentSettings: StudioSettingsValue = { ...settings, prompt: currentPrompt };
   const cost = estimateCredits(mode, settings.resolution, settings.count);
-  const currentModelLabel = studioModeModels[mode].find((item) => item.value === modeModels[mode])?.label || studioModeModels[mode][0].label;
+  const currentModelLabel = studioModeModels[mode].find((item) => item.value === settings.model)?.label || studioModeModels[mode][0].label;
   const currentDefinition = studioModeDefinitions[mode];
   const sourceAssets = assets.filter((item) => item.role === "image");
+  const imageTaskActive = Boolean(currentGeneration.task && ["queued", "running", "cancel_requested"].includes(currentGeneration.task.status));
+  const currentLocalOperation = localOperations[mode];
+  const directLocalAction = mode === "remove-bg" && (settings.imageEditAction === "remove-background" || settings.imageEditAction === "replace-background");
+  const displayedCost = directLocalAction ? 0 : cost;
 
   useEffect(() => {
     if (!importedRoute) return;
@@ -110,7 +114,7 @@ export function StudioPage() {
     setModePrompts((previous) => ({ ...previous, [targetMode]: importedRoute.prompt }));
     if (importedRoute.sourceImage) {
       const source: StudioAsset = {
-        id: createLocalId("gallery"),
+        id: createLocalId(),
         name: importedRoute.sourceImage.name,
         dataUrl: importedRoute.sourceImage.dataUrl || "",
         url: importedRoute.sourceImage.url || "",
@@ -130,11 +134,10 @@ export function StudioPage() {
       setModePrompts((previous) => ({ ...previous, [mode]: String(value) }));
       return;
     }
-    if (key === "model") {
-      setModeModels((previous) => ({ ...previous, [mode]: String(value) }));
-      return;
-    }
-    setSettings((previous) => ({ ...previous, [key]: value }));
+    setModeSettings((previous) => ({
+      ...previous,
+      [mode]: { ...previous[mode], [key]: value } as StudioModeSettings,
+    }));
   }
 
   function changeMode(nextMode: StudioMode) {
@@ -145,7 +148,7 @@ export function StudioPage() {
   async function appendImageFiles(files: File[], role: StudioAsset["role"], mergeReferences = false) {
     if (!files.length) return;
     const next: StudioAsset[] = [];
-    for (const file of files.slice(0, role === "mask" ? 1 : 4)) {
+    for (const file of files.slice(0, role === "mask" || role === "background" ? 1 : 4)) {
       if (!file.type.startsWith("image/")) continue;
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -156,8 +159,8 @@ export function StudioPage() {
       next.push({ id: createLocalId(), name: file.name || t("studio.sourceImage"), dataUrl, url: "", role });
     }
     if (!next.length) return;
-    setModeAssets((previous) => ({ ...previous, [mode]: role === "mask"
-      ? [...previous[mode].filter((item) => item.role !== "mask"), next[0]]
+    setModeAssets((previous) => ({ ...previous, [mode]: role === "mask" || role === "background"
+      ? [...previous[mode].filter((item) => item.role !== role), next[0]]
       : mergeReferences
         ? mergePastedImageAssets(previous[mode], next)
         : [...previous[mode].filter((item) => item.role !== "image" || mode === "image" || mode === "batch"), ...next].slice(0, 4) }));
@@ -191,11 +194,38 @@ export function StudioPage() {
     setModePrompts((previous) => ({ ...previous, [mode]: template.prompt }));
   }
 
-  function optimizeCurrentPrompt() {
+  function promptSourceForOptimization(asset: StudioAsset | undefined) {
+    if (!asset) return undefined;
+    if (asset.dataUrl) return asset.dataUrl;
+    if (!asset.url) return undefined;
+    if (/^https?:\/\//i.test(asset.url)) return asset.url;
+    if (typeof window !== "undefined") return new URL(asset.url, window.location.origin).toString();
+    return asset.url;
+  }
+
+  async function optimizeCurrentPrompt() {
     const prompt = currentPrompt.trim();
-    if (!prompt) return;
-    const suffix = "，主体清晰，构图平衡，光影自然，细节丰富，画面干净，高质量商业视觉";
-    if (!prompt.includes("构图平衡")) setModePrompts((previous) => ({ ...previous, [mode]: `${prompt}${suffix}`.slice(0, MAX_STUDIO_PROMPT_LENGTH) }));
+    if (!prompt || optimizingMode) return;
+    if (!user) {
+      toast.error(t("studio.error.login"));
+      return;
+    }
+    setOptimizingMode(mode);
+    try {
+      const preparedSources = await prepareImageTaskAssets(sourceAssets.slice(0, 1));
+      const result = await optimizePrompt({
+        profile: mode === "text" ? "text_to_image" : "image_to_image",
+        prompt,
+        mode,
+        sourceImage: preparedSources[0]?.dataUrl || promptSourceForOptimization(sourceAssets[0]),
+      });
+      setModePrompts((previous) => ({ ...previous, [mode]: result.optimizedPrompt.slice(0, MAX_STUDIO_PROMPT_LENGTH) }));
+      toast.success(result.fallback ? t("studio.optimizeFallback") : t("studio.optimizeDone"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("studio.error.create"));
+    } finally {
+      setOptimizingMode(null);
+    }
   }
 
   function handleResultEdit(url: string) {
@@ -207,7 +237,8 @@ export function StudioPage() {
   }
 
   async function submitGeneration(targetMode: StudioMode, rawPrompt: string, sourceItems: StudioAsset[]) {
-    const prompt = buildModePrompt(targetMode, rawPrompt, settings);
+    const targetSettings = modeSettings[targetMode];
+    const prompt = buildModePrompt(targetMode, rawPrompt, targetSettings);
     if (!user) {
       toast.error(t("studio.error.login"));
       return;
@@ -216,20 +247,57 @@ export function StudioPage() {
       toast.error(t("studio.error.prompt"));
       return;
     }
+    setLocalOperations((previous) => ({ ...previous, [targetMode]: undefined }));
+    const preparedSources = await prepareImageTaskAssets(sourceItems);
     await startGeneration({
       mode: targetMode,
       prompt,
-      model: modeModels[targetMode],
-      count: settings.count,
-      size: sizeFromStudioPreset(settings.aspectRatio, settings.resolution),
+      model: targetSettings.model,
+      count: targetSettings.count,
+      size: sizeFromStudioPreset(targetSettings.aspectRatio, targetSettings.resolution),
       quality: "",
-      sourceImages: sourceItems.map((item) => ({ id: item.id, role: item.role, name: item.name, dataUrl: item.dataUrl, url: item.url })),
+      sourceImages: preparedSources
+        .filter((item): item is StudioAsset & { role: "image" | "mask" } => item.role === "image" || item.role === "mask")
+        .map((item) => ({ id: item.id, role: item.role, name: item.name, dataUrl: item.dataUrl, url: item.url })),
+      resolution: targetSettings.resolution.toUpperCase() as "1K" | "2K" | "4K",
     });
+  }
+
+  async function submitLocalOperation() {
+    const targetMode: StudioMode = "remove-bg";
+    const source = assets.find((item) => item.role === "image");
+    const background = assets.find((item) => item.role === "background");
+    if (!source) {
+      toast.error(t("studio.error.upload"));
+      return;
+    }
+    if (settings.imageEditAction === "replace-background" && !background) {
+      toast.error(t("studio.backgroundRequired"));
+      return;
+    }
+    setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: true } }));
+    try {
+      const sourceFile = await assetToFile(source);
+      const output = settings.imageEditAction === "replace-background"
+        ? await replaceImageBackground(sourceFile, await assetToFile(background!), { autoCutout: true })
+        : await cutoutImage(sourceFile);
+      const resultUrl = await blobToDataUrl(output);
+      setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: false, resultUrl } }));
+      toast.success(t("studio.localProcessDone"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("studio.localProcessFailed");
+      setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: false, error: message } }));
+      toast.error(message);
+    }
   }
 
   async function submit() {
     if (mode !== "text" && !sourceAssets.length) {
       toast.error(t("studio.error.upload"));
+      return;
+    }
+    if (directLocalAction) {
+      await submitLocalOperation();
       return;
     }
     if (mode === "edit" && !assets.some((item) => item.role === "mask")) {
@@ -244,10 +312,11 @@ export function StudioPage() {
     }
   }
 
-  async function submitFromMaskEditor(payload: { prompt: string; mask: { previewDataUrl: string } }) {
+  async function submitFromMaskEditor(payload: { prompt: string; mask: MaskPayload }) {
     const source = sourceAssets[0];
     if (!source) return;
-    const mask: StudioAsset = { id: createLocalId(), name: "mask.png", dataUrl: payload.mask.previewDataUrl, url: "", role: "mask" };
+    const maskDataUrl = await blobToDataUrl(payload.mask.file);
+    const mask: StudioAsset = { id: createLocalId(), name: "mask.png", dataUrl: maskDataUrl, url: "", role: "mask" };
     const nextAssets = [source, mask];
     setModeAssets((previous) => ({ ...previous, edit: nextAssets }));
     setModePrompts((previous) => ({ ...previous, edit: payload.prompt }));
@@ -257,6 +326,24 @@ export function StudioPage() {
       toast.success(t("studio.submitted"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("studio.error.create"));
+    }
+  }
+
+  async function submitLocalMaskEditor(payload: { prompt: string; mask: MaskPayload }) {
+    const source = sourceAssets[0];
+    if (!source) return;
+    const targetMode: StudioMode = "edit";
+    setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: true } }));
+    try {
+      const output = await localMaskEdit(await assetToFile(source), payload.mask.selectionFile);
+      const resultUrl = await blobToDataUrl(output);
+      setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: false, resultUrl } }));
+      setEditorOpen(false);
+      toast.success(t("studio.localRepairDone"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("studio.localProcessFailed");
+      setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: false, error: message } }));
+      toast.error(message);
     }
   }
 
@@ -271,7 +358,7 @@ export function StudioPage() {
           <div className={CONTROLS_PANEL_CLASS_NAME}>
             <header className="flex min-h-[74px] items-center justify-between gap-3 border-b border-white/10 px-5">
               <div className="select-text"><p className="text-[10px] font-bold tracking-[0.22em] text-[#efa3fa]">XINGHAI STUDIO</p><h1 className="mt-1 text-2xl font-semibold tracking-[-0.045em] text-white">{t("studio.title")}</h1></div>
-              <div className="rounded-[12px] border border-white/12 bg-white/7 px-3.5 py-2 text-xs font-semibold text-white select-text">{t("studio.estimatedCredits", { count: cost })}</div>
+              <div className="rounded-[12px] border border-white/12 bg-white/7 px-3.5 py-2 text-xs font-semibold text-white select-text">{t("studio.estimatedCredits", { count: displayedCost })}</div>
             </header>
 
             <div className={STUDIO_EDITOR_BODY_CLASS_NAME}>
@@ -293,16 +380,16 @@ export function StudioPage() {
             </div>
 
             <footer className={STUDIO_ACTION_BAR_CLASS_NAME}>
-              <div className="min-w-0 select-text"><p className="truncate text-xs font-semibold text-white">{`${t(currentDefinition.labelKey)} · ${t(settings.count === 1 ? "common.image" : "common.images", { count: settings.count })} · ${settings.resolution.toUpperCase()}`}</p><p className="mt-1 text-[9px] text-white/38">{t("studio.cost", { count: cost })}</p></div>
+              <div className="min-w-0 select-text"><p className="truncate text-xs font-semibold text-white">{`${t(currentDefinition.labelKey)} · ${t(settings.count === 1 ? "common.image" : "common.images", { count: settings.count })} · ${settings.resolution.toUpperCase()}`}</p><p className="mt-1 text-[9px] text-white/38">{directLocalAction ? t("studio.localProcessFree") : t("studio.cost", { count: displayedCost })}</p></div>
               <div className="select-text text-right"><p className="text-[9px] text-white/38">{t("preview.engine")}</p><p className="text-xs font-semibold text-white/80">{currentModelLabel}</p></div>
             </footer>
           </div>
         </section>
 
-        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={currentGeneration.starting || Boolean(currentGeneration.task && ["queued", "running", "cancel_requested"].includes(currentGeneration.task.status))} results={currentGeneration.resultUrls} error={currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={optimizeCurrentPrompt} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={currentGeneration.starting || Boolean(currentGeneration.task && ["queued", "running", "cancel_requested"].includes(currentGeneration.task.status))} />
+        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={Boolean(currentLocalOperation?.busy) || currentGeneration.starting || imageTaskActive} results={currentLocalOperation?.resultUrl ? [currentLocalOperation.resultUrl] : currentGeneration.resultUrls} error={currentLocalOperation?.error || currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={() => void optimizeCurrentPrompt()} optimizing={optimizingMode === mode} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={Boolean(currentLocalOperation?.busy) || currentGeneration.starting || imageTaskActive || optimizingMode === mode} onCancel={imageTaskActive ? () => void cancelGeneration(mode) : undefined} cancelDisabled={currentGeneration.task?.status === "cancel_requested"} localResult={Boolean(currentLocalOperation?.resultUrl)} generateLabel={directLocalAction ? t("studio.processImage") : t("studio.generate")} />
       </div>
 
-      <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} />
+      <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} isSubmitting={Boolean(localOperations.edit?.busy) || generationStates.edit.starting} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} onLocalSubmit={submitLocalMaskEditor} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { createClientId } from "@/lib/client-id";
-import { createImageTask, listImageTasks } from "@/lib/image-tasks/client";
+import { cancelImageTask, createImageTask, listImageTasks, subscribeImageTaskStream } from "@/lib/image-tasks/client";
 import {
   COMMERCIAL_STUDIO_CONVERSATION_ID,
   didReachTerminalStatus,
@@ -40,8 +40,7 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
     });
     if (completed) setGalleryRevision((value) => value + 1);
     if (reachedTerminal) void loadCurrentUser().catch(() => undefined);
-    const selected = selectStudioTask(items);
-    return selected;
+    return selectStudioTask(items);
   }, []);
 
   const refreshTasks = useCallback(async () => {
@@ -61,9 +60,19 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
       .then((payload) => applyTaskList(payload.items, scope))
       .catch((error) => {
         if (scope === userScopeRef.current) {
-          setRequestError(error instanceof Error ? error.message : "任务记录加载失败");
+          const message = error instanceof Error ? error.message : "任务记录加载失败";
+          setGenerationStates((previous) => ({ ...previous, text: { ...previous.text, error: message } }));
         }
       });
+  }, [applyTaskList, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const scope = userScopeRef.current;
+    return subscribeImageTaskStream((event) => {
+      if (event.type === "init") applyTaskList(event.items, scope);
+      else applyTaskList([event.task], scope);
+    });
   }, [applyTaskList, userId]);
 
   useEffect(() => {
@@ -91,6 +100,11 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
         size: input.size,
         quality: input.quality || "",
         sourceImages: input.sourceImages,
+        style: input.style,
+        background: input.background,
+        resolution: input.resolution,
+        parentTaskId: input.parentTaskId,
+        parentImageIndex: input.parentImageIndex,
       });
       statusesRef.current.set(payload.task.id, payload.task.status);
       setGenerationStates((previous) => updateGenerationState(previous, payload.task));
@@ -102,6 +116,17 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
       throw error;
     }
   }, [userId]);
+
+  const cancelGeneration = useCallback<GenerationContextValue["cancelGeneration"]>(async (mode) => {
+    if (!userId) return undefined;
+    const current = generationStates[mode].task;
+    if (!current || !isActiveImageTask(current)) return current;
+    const payload = await cancelImageTask(current.id);
+    const scope = userScopeRef.current;
+    applyTaskList([payload.task], scope);
+    void loadCurrentUser().catch(() => undefined);
+    return payload.task;
+  }, [applyTaskList, generationStates, userId]);
 
   const value = useMemo<GenerationContextValue>(() => {
     const textState = generationStates.text;
@@ -115,9 +140,10 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
       error: textState.error,
       galleryRevision,
       startGeneration,
+      cancelGeneration,
       refreshTasks,
     };
-  }, [generationStates, galleryRevision, refreshTasks, startGeneration]);
+  }, [cancelGeneration, generationStates, galleryRevision, refreshTasks, startGeneration]);
 
   return <GenerationContext.Provider value={value}>{children}</GenerationContext.Provider>;
 }

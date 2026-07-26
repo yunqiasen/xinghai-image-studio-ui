@@ -26,5 +26,5 @@ export function createLocalId(source: CryptoSource | undefined = globalThis.cryp
 }
 
 export function createClientId(prefix: string, source: CryptoSource | undefined = globalThis.crypto) {
-  return `${prefix}_${createLocalId(source).replaceAll("-", "")}`;
+  return `${prefix}_${createLocalId(source).replace(/-/g, "")}`;
 }

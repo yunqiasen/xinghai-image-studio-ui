@@ -6,7 +6,7 @@ describe("client id generation", () => {
   it("uses randomUUID when the browser provides it", () => {
     const source = {
       randomUUID: () => "12345678-1234-1234-1234-123456789abc",
-    } as Crypto;
+    } as unknown as Crypto;
 
     expect(createClientId("web", source)).toBe("web_12345678123412341234123456789abc");
     expect(createLocalId(source)).toBe("12345678-1234-1234-1234-123456789abc");

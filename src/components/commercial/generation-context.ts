@@ -13,6 +13,11 @@ type StartGenerationInput = {
   size: string;
   quality?: string;
   sourceImages: ImageTaskSource[];
+  style?: string;
+  background?: string;
+  resolution?: "1K" | "2K" | "4K";
+  parentTaskId?: string;
+  parentImageIndex?: number;
 };
 
 export type GenerationContextValue = {
@@ -26,6 +31,7 @@ export type GenerationContextValue = {
   error?: string;
   galleryRevision: number;
   startGeneration: (input: StartGenerationInput) => Promise<ImageTask>;
+  cancelGeneration: (mode: StudioMode) => Promise<ImageTask | undefined>;
   refreshTasks: () => Promise<ImageTask | undefined>;
 };
 
