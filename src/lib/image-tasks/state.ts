@@ -21,7 +21,7 @@ export function selectStudioTask(tasks: ImageTask[]) {
 
 export function taskImageUrls(task: ImageTask | null | undefined) {
   if (task?.status !== "succeeded") return [];
-  return task.images.flatMap((image) => image.url ? [image.url] : []);
+  return task.images.flatMap((image) => image.url && image.sourceStatus !== "unavailable" ? [image.url] : []);
 }
 
 export function taskErrorMessage(task: ImageTask | null | undefined) {

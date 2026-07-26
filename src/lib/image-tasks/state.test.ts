@@ -48,3 +48,14 @@ describe("commercial generation state", () => {
     expect(taskErrorMessage(task({ status: "cancelled" }))).toBe("任务已取消，积分已退回");
   });
 });
+
+it("does not restore image results whose source is unavailable", () => {
+  const selected = task({
+    status: "succeeded",
+    images: [
+      { url: "/stale.png", sourceStatus: "unavailable" },
+      { url: "/fresh.png", sourceStatus: "available" },
+    ],
+  });
+  expect(taskImageUrls(selected)).toEqual(["/fresh.png"]);
+});

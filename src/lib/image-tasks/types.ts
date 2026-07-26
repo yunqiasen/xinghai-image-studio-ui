@@ -18,6 +18,7 @@ export type ImageTaskResult = {
   url?: string;
   file_id?: string;
   error?: string;
+  sourceStatus?: "available" | "unavailable" | "unknown";
 };
 
 export type ImageTask = {

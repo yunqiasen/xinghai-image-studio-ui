@@ -12,9 +12,9 @@
 `API.md` 是人工可读契约，`openapi-studio.yaml` 是机器可读契约。两者不一致时停止接入，由后端代理先修正文档。
 
 ```text
-接入契约版本: 2026-07-26.gallery-availability.1
-后端契约 Commit: eede371355e3b07aec5e697f752178a56fc80d4a
-后端实现基线 Commit: f288971000e86f9825a37836b019972ecfab2b75
+接入契约版本: 2026-07-26.image-task-availability.1
+后端契约 Commit: 8e2057333a210cee8225d61bed7ed1b3e90ac6c6
+后端实现基线 Commit: bfab629a4c366a202c623779386a86356e1405be
 ```
 
 本次接入已确认实现基线是后端契约 Commit 的祖先，`API.md`、OpenAPI 与 `API_CHANGELOG.md` 版本一致；发布时两项后端提交必须同时进入 `origin/main`。
@@ -44,7 +44,7 @@
 | 清空作品 | `DELETE /api/gallery` | `src/lib/storage/local-session.ts` | 已接入 |
 | 同步生图 | `POST /api/image/generate` | `src/lib/image2api/client.ts` | 保留兼容客户端，当前商业 `/studio` 不再使用 |
 | 站点公开信息 | `GET /api/public/site-info` | `src/lib/site-info.ts`、`src/components/commercial/app-shell.tsx` | 已接入，驱动品牌名称、Logo、页脚、联系方式和文档入口 |
-| 异步图片任务 | `POST/GET /api/image/tasks` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx`、`src/app/studio/page.tsx` | 商业 `/studio` 已接入；跨路由保留状态，刷新后按当前用户恢复 |
+| 异步图片任务 | `POST/GET /api/image/tasks` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx`、`src/app/studio/page.tsx` | 商业 `/studio` 已接入；跨路由保留状态，恢复时过滤 `images[].sourceStatus=unavailable` |
 
 ## 前端依赖的关键字段
 
@@ -79,7 +79,7 @@ type RegistrationPolicy = {
 
 创作分类的差异化设置由前端状态和现有请求字段承载，不新增接口：`text` 使用文生图设置，`image` 增加参考强度、构图保持和参考图，`edit` 使用图片与 `role=mask` 遮罩，`remove-bg` 映射为图片编辑并提供五个编辑动作，`upscale` 提供 2×/4×、变体、老照片修复和人脸增强，`batch` 提供一致性和构图变化设置。右侧模板按分类过滤，点击后写入该分类的提示词；结果图的局部编辑入口复用现有 `ImageEditModal` 并直接传入结果 URL。以上是前端交互分层，后端尚未为图片编辑和超分提供专用执行分支，暂不把这些 UI 动作宣称为后端能力。
 
-前端消费 `queued`、`running`、`cancel_requested`、`succeeded`、`failed`、`cancelled` 六种状态。全局 Provider 位于 `CommercialShell` 与路由 `Outlet` 之间，因此子页面卸载不会清除任务；登录用户变化时立即清空上一账号任务，再读取当前账号最近任务。成功图片只读取 `task.images[].url`，失败原因优先显示 `task.error`。
+前端消费 `queued`、`running`、`cancel_requested`、`succeeded`、`failed`、`cancelled` 六种状态。全局 Provider 位于 `CommercialShell` 与路由 `Outlet` 之间，因此子页面卸载不会清除任务；登录用户变化时立即清空上一账号任务，再读取当前账号最近任务。成功图片读取 `task.images[].url`，但恢复时跳过 `sourceStatus=unavailable`；字段缺失、`available` 或 `unknown` 保持兼容加载。这样旧验收任务和失效账号结果不会在进入工作台时触发破图请求。失败原因优先显示 `task.error`。
 
 作品页依赖后端 `GET /api/gallery` 的用户隔离结果。后端按 `created_at DESC, id DESC` 返回最新 30 条记录，每项携带 `sourceStatus=available|unavailable|unknown`；页面进入、手动刷新、活跃任务轮询、任务成功事件都会重新请求后端。`unavailable` 在渲染前移出网格，不发起对应 `/p/img/*` 请求，也不计入顶部“可查看”数量；`unknown` 继续尝试加载，实际失败后再隐藏。页面只保留一行“历史记录已隐藏”汇总，不展示逐条提示词、重试按钮或可操作假卡片。可查看卡片继续支持完整比例展示、灯箱预览、下载、整体变化（进入图生图）和局部编辑（进入遮罩编辑器）。账号变化先清空旧卡片，避免短暂显示上一用户作品。
 
