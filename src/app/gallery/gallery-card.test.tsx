@@ -18,6 +18,24 @@ const item: GalleryItem = {
 };
 
 describe("GalleryCard", () => {
+  it("prioritizes the first gallery batch and renders a visible media loading state", () => {
+    const html = renderToStaticMarkup(
+      <LanguageProvider initialLocale="zh-CN">
+        <GalleryCard
+          index={0}
+          item={item}
+          onDownload={() => undefined}
+          onLocalEdit={() => undefined}
+          onOpen={() => undefined}
+          onVariation={() => undefined}
+        />
+      </LanguageProvider>,
+    );
+
+    expect(html).toContain('loading="eager"');
+    expect(html).toContain('data-gallery-image-state="loading"');
+  });
+
   it("uses a short accessible alt and exposes work actions", () => {
     const html = renderToStaticMarkup(
       <LanguageProvider initialLocale="zh-CN">

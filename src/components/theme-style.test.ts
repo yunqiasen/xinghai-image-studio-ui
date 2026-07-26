@@ -29,6 +29,8 @@ describe("work gallery styling", () => {
     expect(css).toContain("grid-template-columns: repeat(4");
     expect(css).toContain("object-fit: contain");
     expect(css).toContain(".gallery-image-fallback");
+    expect(css).toContain(".gallery-image-skeleton");
     expect(css).toContain(".gallery-unavailable-history");
+    expect(css).toContain("@media (min-width: 360px)");
   });
 });

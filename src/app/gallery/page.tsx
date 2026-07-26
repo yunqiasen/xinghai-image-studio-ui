@@ -183,21 +183,18 @@ export function GalleryPage() {
         <>
           {visibleItems.length ? (
             <div className="gallery-work-grid">
-              {visibleItems.map((item) => {
-                const index = items.indexOf(item);
-                return (
-                  <GalleryCard
-                    key={item.id}
-                    index={index}
-                    item={item}
-                    onAvailabilityChange={markAvailability}
-                    onDownload={(target) => void download(target)}
-                    onLocalEdit={(target, position) => openStudio(target, position, "local-edit")}
-                    onOpen={(target) => setSelectedItem({ item: target, index })}
-                    onVariation={(target, position) => openStudio(target, position, "variation")}
-                  />
-                );
-              })}
+              {visibleItems.map((item, index) => (
+                <GalleryCard
+                  key={item.id}
+                  index={index}
+                  item={item}
+                  onAvailabilityChange={markAvailability}
+                  onDownload={(target) => void download(target)}
+                  onLocalEdit={(target, position) => openStudio(target, position, "local-edit")}
+                  onOpen={(target) => setSelectedItem({ item: target, index })}
+                  onVariation={(target, position) => openStudio(target, position, "variation")}
+                />
+              ))}
             </div>
           ) : (
             <div className="gallery-state-panel grid min-h-40 place-items-center rounded-[22px] border border-dashed text-center text-sm">

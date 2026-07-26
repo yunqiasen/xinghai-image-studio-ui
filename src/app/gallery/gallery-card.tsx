@@ -39,6 +39,14 @@ function retryURL(url: string, revision: number) {
   return `${url}${url.includes("?") ? "&" : "?"}gallery_retry=${revision}`;
 }
 
+/**
+ * 作品页最多只展示 30 条。先把前 12 张送进浏览器，避免手机首屏往下滚时
+ * 连续出现空白媒体框；其余卡片仍保留懒加载，控制图片内存占用。
+ */
+function galleryImageLoading(index: number): "eager" | "lazy" {
+  return index < 12 ? "eager" : "lazy";
+}
+
 function formatCreatedAt(value: string, locale: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -62,10 +70,12 @@ export function GalleryCard({ item, index, onOpen, onVariation, onLocalEdit, onD
   const { locale, t } = useLanguage();
   const modeLabel = useModeLabel(item.mode);
   const [imageFailed, setImageFailed] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [revision, setRevision] = useState(0);
 
   function retry() {
     setImageFailed(false);
+    setImageLoaded(false);
     setRevision((value) => value + 1);
   }
 
@@ -84,22 +94,33 @@ export function GalleryCard({ item, index, onOpen, onVariation, onLocalEdit, onD
             </div>
           </div>
         ) : (
-          <button aria-label={t("gallery.open")} className="absolute inset-0 grid h-full w-full place-items-center p-2" onClick={() => onOpen(item)} type="button">
-            <img
-              alt={t("gallery.itemAlt", { count: index + 1 })}
-              className="gallery-work-image h-full w-full object-contain"
-              decoding="async"
-              loading="lazy"
-              onError={() => {
-                setImageFailed(true);
-                onAvailabilityChange?.(item, false);
-              }}
-              onLoad={() => onAvailabilityChange?.(item, true)}
-              src={retryURL(item.url, revision)}
-            />
-          </button>
+          <>
+            {!imageLoaded ? (
+              <div aria-hidden="true" className="gallery-image-skeleton absolute inset-0" data-gallery-image-state="loading">
+                <span className="gallery-image-skeleton-shimmer" />
+              </div>
+            ) : null}
+            <button aria-label={t("gallery.open")} className="absolute inset-0 z-[1] grid h-full w-full place-items-center p-2" onClick={() => onOpen(item)} type="button">
+              <img
+                alt={t("gallery.itemAlt", { count: index + 1 })}
+                className={`gallery-work-image h-full w-full object-contain${imageLoaded ? " is-loaded" : ""}`}
+                decoding="async"
+                loading={galleryImageLoading(index)}
+                onError={() => {
+                  setImageLoaded(false);
+                  setImageFailed(true);
+                  onAvailabilityChange?.(item, false);
+                }}
+                onLoad={() => {
+                  setImageLoaded(true);
+                  onAvailabilityChange?.(item, true);
+                }}
+                src={retryURL(item.url, revision)}
+              />
+            </button>
+          </>
         )}
-        <div className="gallery-work-badges pointer-events-none absolute inset-x-3 top-3 flex items-center justify-between gap-2">
+        <div className="gallery-work-badges pointer-events-none absolute inset-x-3 top-3 z-[2] flex items-center justify-between gap-2">
           <span className="rounded-full px-2.5 py-1 text-[10px] font-bold">{modeLabel}</span>
           {!imageFailed ? <span className="gallery-open-chip grid h-8 w-8 place-items-center rounded-full"><Maximize2 size={13} /></span> : null}
         </div>
@@ -107,15 +128,15 @@ export function GalleryCard({ item, index, onOpen, onVariation, onLocalEdit, onD
       <div className="gallery-work-copy p-3.5">
         <p className="line-clamp-2 min-h-10 text-[12px] font-medium leading-5">{item.prompt || t("gallery.noPrompt")}</p>
         <p className="mt-2 text-[10px] font-medium">{formatCreatedAt(item.createdAt, locale)}</p>
-        <div className="mt-3 grid grid-cols-2 gap-1.5">
-          <button className="gallery-card-action gallery-card-action-primary inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-[10px] font-bold" data-gallery-action="variation" onClick={() => onVariation(item, index)} type="button">
-            <Sparkles size={13} />{t("gallery.variation")}
+        <div className="gallery-card-actions mt-3 grid grid-cols-2 gap-1.5">
+          <button aria-label={t("gallery.variation")} className="gallery-card-action gallery-card-action-primary inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-[10px] font-bold" data-gallery-action="variation" onClick={() => onVariation(item, index)} title={t("gallery.variation")} type="button">
+            <Sparkles size={13} /><span className="gallery-action-label">{t("gallery.variation")}</span>
           </button>
-          <button className="gallery-card-action inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-[10px] font-bold" data-gallery-action="local-edit" onClick={() => onLocalEdit(item, index)} type="button">
-            <ScanLine size={13} />{t("gallery.localEdit")}
+          <button aria-label={t("gallery.localEdit")} className="gallery-card-action inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-[10px] font-bold" data-gallery-action="local-edit" onClick={() => onLocalEdit(item, index)} title={t("gallery.localEdit")} type="button">
+            <ScanLine size={13} /><span className="gallery-action-label">{t("gallery.localEdit")}</span>
           </button>
-          <button className="gallery-card-action col-span-2 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-[10px] font-bold disabled:cursor-not-allowed disabled:opacity-40" disabled={imageFailed} onClick={() => onDownload(item)} type="button">
-            <Download size={13} />{t("gallery.download")}
+          <button aria-label={t("gallery.download")} className="gallery-card-action col-span-2 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-[10px] font-bold disabled:cursor-not-allowed disabled:opacity-40" disabled={imageFailed} onClick={() => onDownload(item)} title={t("gallery.download")} type="button">
+            <Download size={13} /><span className="gallery-action-label">{t("gallery.download")}</span>
           </button>
         </div>
       </div>
