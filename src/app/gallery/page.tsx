@@ -135,14 +135,14 @@ export function GalleryPage() {
     <div className="gallery-page mx-auto w-full max-w-[1360px] space-y-4 pb-8">
       <header className="gallery-work-hero relative overflow-hidden rounded-[26px] border px-5 py-5 sm:px-6">
         <div className="gallery-hero-line pointer-events-none absolute -right-8 top-1/2 h-px w-64 -rotate-12" />
-        <div className="relative flex flex-wrap items-center justify-between gap-5">
-          <div className="max-w-2xl">
+        <div className="gallery-hero-content relative flex flex-wrap items-center justify-between gap-5">
+          <div className="gallery-hero-copy max-w-2xl">
             <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em]"><Images size={14} /><span>{t("gallery.kicker")}</span></div>
             <h1 className="mt-2 text-3xl font-semibold tracking-[-0.05em] sm:text-4xl">{t("gallery.title")}</h1>
             <p className="gallery-work-lead mt-2 max-w-xl text-sm leading-6">{t("gallery.description")}</p>
           </div>
           {user ? (
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="gallery-hero-controls flex flex-wrap items-center justify-end gap-2">
               <div className="gallery-count-card mr-1 rounded-2xl border px-4 py-2.5 text-right">
                 <b className="block text-lg leading-none tabular-nums">{visibleItems.length}</b>
                 <span className="mt-1 block text-[9px] font-bold tracking-[0.12em]">{t("gallery.latestOnly")}</span>

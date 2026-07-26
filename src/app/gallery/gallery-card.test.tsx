@@ -51,13 +51,43 @@ describe("GalleryCard", () => {
     );
 
     expect(html).toContain('data-gallery-card="gallery-1"');
+    expect(html).toContain('data-gallery-card-surface="image-first"');
+    expect(html).toContain('data-gallery-card-meta');
+    expect(html).toContain('data-gallery-actions="overlay"');
     expect(html).toContain('alt="第 1 张作品"');
     expect(html).not.toContain(`alt="${item.prompt}"`);
-    expect(html).toContain("整体变化");
-    expect(html).toContain("局部编辑");
-    expect(html).toContain("下载");
+    expect(html).not.toContain(item.prompt);
+    expect(html).toContain('aria-label="整体变化"');
+    expect(html).toContain('aria-label="局部编辑"');
+    expect(html).toContain('aria-label="下载图片"');
     expect(html).toContain('data-gallery-action="variation"');
     expect(html).toContain('data-gallery-action="local-edit"');
+    expect(html).toContain('data-gallery-action="download"');
+  });
+});
+
+
+describe("GalleryLightbox", () => {
+  it("keeps the full prompt scrollable while work actions stay available", () => {
+    const { GalleryLightbox } = galleryCardModule;
+    const html = renderToStaticMarkup(
+      <LanguageProvider initialLocale="zh-CN">
+        <GalleryLightbox
+          index={0}
+          item={item}
+          onClose={() => undefined}
+          onDownload={() => undefined}
+          onLocalEdit={() => undefined}
+          onOpen={() => undefined}
+          onVariation={() => undefined}
+          open
+        />
+      </LanguageProvider>,
+    );
+
+    expect(html).toContain('data-gallery-prompt-scroll="bounded"');
+    expect(html).toContain('data-gallery-lightbox-actions="sticky"');
+    expect(html).toContain(item.prompt);
   });
 });
 

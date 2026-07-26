@@ -80,7 +80,11 @@ export function GalleryCard({ item, index, onOpen, onVariation, onLocalEdit, onD
   }
 
   return (
-    <article className="gallery-work-card overflow-hidden rounded-[22px] border" data-gallery-card={item.id}>
+    <article
+      className="gallery-work-card group relative overflow-hidden rounded-[24px] border"
+      data-gallery-card={item.id}
+      data-gallery-card-surface="image-first"
+    >
       <div className="gallery-work-media relative aspect-square overflow-hidden">
         {imageFailed ? (
           <div className="gallery-image-fallback absolute inset-0 grid place-items-center p-5 text-center" data-gallery-image-state="failed">
@@ -100,7 +104,12 @@ export function GalleryCard({ item, index, onOpen, onVariation, onLocalEdit, onD
                 <span className="gallery-image-skeleton-shimmer" />
               </div>
             ) : null}
-            <button aria-label={t("gallery.open")} className="absolute inset-0 z-[1] grid h-full w-full place-items-center p-2" onClick={() => onOpen(item)} type="button">
+            <button
+              aria-label={t("gallery.open")}
+              className="absolute inset-0 z-[1] grid h-full w-full place-items-center p-2"
+              onClick={() => onOpen(item)}
+              type="button"
+            >
               <img
                 alt={t("gallery.itemAlt", { count: index + 1 })}
                 className={`gallery-work-image h-full w-full object-contain${imageLoaded ? " is-loaded" : ""}`}
@@ -120,30 +129,63 @@ export function GalleryCard({ item, index, onOpen, onVariation, onLocalEdit, onD
             </button>
           </>
         )}
-        <div className="gallery-work-badges pointer-events-none absolute inset-x-3 top-3 z-[2] flex items-center justify-between gap-2">
+
+        <div className="gallery-work-badges pointer-events-none absolute inset-x-3 top-3 z-[3] flex items-center justify-between gap-2">
           <span className="rounded-full px-2.5 py-1 text-[10px] font-bold">{modeLabel}</span>
-          {!imageFailed ? <span className="gallery-open-chip grid h-8 w-8 place-items-center rounded-full"><Maximize2 size={13} /></span> : null}
+          {!imageFailed ? (
+            <span aria-hidden="true" className="gallery-open-chip grid h-9 w-9 place-items-center rounded-full">
+              <Maximize2 size={14} />
+            </span>
+          ) : null}
         </div>
+
+        {!imageFailed ? (
+          <div className="gallery-card-actions absolute inset-x-3 bottom-3 z-[4] flex items-center gap-2" data-gallery-actions="overlay">
+            <button
+              aria-label={t("gallery.variation")}
+              className="gallery-card-action gallery-card-action-primary inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-[11px] font-bold"
+              data-gallery-action="variation"
+              onClick={() => onVariation(item, index)}
+              title={t("gallery.variation")}
+              type="button"
+            >
+              <Sparkles size={14} /><span className="gallery-action-label">{t("gallery.variation")}</span>
+            </button>
+            <button
+              aria-label={t("gallery.localEdit")}
+              className="gallery-card-action inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-[11px] font-bold"
+              data-gallery-action="local-edit"
+              onClick={() => onLocalEdit(item, index)}
+              title={t("gallery.localEdit")}
+              type="button"
+            >
+              <ScanLine size={14} /><span className="gallery-action-label">{t("gallery.localEdit")}</span>
+            </button>
+            <button
+              aria-label={t("gallery.download")}
+              className="gallery-card-action inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+              data-gallery-action="download"
+              disabled={imageFailed}
+              onClick={() => onDownload(item)}
+              title={t("gallery.download")}
+              type="button"
+            >
+              <Download size={14} />
+            </button>
+          </div>
+        ) : null}
       </div>
-      <div className="gallery-work-copy p-3.5">
-        <p className="line-clamp-2 min-h-10 text-[12px] font-medium leading-5">{item.prompt || t("gallery.noPrompt")}</p>
-        <p className="mt-2 text-[10px] font-medium">{formatCreatedAt(item.createdAt, locale)}</p>
-        <div className="gallery-card-actions mt-3 grid grid-cols-2 gap-1.5">
-          <button aria-label={t("gallery.variation")} className="gallery-card-action gallery-card-action-primary inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-[10px] font-bold" data-gallery-action="variation" onClick={() => onVariation(item, index)} title={t("gallery.variation")} type="button">
-            <Sparkles size={13} /><span className="gallery-action-label">{t("gallery.variation")}</span>
-          </button>
-          <button aria-label={t("gallery.localEdit")} className="gallery-card-action inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-[10px] font-bold" data-gallery-action="local-edit" onClick={() => onLocalEdit(item, index)} title={t("gallery.localEdit")} type="button">
-            <ScanLine size={13} /><span className="gallery-action-label">{t("gallery.localEdit")}</span>
-          </button>
-          <button aria-label={t("gallery.download")} className="gallery-card-action col-span-2 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-[10px] font-bold disabled:cursor-not-allowed disabled:opacity-40" disabled={imageFailed} onClick={() => onDownload(item)} title={t("gallery.download")} type="button">
-            <Download size={13} /><span className="gallery-action-label">{t("gallery.download")}</span>
-          </button>
+
+      <div className="gallery-work-meta flex items-center justify-between gap-3 px-3.5 py-3" data-gallery-card-meta>
+        <div className="min-w-0">
+          <p className="truncate text-[11px] font-semibold">{modeLabel}</p>
+          <p className="mt-0.5 truncate text-[10px] font-medium">{formatCreatedAt(item.createdAt, locale)}</p>
         </div>
+        <span aria-hidden="true" className="gallery-meta-mark grid h-7 w-7 shrink-0 place-items-center rounded-full"><Maximize2 size={12} /></span>
       </div>
     </article>
   );
 }
-
 
 export function GalleryUnavailableHistory({ items }: GalleryUnavailableHistoryProps) {
   const { t } = useLanguage();
@@ -151,8 +193,9 @@ export function GalleryUnavailableHistory({ items }: GalleryUnavailableHistoryPr
 
   return (
     <aside
-      className="gallery-unavailable-history flex items-center gap-3 rounded-2xl border px-4 py-3.5 sm:px-5"
+      className="gallery-unavailable-history flex items-center gap-3 rounded-2xl border px-4 py-3 sm:px-5"
       data-gallery-unavailable-count={items.length}
+      data-gallery-history-summary="compact"
     >
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"><History size={17} /></span>
       <span className="min-w-0">
@@ -190,15 +233,15 @@ export function GalleryLightbox({ open, item, index, onClose, onVariation, onLoc
         <div className="gallery-lightbox-media grid min-h-0 place-items-center overflow-hidden p-3 sm:p-5">
           <img alt={t("gallery.itemAlt", { count: index + 1 })} className="h-full max-h-full w-full object-contain" src={item.url} />
         </div>
-        <aside className="gallery-lightbox-copy min-h-0 overflow-y-auto p-5 pt-16 sm:p-6 sm:pt-16">
+        <aside className="gallery-lightbox-copy flex min-h-0 flex-col overflow-hidden p-5 pt-16 sm:p-6 sm:pt-16">
           <div className="flex items-center gap-2 text-[11px] font-bold">
             <span className="rounded-full border px-2.5 py-1">{modeLabel}</span>
             <span>{formatCreatedAt(item.createdAt, locale)}</span>
           </div>
           <h2 className="mt-5 text-2xl font-semibold tracking-[-0.04em]">{t("gallery.previewTitle")}</h2>
           <p className="mt-2 text-xs font-bold tracking-[0.14em]">{t("gallery.prompt")}</p>
-          <p className="gallery-lightbox-prompt mt-3 whitespace-pre-wrap rounded-2xl border p-4 text-sm leading-6">{item.prompt || t("gallery.noPrompt")}</p>
-          <div className="mt-5 grid gap-2">
+          <p className="gallery-lightbox-prompt mt-3 min-h-0 overflow-y-auto whitespace-pre-wrap rounded-2xl border p-4 text-sm leading-6" data-gallery-prompt-scroll="bounded">{item.prompt || t("gallery.noPrompt")}</p>
+          <div className="gallery-lightbox-actions mt-5 grid gap-2" data-gallery-lightbox-actions="sticky">
             <button className="gallery-lightbox-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold" onClick={() => onVariation(item, index)} type="button"><Sparkles size={15} />{t("gallery.variation")}</button>
             <button className="gallery-lightbox-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold" onClick={() => onLocalEdit(item, index)} type="button"><ScanLine size={15} />{t("gallery.localEdit")}</button>
             <button className="gallery-lightbox-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold" onClick={() => onDownload(item)} type="button"><Download size={15} />{t("gallery.download")}</button>
