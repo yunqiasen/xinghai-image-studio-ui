@@ -118,7 +118,7 @@ describe("commercial user API coverage", () => {
   });
 
   it("redeems only a code and consumes gallery responses from the backend", async () => {
-    const item = { id: "gallery-1", url: "/p/img/1", prompt: "星空", mode: "text", createdAt: user.createdAt };
+    const item = { id: "gallery-1", url: "/p/img/1", prompt: "星空", mode: "text", createdAt: user.createdAt, sourceStatus: "available" };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, user: { ...user, credits: 120 }, amount: 100 }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, items: [item] }), { status: 200 }))

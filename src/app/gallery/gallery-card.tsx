@@ -1,4 +1,4 @@
-import { ChevronDown, Download, History, ImageOff, Maximize2, RefreshCw, ScanLine, Sparkles, X } from "lucide-react";
+import { Download, History, ImageOff, Maximize2, RefreshCw, ScanLine, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useLanguage } from "@/components/language-provider";
@@ -22,7 +22,6 @@ type GalleryLightboxProps = Omit<GalleryCardProps, "onAvailabilityChange"> & {
 
 type GalleryUnavailableHistoryProps = {
   items: GalleryItem[];
-  onRetry: (item: GalleryItem) => void;
 };
 
 const galleryModeLabels: Record<string, TranslationKey> = {
@@ -125,36 +124,21 @@ export function GalleryCard({ item, index, onOpen, onVariation, onLocalEdit, onD
 }
 
 
-export function GalleryUnavailableHistory({ items, onRetry }: GalleryUnavailableHistoryProps) {
-  const { locale, t } = useLanguage();
+export function GalleryUnavailableHistory({ items }: GalleryUnavailableHistoryProps) {
+  const { t } = useLanguage();
   if (!items.length) return null;
 
   return (
-    <details className="gallery-unavailable-history overflow-hidden rounded-[22px] border" data-gallery-unavailable-count={items.length}>
-      <summary className="gallery-unavailable-summary flex cursor-pointer list-none items-center gap-3 px-4 py-4 sm:px-5">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"><History size={18} /></span>
-        <span className="min-w-0 flex-1">
-          <b className="block text-sm">{t("gallery.unavailableHistory", { count: items.length })}</b>
-          <small className="mt-1 block text-[11px]">{t("gallery.unavailableHistoryHelp")}</small>
-        </span>
-        <span className="gallery-unavailable-expand inline-flex items-center gap-1 text-[11px] font-semibold">
-          <span className="hidden sm:inline">{t("gallery.expandHistory")}</span><ChevronDown size={14} />
-        </span>
-      </summary>
-      <ul className="gallery-unavailable-list border-t px-3 py-2 sm:px-4">
-        {items.map((item) => (
-          <li className="gallery-unavailable-row flex min-w-0 items-center gap-3 py-2.5" data-gallery-unavailable-item={item.id} key={item.id}>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-medium">{item.prompt || t("gallery.noPrompt")}</span>
-              <small className="mt-1 block text-[10px]">{formatCreatedAt(item.createdAt, locale)}</small>
-            </span>
-            <button className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[10px] font-semibold" onClick={() => onRetry(item)} type="button">
-              <RefreshCw size={11} />{t("gallery.retry")}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </details>
+    <aside
+      className="gallery-unavailable-history flex items-center gap-3 rounded-2xl border px-4 py-3.5 sm:px-5"
+      data-gallery-unavailable-count={items.length}
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"><History size={17} /></span>
+      <span className="min-w-0">
+        <b className="block text-sm">{t("gallery.unavailableHistory", { count: items.length })}</b>
+        <small className="mt-0.5 block text-[11px]">{t("gallery.unavailableHistoryHelp")}</small>
+      </span>
+    </aside>
   );
 }
 

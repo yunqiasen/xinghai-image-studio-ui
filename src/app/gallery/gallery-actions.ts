@@ -7,7 +7,7 @@ export function partitionGalleryItems(items: GalleryItem[], unavailableIds: Read
   const visible: GalleryItem[] = [];
   const unavailable: GalleryItem[] = [];
   for (const item of items) {
-    (unavailableIds.has(item.id) ? unavailable : visible).push(item);
+    (item.sourceStatus === "unavailable" || unavailableIds.has(item.id) ? unavailable : visible).push(item);
   }
   return { visible, unavailable };
 }

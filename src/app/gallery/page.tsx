@@ -144,7 +144,7 @@ export function GalleryPage() {
           {user ? (
             <div className="flex flex-wrap items-center justify-end gap-2">
               <div className="gallery-count-card mr-1 rounded-2xl border px-4 py-2.5 text-right">
-                <b className="block text-lg leading-none tabular-nums">{items.length}</b>
+                <b className="block text-lg leading-none tabular-nums">{visibleItems.length}</b>
                 <span className="mt-1 block text-[9px] font-bold tracking-[0.12em]">{t("gallery.latestOnly")}</span>
               </div>
               <button className="gallery-hero-action inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-xs font-bold disabled:opacity-55" disabled={loading} onClick={() => void loadItems(true)} type="button">
@@ -160,11 +160,9 @@ export function GalleryPage() {
 
       {user ? (
         <div className="gallery-work-toolbar flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-xs">
-          <span className="font-semibold">{t("gallery.worksCount", { count: items.length })}</span>
+          <span className="font-semibold">{t("gallery.worksCount", { count: visibleItems.length })}</span>
           {galleryIsPolling ? (
             <span className="inline-flex items-center gap-2 font-semibold"><LoaderCircle className="animate-spin" size={13} /> {t("gallery.generating")}</span>
-          ) : unavailableItems.length ? (
-            <span>{t("gallery.availabilitySummary", { available: visibleItems.length, unavailable: unavailableItems.length })}</span>
           ) : <span>{t("gallery.limitHelp")}</span>}
         </div>
       ) : null}
@@ -206,7 +204,7 @@ export function GalleryPage() {
               {t("gallery.noAvailable")}
             </div>
           )}
-          <GalleryUnavailableHistory items={unavailableItems} onRetry={(item) => markAvailability(item, true)} />
+          <GalleryUnavailableHistory items={unavailableItems} />
         </>
       ) : (
         <div className="gallery-state-panel grid min-h-72 place-items-center rounded-[26px] border border-dashed text-center">

@@ -12,12 +12,12 @@
 `API.md` 是人工可读契约，`openapi-studio.yaml` 是机器可读契约。两者不一致时停止接入，由后端代理先修正文档。
 
 ```text
-接入契约版本: 2026-07-26.gallery-assets.1
-后端契约 Commit: cec883bed5203a6980de99a2457894ea21cb47ad
-后端实现基线 Commit: 232b5fcd4e3b1a068995026841b8a78660bfda1e
+接入契约版本: 2026-07-26.gallery-availability.1
+后端契约 Commit: eede371355e3b07aec5e697f752178a56fc80d4a
+后端实现基线 Commit: f288971000e86f9825a37836b019972ecfab2b75
 ```
 
-本次接入已确认实现基线是后端当前 `origin/main` 的祖先，`API.md`、OpenAPI 与 `API_CHANGELOG.md` 版本一致。
+本次接入已确认实现基线是后端契约 Commit 的祖先，`API.md`、OpenAPI 与 `API_CHANGELOG.md` 版本一致；发布时两项后端提交必须同时进入 `origin/main`。
 
 接口未进入后端契约时，前端不允许自行伪造路径、请求字段、响应字段、Mock 业务数据或临时 BFF。字段变化必须由后端先更新两份契约，前端再更新类型和页面。
 
@@ -39,7 +39,7 @@
 | 登录 | `POST /api/auth/login` | `src/lib/storage/local-session.ts` | 已接入 |
 | 退出 | `POST /api/auth/logout` | `src/lib/storage/local-session.ts` | 已接入 |
 | 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送 `code` |
-| 获取作品 | `GET /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/page.tsx` | 已接入；后端按创建时间倒序返回最新 30 条，活跃任务期间轮询，成功后立即刷新 |
+| 获取作品 | `GET /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/page.tsx` | 已接入；消费 `sourceStatus`，只渲染最多 30 条中的可查看作品，活跃任务期间轮询 |
 | 灵魂画廊模板 | 无新增接口，本地静态素材 | `src/app/soul-gallery/*`、`public/soul-gallery-assets/*` | 已接入 19 项；搜索、分类、复制和带入创作均在前端完成 |
 | 清空作品 | `DELETE /api/gallery` | `src/lib/storage/local-session.ts` | 已接入 |
 | 同步生图 | `POST /api/image/generate` | `src/lib/image2api/client.ts` | 保留兼容客户端，当前商业 `/studio` 不再使用 |
@@ -81,7 +81,7 @@ type RegistrationPolicy = {
 
 前端消费 `queued`、`running`、`cancel_requested`、`succeeded`、`failed`、`cancelled` 六种状态。全局 Provider 位于 `CommercialShell` 与路由 `Outlet` 之间，因此子页面卸载不会清除任务；登录用户变化时立即清空上一账号任务，再读取当前账号最近任务。成功图片只读取 `task.images[].url`，失败原因优先显示 `task.error`。
 
-作品页依赖后端 `GET /api/gallery` 的用户隔离结果。后端按 `created_at DESC, id DESC` 返回最新 30 条；页面进入、手动刷新、活跃任务轮询、任务成功事件都会重新请求后端。卡片固定媒体比例并使用 `object-contain`，不裁切横图/竖图；图片加载失败时不把完整提示词当作图片替代文本，并把失效记录从主图片网格移入底部折叠历史区，避免大块空卡占据作品页。可查看卡片支持灯箱预览、下载、整体变化（进入图生图）和局部编辑（进入遮罩编辑器）。账号变化先清空旧卡片，避免短暂显示上一用户作品。图片 URL 由后端 `/p/img/*` 代理提供，后端成功任务会先缓存到持久资产卷。
+作品页依赖后端 `GET /api/gallery` 的用户隔离结果。后端按 `created_at DESC, id DESC` 返回最新 30 条记录，每项携带 `sourceStatus=available|unavailable|unknown`；页面进入、手动刷新、活跃任务轮询、任务成功事件都会重新请求后端。`unavailable` 在渲染前移出网格，不发起对应 `/p/img/*` 请求，也不计入顶部“可查看”数量；`unknown` 继续尝试加载，实际失败后再隐藏。页面只保留一行“历史记录已隐藏”汇总，不展示逐条提示词、重试按钮或可操作假卡片。可查看卡片继续支持完整比例展示、灯箱预览、下载、整体变化（进入图生图）和局部编辑（进入遮罩编辑器）。账号变化先清空旧卡片，避免短暂显示上一用户作品。
 
 灵魂画廊不属于用户作品，也不读取或写入后端业务数据。19 项目录和图片随前端静态发布；搜索、分类、详情和复制均在浏览器内完成。“带入创作”通过 React Router state 一次性填充 `/studio` 提示词，随后清除 state，不新增接口、不改变异步任务请求字段。
 

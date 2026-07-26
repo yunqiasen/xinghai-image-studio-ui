@@ -12,6 +12,7 @@ const item: GalleryItem = {
   prompt: "一只蓝色陶瓷杯，商业产品摄影",
   mode: "text",
   createdAt: "2026-07-25T10:00:00Z",
+  sourceStatus: "available",
 };
 
 describe("gallery studio actions", () => {
@@ -43,10 +44,15 @@ describe("gallery availability", () => {
     expect(partitionGalleryItems).toBeTypeOf("function");
     if (!partitionGalleryItems) return;
 
-    const second = { ...item, id: "gallery-2" };
-    expect(partitionGalleryItems([item, second], new Set([item.id]))).toEqual({
-      visible: [second],
-      unavailable: [item],
+    const second = { ...item, id: "gallery-2", sourceStatus: "unavailable" as const };
+    const third = { ...item, id: "gallery-3", sourceStatus: "unknown" as const };
+    expect(partitionGalleryItems([item, second, third], new Set())).toEqual({
+      visible: [item, third],
+      unavailable: [second],
+    });
+    expect(partitionGalleryItems([item, third], new Set([third.id]))).toEqual({
+      visible: [item],
+      unavailable: [third],
     });
   });
 });

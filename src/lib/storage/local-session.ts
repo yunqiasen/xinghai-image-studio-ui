@@ -15,6 +15,7 @@ export type GalleryItem = {
   prompt: string;
   mode: string;
   createdAt: string;
+  sourceStatus: "available" | "unavailable" | "unknown";
 };
 
 export type RegistrationPolicy = {
