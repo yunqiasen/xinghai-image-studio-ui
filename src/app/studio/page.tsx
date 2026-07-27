@@ -315,7 +315,7 @@ export function StudioPage() {
   async function submitFromMaskEditor(payload: { prompt: string; mask: MaskPayload }) {
     const source = sourceAssets[0];
     if (!source) return;
-    const maskDataUrl = await blobToDataUrl(payload.mask.file);
+    const maskDataUrl = await blobToDataUrl(payload.mask.selectionFile);
     const mask: StudioAsset = { id: createLocalId(), name: "mask.png", dataUrl: maskDataUrl, url: "", role: "mask" };
     const nextAssets = [source, mask];
     setModeAssets((previous) => ({ ...previous, edit: nextAssets }));

@@ -27,9 +27,9 @@ type Stroke = {
 };
 
 export type MaskPayload = {
-  /** Alpha-style mask used by model editing: painted area is transparent. */
+  /** Alpha-style compatibility mask: painted area is transparent. */
   file: File;
-  /** White-on-black mask used by the deterministic local repair endpoint. */
+  /** White-on-black selection mask used by AI constrained editing and local repair. */
   selectionFile: File;
   previewDataUrl: string;
 };

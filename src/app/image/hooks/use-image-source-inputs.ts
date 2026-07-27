@@ -24,7 +24,7 @@ type UseImageSourceInputsOptions = {
   makeId: () => string;
 };
 
-async function fileToDataUrl(file: File) {
+export async function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));

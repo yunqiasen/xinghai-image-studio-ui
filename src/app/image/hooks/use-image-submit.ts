@@ -16,7 +16,7 @@ import type {
   StoredSourceImage,
 } from "@/store/image-conversations";
 
-import type { EditorTarget } from "./use-image-source-inputs";
+import { fileToDataUrl, type EditorTarget } from "./use-image-source-inputs";
 import {
   buildConversationTitle,
   buildInpaintSourceReference,
@@ -144,6 +144,7 @@ export function useImageSubmit({
       prompt: string;
       mask: {
         file: File;
+        selectionFile: File;
         previewDataUrl: string;
       };
       aspectRatio?: string;
@@ -154,6 +155,15 @@ export function useImageSubmit({
         return;
       }
       isSelectionEditDispatchingRef.current = true;
+
+      let maskDataUrl: string;
+      try {
+        maskDataUrl = await fileToDataUrl(mask.selectionFile);
+      } catch (error) {
+        isSelectionEditDispatchingRef.current = false;
+        toast.error(error instanceof Error ? error.message : "读取遮罩失败");
+        return;
+      }
 
       const sourceReference = editorTarget.image
         ? buildInpaintSourceReference(editorTarget.image)
@@ -190,7 +200,7 @@ export function useImageSubmit({
             id: makeId(),
             role: "mask",
             name: "mask.png",
-            dataUrl: mask.previewDataUrl,
+            dataUrl: maskDataUrl,
           },
         ],
         sourceReference,

@@ -11,9 +11,9 @@
 ```
 
 ```text
-接入契约版本: 2026-07-26.image-task-availability.1
-后端契约 Commit: 8e2057333a210cee8225d61bed7ed1b3e90ac6c6
-后端实现基线 Commit: bfab629a4c366a202c623779386a86356e1405be
+接入契约版本: 2026-07-28.masked-edit.1
+后端契约 Commit: e44d73b964fb1ad3e965c468fb95ff4aa7228341
+后端实现基线 Commit: e84c29792c0a6891e2d14881b66b72dd6046c534
 ```
 
 上述两个后端提交均为完整 SHA；实现基线是契约提交的祖先。前端不根据页面需要猜路径、字段、响应或业务数据，也不新增 BFF、Mock 业务接口或本地业务数据库。
@@ -36,7 +36,7 @@
 | 注册/登录/退出 | `POST /api/auth/register`、`POST /api/auth/login`、`POST /api/auth/logout` | `src/lib/storage/local-session.ts` | 已接入 |
 | 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送兑换码 |
 | 作品列表/清空 | `GET /api/gallery`、`DELETE /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/*` | 已接入；最多展示后端最新 30 条中的可查看作品 |
-| 图片异步任务创建/列表/详情/取消 | `POST/GET /api/image/tasks`、`GET/DELETE /api/image/tasks/:id` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx` | 已接入 |
+| 图片异步任务创建/列表/详情/取消 | `POST/GET /api/image/tasks`、`GET/DELETE /api/image/tasks/:id` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx` | 已接入；`role=mask` 结果由后端强制限制在选区内 |
 | 图片任务实时流 | `GET /api/image/tasks/stream` | `src/lib/image-tasks/client.ts`、`GenerationProvider` | 已接入；SSE 断线由 2 秒轮询兜底 |
 | 提示词优化 | `POST /api/prompt/optimize` | `src/lib/prompt-optimizer/*`、图像/视频工作台 | 已接入四套 profile |
 | 图片提示词兼容接口 | `POST /api/image/prompt/optimize` | 暂无页面调用 | 保留后端兼容，不重复接入 |
@@ -68,7 +68,7 @@
 }
 ```
 
-参考图和遮罩按后端 `sourceImages[].role` 发送；背景替换的第二张背景图只用于本地 multipart 接口，不会误发到图片任务的未知 role。客户端 ID 在没有 `crypto.randomUUID()` 的内网 HTTP 环境回退到 `getRandomValues()`。
+参考图和遮罩按后端 `sourceImages[].role` 发送；AI 局部编辑固定发送原图和黑底白色选区遮罩，白色区域允许修改。背景替换的第二张背景图只用于本地 multipart 接口，不会误发到图片任务的未知 role。客户端 ID 在没有 `crypto.randomUUID()` 的内网 HTTP 环境回退到 `getRandomValues()`。
 
 ### 分类隔离
 
@@ -107,7 +107,7 @@
 
 ### 结果图操作
 
-结果图可以直接打开大图、下载或进入局部编辑。局部编辑器同时生成两份遮罩：AI 图片任务使用透明涂抹遮罩，本地修复使用黑底白色选区遮罩，避免把带涂鸦的预览图误当成 API mask。
+结果图可以直接打开大图、下载或进入局部编辑。局部编辑器会生成兼容 Alpha 遮罩、黑底白色选区遮罩和带涂抹效果的界面预览；`/studio` 与 `/image` 的 AI 图片任务、`/api/image/local-mask-edit` 本地修复都只提交 `selectionFile`（黑底白色选区），不提交预览图。后端在成功发布前执行原图 + 模型结果 + 遮罩像素合成，遮罩外保持原图像素；合成失败任务退款且不进入作品库。
 
 作品页的“整体变化”和“局部编辑”会把签名 `/p/img/*` 源图带入工作台。该地址是浏览器同源相对路径，提交图片任务或带图优化前，前端先携带 Cookie 读取图片并转成 Data URL，再放入 `sourceImages[].dataUrl` / `sourceImage`；这样既保留作品代理鉴权，也符合后端参考图摄取只接受 Data URL、Base64 或公开 HTTP(S) URL 的契约。
 
