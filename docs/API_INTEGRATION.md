@@ -11,9 +11,9 @@
 ```
 
 ```text
-接入契约版本: 2026-07-28.masked-edit.2
-后端契约 Commit: db2a8e51851bc88032a7a799b696416d43efddc3
-后端实现基线 Commit: 9929fee4e55770074207eff3d64a0623e6833b20
+接入契约版本: 2026-07-28.image-count.1
+后端契约 Commit: f289df1719b51882c6189b0f1b3de9acdcda6c0c
+后端实现基线 Commit: 4e760573a0fd883d748dae837e1c6891e9babc0f
 ```
 
 上述两个后端提交均为完整 SHA；实现基线是契约提交的祖先。前端不根据页面需要猜路径、字段、响应或业务数据，也不新增 BFF、Mock 业务接口或本地业务数据库。
@@ -36,7 +36,7 @@
 | 注册/登录/退出 | `POST /api/auth/register`、`POST /api/auth/login`、`POST /api/auth/logout` | `src/lib/storage/local-session.ts` | 已接入 |
 | 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送兑换码 |
 | 作品列表/清空 | `GET /api/gallery`、`DELETE /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/*` | 已接入；最多展示后端最新 30 条中的可查看作品 |
-| 图片异步任务创建/列表/详情/取消 | `POST/GET /api/image/tasks`、`GET/DELETE /api/image/tasks/:id` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx` | 已接入；局部编辑使用 `mode=image + role=mask`，后端强制限制在选区内 |
+| 图片异步任务创建/列表/详情/取消 | `POST/GET /api/image/tasks`、`GET/DELETE /api/image/tasks/:id` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx` | 已接入；局部编辑使用 `mode=image + role=mask`，后端强制限制在选区内；成功 `images.length <= count` |
 | 图片任务实时流 | `GET /api/image/tasks/stream` | `src/lib/image-tasks/client.ts`、`GenerationProvider` | 已接入；SSE 断线由 2 秒轮询兜底 |
 | 提示词优化 | `POST /api/prompt/optimize` | `src/lib/prompt-optimizer/*`、图像/视频工作台 | 已接入四套 profile |
 | 图片提示词兼容接口 | `POST /api/image/prompt/optimize` | 暂无页面调用 | 保留后端兼容，不重复接入 |
