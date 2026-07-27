@@ -20,7 +20,7 @@ import { cutoutImage, localMaskEdit, replaceImageBackground } from "@/lib/image-
 import { optimizePrompt } from "@/lib/prompt-optimizer/client";
 import { useSessionUser } from "@/lib/storage/session-hooks";
 
-import { imageModes, studioModeDefinitions, studioModeModels, studioVisibleModes, type StudioPromptTemplate } from "./mode-config";
+import { studioModeDefinitions, studioModeModels, studioVisibleModes, type StudioPromptTemplate } from "./mode-config";
 import { buildModePrompt } from "./mode-request";
 import { mergePastedImageAssets } from "./prompt-paste";
 import { assetToFile, blobToDataUrl, prepareImageTaskAssets } from "./local-image-runtime";
@@ -185,7 +185,7 @@ export function StudioPage() {
       toast.error(t("studio.error.upload"));
       return;
     }
-    setMode("edit");
+    setMode("image");
     setEditorImageSrc(displaySource(source));
     setEditorOpen(true);
   }
@@ -230,8 +230,8 @@ export function StudioPage() {
 
   function handleResultEdit(url: string) {
     const source: StudioAsset = { id: `result-${Date.now()}`, name: "生成结果", dataUrl: "", url, role: "image" };
-    setModeAssets((previous) => ({ ...previous, edit: [source] }));
-    setMode("edit");
+    setModeAssets((previous) => ({ ...previous, image: [source] }));
+    setMode("image");
     setEditorImageSrc(url);
     setEditorOpen(true);
   }
@@ -300,10 +300,6 @@ export function StudioPage() {
       await submitLocalOperation();
       return;
     }
-    if (mode === "edit" && !assets.some((item) => item.role === "mask")) {
-      openMaskEditor();
-      return;
-    }
     try {
       await submitGeneration(mode, currentPrompt, assets);
       toast.success(t("studio.submitted"));
@@ -318,11 +314,11 @@ export function StudioPage() {
     const maskDataUrl = await blobToDataUrl(payload.mask.selectionFile);
     const mask: StudioAsset = { id: createLocalId(), name: "mask.png", dataUrl: maskDataUrl, url: "", role: "mask" };
     const nextAssets = [source, mask];
-    setModeAssets((previous) => ({ ...previous, edit: nextAssets }));
-    setModePrompts((previous) => ({ ...previous, edit: payload.prompt }));
+    setModeAssets((previous) => ({ ...previous, image: nextAssets }));
+    setModePrompts((previous) => ({ ...previous, image: payload.prompt }));
     setEditorOpen(false);
     try {
-      await submitGeneration("edit", payload.prompt, nextAssets);
+      await submitGeneration("image", payload.prompt, nextAssets);
       toast.success(t("studio.submitted"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("studio.error.create"));
@@ -332,7 +328,7 @@ export function StudioPage() {
   async function submitLocalMaskEditor(payload: { prompt: string; mask: MaskPayload }) {
     const source = sourceAssets[0];
     if (!source) return;
-    const targetMode: StudioMode = "edit";
+    const targetMode: StudioMode = "image";
     setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: true } }));
     try {
       const output = await localMaskEdit(await assetToFile(source), payload.mask.selectionFile);
@@ -389,7 +385,7 @@ export function StudioPage() {
         <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={Boolean(currentLocalOperation?.busy) || currentGeneration.starting || imageTaskActive} results={currentLocalOperation?.resultUrl ? [currentLocalOperation.resultUrl] : currentGeneration.resultUrls} error={currentLocalOperation?.error || currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={() => void optimizeCurrentPrompt()} optimizing={optimizingMode === mode} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={Boolean(currentLocalOperation?.busy) || currentGeneration.starting || imageTaskActive || optimizingMode === mode} onCancel={imageTaskActive ? () => void cancelGeneration(mode) : undefined} cancelDisabled={currentGeneration.task?.status === "cancel_requested"} localResult={Boolean(currentLocalOperation?.resultUrl)} generateLabel={directLocalAction ? t("studio.processImage") : t("studio.generate")} />
       </div>
 
-      <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} isSubmitting={Boolean(localOperations.edit?.busy) || generationStates.edit.starting} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} onLocalSubmit={submitLocalMaskEditor} />
+      <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} isSubmitting={Boolean(localOperations.image?.busy) || generationStates.image.starting} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} onLocalSubmit={submitLocalMaskEditor} />
     </div>
   );
 }

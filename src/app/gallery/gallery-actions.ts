@@ -23,7 +23,7 @@ export function buildGalleryStudioRouteState(
   };
   if (action === "local-edit") {
     return {
-      mode: "edit",
+      mode: "image",
       prompt: "",
       sourceImage,
       openMaskEditor: true,

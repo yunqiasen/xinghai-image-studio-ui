@@ -45,7 +45,8 @@ function isRepeatedCompletedTask(current: ImageTask | undefined, next: ImageTask
 
 export function updateGenerationState(states: StudioGenerationStates, task: ImageTask): StudioGenerationStates {
   if (!isStudioMode(task.mode)) return states;
-  const current = states[task.mode];
+  const stateMode: StudioMode = task.mode === "edit" ? "image" : task.mode;
+  const current = states[stateMode];
   if (isRepeatedCompletedTask(current.task, task)) return states;
   if (current.task && current.task.id !== task.id) {
     const currentCreatedAt = Date.parse(current.task.createdAt);
@@ -56,7 +57,7 @@ export function updateGenerationState(states: StudioGenerationStates, task: Imag
   }
   return {
     ...states,
-    [task.mode]: {
+    [stateMode]: {
       ...current,
       task,
       starting: false,

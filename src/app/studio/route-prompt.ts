@@ -50,13 +50,15 @@ export function readStudioRouteState(state: unknown): StudioRouteState | null {
   const requestedMode = typeof raw.mode === "string" && studioRouteModes.has(raw.mode as StudioMode)
     ? raw.mode as StudioMode
     : undefined;
-  const mode = requestedMode || (sourceImage ? "image" : "text");
+  const mode = requestedMode === "edit"
+    ? "image"
+    : requestedMode || (sourceImage ? "image" : "text");
   if (!prompt && !sourceImage) return null;
 
   return {
     mode,
     prompt,
     ...(sourceImage ? { sourceImage } : {}),
-    ...(sourceImage && mode === "edit" && raw.openMaskEditor === true ? { openMaskEditor: true as const } : {}),
+    ...(sourceImage && mode === "image" && raw.openMaskEditor === true ? { openMaskEditor: true as const } : {}),
   };
 }

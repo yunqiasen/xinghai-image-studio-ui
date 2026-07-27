@@ -50,6 +50,36 @@ type StudioPreviewProps = {
 
 type DragOrigin = { pointerX: number; pointerY: number; offsetX: number; offsetY: number };
 
+type StudioImageLightboxProps = {
+  url: string;
+  onClose: () => void;
+  onEdit: (url: string) => void;
+};
+
+export function StudioImageLightbox({ url, onClose, onEdit }: StudioImageLightboxProps) {
+  const { t } = useLanguage();
+
+  return (
+    <div aria-label={t("preview.openOriginal")} aria-modal="true" className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-xl" data-preview-lightbox="image" onClick={onClose} role="dialog">
+      <button aria-label={t("common.close")} className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full bg-white/12 text-2xl text-white transition hover:bg-white/20" onClick={onClose} type="button">×</button>
+      <button
+        className="absolute bottom-6 left-1/2 z-10 inline-flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-full border border-white/25 bg-[linear-gradient(115deg,#7c3aed,#d946ef)] px-6 text-sm font-bold text-white shadow-[0_18px_48px_rgba(88,28,135,.5)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_56px_rgba(88,28,135,.6)]"
+        data-preview-action="local-edit"
+        onClick={(event) => {
+          event.stopPropagation();
+          onClose();
+          onEdit(url);
+        }}
+        type="button"
+      >
+        <ScanLine size={17} />
+        {t("studio.localEdit")}
+      </button>
+      <img alt={t("preview.resultAlt", { index: 1 })} className="max-h-[92dvh] max-w-[94vw] rounded-2xl object-contain shadow-2xl" onClick={(event) => event.stopPropagation()} src={url} />
+    </div>
+  );
+}
+
 export function StudioPreview({
   mode = "text",
   aspectRatio,
@@ -165,7 +195,7 @@ export function StudioPreview({
               <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
               <button aria-label={t("preview.zoomIn")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom + 0.1)} type="button"><Plus size={14} /></button>
               <button aria-label={t("preview.fit")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(1)} title={t("preview.fit")} type="button"><Maximize2 size={14} /></button>
-              <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[#7651c7] hover:bg-violet-50" onClick={() => onEditResult?.(results[0])} title={t("studio.localEdit")} type="button"><ScanLine size={14} /><span className="hidden xl:inline">{t("studio.localEdit")}</span></button>
+              <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-violet-600 px-2.5 font-bold text-white shadow-sm transition hover:bg-violet-700" data-preview-action="local-edit" onClick={() => onEditResult?.(results[0])} title={t("studio.localEdit")} type="button"><ScanLine size={14} /><span>{t("studio.localEdit")}</span></button>
               <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => setPreviewUrl(results[0])} title={t("preview.openOriginal")} type="button"><ExternalLink size={14} /></button>
               <a aria-label={t("preview.download")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" download="xinghai-result.png" href={results[0]} title={t("preview.download")}><Download size={14} /></a>
             </div>
@@ -302,12 +332,7 @@ export function StudioPreview({
           {busy && onCancel ? <button aria-label={t("studio.cancelTask")} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60" disabled={cancelDisabled} onClick={onCancel} type="button"><XCircle size={15} />{cancelDisabled ? t("studio.cancelRequested") : t("studio.cancelTask")}</button> : <button aria-label={generateLabel || t("studio.generate")} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-4 text-xs font-bold text-white shadow-[0_10px_24px_rgba(124,58,237,.22)] disabled:cursor-not-allowed disabled:opacity-60" disabled={promptDisabled} onClick={onGenerate} type="button"><Sparkles size={15} />{generateLabel || t("studio.generate")}</button>}
         </div>
       </footer>
-      {previewUrl ? (
-        <div aria-label={t("preview.openOriginal")} aria-modal="true" className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-xl" onClick={() => setPreviewUrl("")} role="dialog">
-          <button aria-label={t("common.close")} className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full bg-white/12 text-2xl text-white hover:bg-white/20" onClick={() => setPreviewUrl("")} type="button">×</button>
-          <img alt={t("preview.resultAlt", { index: 1 })} className="max-h-[92dvh] max-w-[94vw] rounded-2xl object-contain shadow-2xl" onClick={(event) => event.stopPropagation()} src={previewUrl} />
-        </div>
-      ) : null}
+      {previewUrl ? <StudioImageLightbox url={previewUrl} onClose={() => setPreviewUrl("")} onEdit={(url) => onEditResult?.(url)} /> : null}
     </section>
   );
 }

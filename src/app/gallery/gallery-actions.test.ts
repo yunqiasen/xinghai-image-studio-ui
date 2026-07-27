@@ -26,7 +26,7 @@ describe("gallery studio actions", () => {
 
   it("opens local editing with the work as source and mask intent", () => {
     expect(buildGalleryStudioRouteState(item, "local-edit")).toEqual({
-      mode: "edit",
+      mode: "image",
       prompt: "",
       sourceImage: { url: item.url, name: "作品 1" },
       openMaskEditor: true,

@@ -27,6 +27,15 @@ describe("generation state by studio mode", () => {
     expect(states.text.task).toBeUndefined();
   });
 
+  it("restores legacy edit tasks in the image-to-image preview", () => {
+    const legacyEdit = { ...task("edit"), images: [{ url: "edited.png" }] };
+    const states = updateGenerationState(createInitialGenerationStates(), legacyEdit);
+
+    expect(states.image.task?.id).toBe("edit-task");
+    expect(states.image.resultUrls).toEqual(["edited.png"]);
+    expect(states.edit.task).toBeUndefined();
+  });
+
   it("keeps the rendered result URL stable when SSE only rotates its signature", () => {
     const initial = {
       ...task("text"),

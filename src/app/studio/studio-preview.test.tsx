@@ -6,7 +6,7 @@ import { LanguageProvider } from "@/components/language-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import type { LanguageMode } from "@/components/language-modes";
 
-import { StudioPreview } from "./studio-preview";
+import { StudioImageLightbox, StudioPreview } from "./studio-preview";
 
 function renderPreview(element: ReactNode, locale: LanguageMode = "zh-CN") {
   return renderToStaticMarkup(
@@ -82,6 +82,17 @@ describe("StudioPreview", () => {
     expect(html).toContain('data-preview-state="empty"');
     expect(html).toContain("优化中");
     expect(html).not.toContain("正在生成图片");
+  });
+
+
+  it("keeps local editing visible in the enlarged image view", () => {
+    const html = renderPreview(
+      <StudioImageLightbox url="/one.png" onClose={() => undefined} onEdit={() => undefined} />,
+    );
+
+    expect(html).toContain('data-preview-lightbox="image"');
+    expect(html).toContain('data-preview-action="local-edit"');
+    expect(html).toContain("局部编辑");
   });
 
   it("keeps the accessible action label aligned with local processing", () => {

@@ -34,16 +34,18 @@ describe("studio route source state", () => {
     });
   });
 
-  it("keeps the mask-editor intent for a local edit action", () => {
-    expect(readStudioRouteState({
-      mode: "edit",
-      sourceImage: { url: "/p/img/task/0" },
-      openMaskEditor: true,
-    })).toEqual({
-      mode: "edit",
-      prompt: "",
-      sourceImage: { url: "/p/img/task/0", name: "作品" },
-      openMaskEditor: true,
-    });
+  it("keeps local editing inside image-to-image for current and legacy route states", () => {
+    for (const mode of ["image", "edit"]) {
+      expect(readStudioRouteState({
+        mode,
+        sourceImage: { url: "/p/img/task/0" },
+        openMaskEditor: true,
+      })).toEqual({
+        mode: "image",
+        prompt: "",
+        sourceImage: { url: "/p/img/task/0", name: "作品" },
+        openMaskEditor: true,
+      });
+    }
   });
 });

@@ -47,6 +47,25 @@ describe("ModeSettings", () => {
     expect(html).not.toContain("提示词模板");
   });
 
+  it("shows a prominent local-edit action inside image-to-image after a source is added", () => {
+    const html = renderToStaticMarkup(
+      <LanguageProvider initialLocale="zh-CN">
+        <ModeSettings
+          mode="image"
+          value={value}
+          assets={[{ id: "source-1", name: "source.png", dataUrl: "data:image/png;base64,AA==", url: "", role: "image" }]}
+          onChange={() => undefined}
+          onFiles={() => undefined}
+          onRemoveAsset={() => undefined}
+          onOpenMaskEditor={() => undefined}
+        />
+      </LanguageProvider>,
+    );
+
+    expect(html).toContain('data-studio-action="local-edit"');
+    expect(html).toContain("局部编辑");
+  });
+
   it("only offers backend-supported image counts", () => {
     const html = renderMode("text");
     expect(html).toContain('value="1"');

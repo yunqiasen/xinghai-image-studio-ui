@@ -11,9 +11,9 @@
 ```
 
 ```text
-接入契约版本: 2026-07-28.masked-edit.1
-后端契约 Commit: e44d73b964fb1ad3e965c468fb95ff4aa7228341
-后端实现基线 Commit: e84c29792c0a6891e2d14881b66b72dd6046c534
+接入契约版本: 2026-07-28.masked-edit.2
+后端契约 Commit: db2a8e51851bc88032a7a799b696416d43efddc3
+后端实现基线 Commit: 9929fee4e55770074207eff3d64a0623e6833b20
 ```
 
 上述两个后端提交均为完整 SHA；实现基线是契约提交的祖先。前端不根据页面需要猜路径、字段、响应或业务数据，也不新增 BFF、Mock 业务接口或本地业务数据库。
@@ -36,7 +36,7 @@
 | 注册/登录/退出 | `POST /api/auth/register`、`POST /api/auth/login`、`POST /api/auth/logout` | `src/lib/storage/local-session.ts` | 已接入 |
 | 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送兑换码 |
 | 作品列表/清空 | `GET /api/gallery`、`DELETE /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/*` | 已接入；最多展示后端最新 30 条中的可查看作品 |
-| 图片异步任务创建/列表/详情/取消 | `POST/GET /api/image/tasks`、`GET/DELETE /api/image/tasks/:id` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx` | 已接入；`role=mask` 结果由后端强制限制在选区内 |
+| 图片异步任务创建/列表/详情/取消 | `POST/GET /api/image/tasks`、`GET/DELETE /api/image/tasks/:id` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx` | 已接入；局部编辑使用 `mode=image + role=mask`，后端强制限制在选区内 |
 | 图片任务实时流 | `GET /api/image/tasks/stream` | `src/lib/image-tasks/client.ts`、`GenerationProvider` | 已接入；SSE 断线由 2 秒轮询兜底 |
 | 提示词优化 | `POST /api/prompt/optimize` | `src/lib/prompt-optimizer/*`、图像/视频工作台 | 已接入四套 profile |
 | 图片提示词兼容接口 | `POST /api/image/prompt/optimize` | 暂无页面调用 | 保留后端兼容，不重复接入 |
@@ -68,11 +68,11 @@
 }
 ```
 
-参考图和遮罩按后端 `sourceImages[].role` 发送；AI 局部编辑固定发送原图和黑底白色选区遮罩，白色区域允许修改。背景替换的第二张背景图只用于本地 multipart 接口，不会误发到图片任务的未知 role。客户端 ID 在没有 `crypto.randomUUID()` 的内网 HTTP 环境回退到 `getRandomValues()`。
+参考图和遮罩按后端 `sourceImages[].role` 发送；AI 局部编辑固定使用 `mode=image`，发送第一张 `role=image` 原图和最后一张黑底白色 `role=mask` 选区，白色区域允许修改。历史 `mode=edit` 仅用于恢复兼容。背景替换的第二张背景图只用于本地 multipart 接口，不会误发到图片任务的未知 role。客户端 ID 在没有 `crypto.randomUUID()` 的内网 HTTP 环境回退到 `getRandomValues()`。
 
 ### 分类隔离
 
-文生图、图生图、局部编辑、图片编辑、超分和批量一致性分别维护：
+文生图、图生图、图片编辑、超分和批量一致性分别维护：
 
 - 提示词
 - 参考图/遮罩
@@ -85,8 +85,8 @@
 分类控件与后端能力的对应关系：
 
 - `text`：模型、比例、数量、分辨率、提示词。
-- `image`：参考图、参考强度、构图保持，以及上述输出设置。
-- `edit`：结果图/参考图、AI 遮罩、编辑提示词；入口来自生成结果的“局部编辑”。
+- `image`：参考图、参考强度、构图保持，以及上述输出设置。局部编辑属于该分类：上传源图、结果图、作品图和大图预览都从这里打开遮罩编辑器，提交后任务与结果继续留在图生图预览。
+- 历史 `edit`：不再显示独立分类；旧路由和后端旧任务统一归并到 `image`。
 - `remove-bg`：去背景、换背景、换衣服、换脸、加文字。去背景和换背景使用本地接口；其他动作通过已有图片任务和明确提示词执行。
 - `upscale`：2×、4×、图片变体、老照片修复、人脸增强，通过已有图片任务和明确提示词执行。
 - `batch`：参考图、角色一致性、构图变化、输出设置。
@@ -102,12 +102,14 @@
 - 成功结果读取 `task.images[].url`；恢复时跳过 `sourceStatus=unavailable`，缺失或 `unknown` 保持兼容加载。
 - SSE 收到 `init` 或 `task.upsert` 后立即更新；连接异常时保留状态并由活动任务轮询 `GET /api/image/tasks`。
 - 后端心跳会为同一成功图片刷新 `/p/img/*` 签名；前端按任务、图片路径和可用状态去重，保留已渲染 URL，避免每 2 秒重复下载大图。`sourceStatus` 变化时仍会更新。
-- 当前分类有活动任务时，底部按钮变为取消；调用 `DELETE /api/image/tasks/:id` 后显示 `cancel_requested`，后端最终退款并返回 `cancelled`。
+- 当前分类有活动任务时，底部按钮变为取消；调用 `DELETE /api/image/tasks/:id` 后显示 `cancel_requested`。该状态不会被迟到的成功或 Mask 合成失败覆盖，后端收尾后退款并返回 `cancelled`。
 - 终态后调用 `GET /api/auth/me` 同步积分；成功任务会触发作品页刷新。
 
 ### 结果图操作
 
-结果图可以直接打开大图、下载或进入局部编辑。局部编辑器会生成兼容 Alpha 遮罩、黑底白色选区遮罩和带涂抹效果的界面预览；`/studio` 与 `/image` 的 AI 图片任务、`/api/image/local-mask-edit` 本地修复都只提交 `selectionFile`（黑底白色选区），不提交预览图。后端在成功发布前执行原图 + 模型结果 + 遮罩像素合成，遮罩外保持原图像素；合成失败任务退款且不进入作品库。
+图生图上传源图后直接显示高对比“局部编辑”按钮。单图工具栏、多图结果卡片和点击图片后的大图预览也常驻该入口；点击后仍保持图生图分类选中，不进入隐藏分类或空预览。
+
+局部编辑器会生成兼容 Alpha 遮罩、黑底白色选区遮罩和带涂抹效果的界面预览；`/studio` 与旧 `/image` 代码路径的 AI 图片任务、`/api/image/local-mask-edit` 本地修复都只提交 `selectionFile`（黑底白色选区），不提交预览图。商业工作台 AI 请求固定使用 `mode=image`，`sourceImages[0].role=image`，最后一项 `role=mask`。后端在成功发布前执行原图 + 模型结果 + 遮罩像素合成，遮罩外保持原图像素；`invalid_mask`、`mask_postprocess_failed` 作为失败任务展示、退款且不进入作品库。
 
 作品页的“整体变化”和“局部编辑”会把签名 `/p/img/*` 源图带入工作台。该地址是浏览器同源相对路径，提交图片任务或带图优化前，前端先携带 Cookie 读取图片并转成 Data URL，再放入 `sourceImages[].dataUrl` / `sourceImage`；这样既保留作品代理鉴权，也符合后端参考图摄取只接受 Data URL、Base64 或公开 HTTP(S) URL 的契约。
 
@@ -122,10 +124,10 @@ POST /api/prompt/optimize
 profile 映射如下：
 
 ```text
-text       -> text_to_image
-image/edit -> image_to_image
-video-text -> text_to_video
-video-image -> image_to_video
+text                 -> text_to_image
+image（含历史 edit） -> image_to_image
+video-text           -> text_to_video
+video-image          -> image_to_video
 ```
 
 图片和图生视频会在有参考图时发送 `sourceImage`；视频同时发送 `duration`、`resolution`、`motion`。后端未配置或上游失败时仍返回 HTTP 200，并以 `fallback=true` 返回原提示词，前端显示降级提示但不阻断后续生成。
@@ -185,4 +187,4 @@ git diff --check
 视频页面: http://127.0.0.1:18100/video
 ```
 
-登录后的端到端检查重点：登录 -> 加载模型目录/作品 -> 提示词优化 -> 创建任务 -> 状态轮询/SSE -> 结果预览 -> 取消或恢复 -> 积分同步。
+登录后的端到端检查重点：登录 -> 图生图上传源图 -> 打开遮罩编辑器 -> 创建 `mode=image + role=mask` 任务 -> 状态轮询/SSE -> 对比遮罩外像素 -> 从结果工具栏和大图预览再次进入局部编辑 -> 积分同步。
