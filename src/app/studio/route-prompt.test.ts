@@ -26,11 +26,11 @@ describe("studio route source state", () => {
     expect(readStudioRouteState({
       mode: "image",
       prompt: "保留主体，改变背景",
-      sourceImage: { url: "/p/img/task/0", name: "作品 1" },
+      sourceImage: { url: "/p/img/task/0", name: "作品 1", sourceTaskId: "task", sourceImageIndex: 0 },
     })).toEqual({
       mode: "image",
       prompt: "保留主体，改变背景",
-      sourceImage: { url: "/p/img/task/0", name: "作品 1" },
+      sourceImage: { url: "/p/img/task/0", name: "作品 1", sourceTaskId: "task", sourceImageIndex: 0 },
     });
   });
 

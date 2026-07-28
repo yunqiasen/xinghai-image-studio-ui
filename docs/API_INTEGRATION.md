@@ -113,7 +113,7 @@
 
 局部编辑器会生成兼容 Alpha 遮罩、黑底白色选区遮罩和带涂抹效果的界面预览；`/studio` 与旧 `/image` 代码路径的 AI 图片任务、`/api/image/local-mask-edit` 本地修复都只提交 `selectionFile`（黑底白色选区），不提交预览图。商业工作台 AI 请求固定使用 `mode=image`，`sourceImages[0].role=image`，最后一项 `role=mask`。结果工具栏、多图卡片和大图预览会把正确的父任务 ID 与被选图片序号传入编辑请求；后端先用父图原生 Inpainting 完成语义替换，再执行原图 + 模型结果 + 遮罩像素合成，遮罩外保持原图像素。`source_context_missing`、`invalid_mask`、`mask_postprocess_failed` 作为失败展示、退款且不进入作品库。
 
-作品页的“整体变化”和“局部编辑”会把签名 `/p/img/*` 源图带入工作台。该地址是浏览器同源相对路径，提交图片任务或带图优化前，前端先携带 Cookie 读取图片并转成 Data URL，再放入 `sourceImages[].dataUrl` / `sourceImage`；这样既保留作品代理鉴权，也符合后端参考图摄取只接受 Data URL、Base64 或公开 HTTP(S) URL 的契约。
+作品页的“整体变化”和“局部编辑”会把签名 `/p/img/{taskId}/{imageIndex}` 源图带入工作台，并从路径保留 `sourceTaskId/sourceImageIndex`。该地址是浏览器同源相对路径，提交图片任务或带图优化前，前端先携带 Cookie 读取图片并转成 Data URL，再放入 `sourceImages[].dataUrl` / `sourceImage`；局部编辑同时映射为 `parentTaskId/parentImageIndex`，因此作品页和工作台结果入口使用同一原生 Inpainting 链路。
 
 ## 提示词优化
 

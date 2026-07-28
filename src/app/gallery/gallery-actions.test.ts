@@ -20,7 +20,7 @@ describe("gallery studio actions", () => {
     expect(buildGalleryStudioRouteState(item, "variation")).toEqual({
       mode: "image",
       prompt: item.prompt,
-      sourceImage: { url: item.url, name: "作品 1" },
+      sourceImage: { url: item.url, name: "作品 1", sourceTaskId: "task-1", sourceImageIndex: 0 },
     });
   });
 
@@ -28,7 +28,7 @@ describe("gallery studio actions", () => {
     expect(buildGalleryStudioRouteState(item, "local-edit")).toEqual({
       mode: "image",
       prompt: "",
-      sourceImage: { url: item.url, name: "作品 1" },
+      sourceImage: { url: item.url, name: "作品 1", sourceTaskId: "task-1", sourceImageIndex: 0 },
       openMaskEditor: true,
     });
   });

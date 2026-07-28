@@ -120,6 +120,8 @@ export function StudioPage() {
         dataUrl: importedRoute.sourceImage.dataUrl || "",
         url: importedRoute.sourceImage.url || "",
         role: "image",
+        sourceTaskId: importedRoute.sourceImage.sourceTaskId,
+        sourceImageIndex: importedRoute.sourceImage.sourceImageIndex,
       };
       setModeAssets((previous) => ({ ...previous, [targetMode]: [source] }));
       if (importedRoute.openMaskEditor) {

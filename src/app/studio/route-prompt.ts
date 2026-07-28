@@ -8,6 +8,8 @@ export type StudioRouteSourceImage = {
   url?: string;
   dataUrl?: string;
   name: string;
+  sourceTaskId?: string;
+  sourceImageIndex?: number;
 };
 
 export type StudioRouteState = {
@@ -44,6 +46,12 @@ export function readStudioRouteState(state: unknown): StudioRouteState | null {
         name: typeof sourceRaw?.name === "string" && sourceRaw.name.trim()
           ? sourceRaw.name.trim().slice(0, 120)
           : "作品",
+        ...(typeof sourceRaw?.sourceTaskId === "string" && sourceRaw.sourceTaskId.trim()
+          ? { sourceTaskId: sourceRaw.sourceTaskId.trim().slice(0, 128) }
+          : {}),
+        ...(typeof sourceRaw?.sourceImageIndex === "number" && Number.isInteger(sourceRaw.sourceImageIndex) && sourceRaw.sourceImageIndex >= 0
+          ? { sourceImageIndex: sourceRaw.sourceImageIndex }
+          : {}),
       }
     : undefined;
 
