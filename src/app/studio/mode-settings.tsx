@@ -14,6 +14,8 @@ export type StudioAsset = {
   dataUrl: string;
   url: string;
   role: "image" | "mask" | "background";
+  sourceTaskId?: string;
+  sourceImageIndex?: number;
 };
 
 export type StudioSettingsValue = {

@@ -21,8 +21,9 @@ import { optimizePrompt } from "@/lib/prompt-optimizer/client";
 import { useSessionUser } from "@/lib/storage/session-hooks";
 
 import { studioModeDefinitions, studioModeModels, studioVisibleModes, type StudioPromptTemplate } from "./mode-config";
-import { buildModePrompt } from "./mode-request";
+import { buildGenerationPrompt } from "./mode-request";
 import { mergePastedImageAssets } from "./prompt-paste";
+import { createResultSourceAsset, parentEditContext } from "./result-edit-context";
 import { assetToFile, blobToDataUrl, prepareImageTaskAssets } from "./local-image-runtime";
 import {
   CONTROLS_PANEL_CLASS_NAME,
@@ -228,8 +229,8 @@ export function StudioPage() {
     }
   }
 
-  function handleResultEdit(url: string) {
-    const source: StudioAsset = { id: `result-${Date.now()}`, name: "生成结果", dataUrl: "", url, role: "image" };
+  function handleResultEdit(url: string, imageIndex: number) {
+    const source = createResultSourceAsset(url, currentGeneration.task?.id, imageIndex);
     setModeAssets((previous) => ({ ...previous, image: [source] }));
     setMode("image");
     setEditorImageSrc(url);
@@ -238,7 +239,8 @@ export function StudioPage() {
 
   async function submitGeneration(targetMode: StudioMode, rawPrompt: string, sourceItems: StudioAsset[]) {
     const targetSettings = modeSettings[targetMode];
-    const prompt = buildModePrompt(targetMode, rawPrompt, targetSettings);
+    const hasMask = sourceItems.some((item) => item.role === "mask");
+    const prompt = buildGenerationPrompt(targetMode, rawPrompt, targetSettings, hasMask);
     if (!user) {
       toast.error(t("studio.error.login"));
       return;
@@ -260,6 +262,7 @@ export function StudioPage() {
         .filter((item): item is StudioAsset & { role: "image" | "mask" } => item.role === "image" || item.role === "mask")
         .map((item) => ({ id: item.id, role: item.role, name: item.name, dataUrl: item.dataUrl, url: item.url })),
       resolution: targetSettings.resolution.toUpperCase() as "1K" | "2K" | "4K",
+      ...parentEditContext(sourceItems),
     });
   }
 

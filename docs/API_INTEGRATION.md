@@ -11,9 +11,9 @@
 ```
 
 ```text
-接入契约版本: 2026-07-28.image-count.1
-后端契约 Commit: f289df1719b51882c6189b0f1b3de9acdcda6c0c
-后端实现基线 Commit: 4e760573a0fd883d748dae837e1c6891e9babc0f
+接入契约版本: 2026-07-28.native-inpainting.1
+后端契约 Commit: e44edff1fcafe50d88aca6a0355a5d4a4cb4f005
+后端实现基线 Commit: 138d862185d5dbd2e8e1796c14696200bd316860
 ```
 
 上述两个后端提交均为完整 SHA；实现基线是契约提交的祖先。前端不根据页面需要猜路径、字段、响应或业务数据，也不新增 BFF、Mock 业务接口或本地业务数据库。
@@ -36,7 +36,7 @@
 | 注册/登录/退出 | `POST /api/auth/register`、`POST /api/auth/login`、`POST /api/auth/logout` | `src/lib/storage/local-session.ts` | 已接入 |
 | 兑换积分 | `POST /api/credits/redeem` | `src/lib/storage/local-session.ts` | 已接入，只发送兑换码 |
 | 作品列表/清空 | `GET /api/gallery`、`DELETE /api/gallery` | `src/lib/storage/local-session.ts`、`src/app/gallery/*` | 已接入；最多展示后端最新 30 条中的可查看作品 |
-| 图片异步任务创建/列表/详情/取消 | `POST/GET /api/image/tasks`、`GET/DELETE /api/image/tasks/:id` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx` | 已接入；局部编辑使用 `mode=image + role=mask`，后端强制限制在选区内；成功 `images.length <= count` |
+| 图片异步任务创建/列表/详情/取消 | `POST/GET /api/image/tasks`、`GET/DELETE /api/image/tasks/:id` | `src/lib/image-tasks/*`、`src/components/commercial/generation-provider.tsx` | 已接入；编辑生成结果时发送 `parentTaskId + parentImageIndex + mode=image + role=mask`，后端使用原生 Inpainting 并限制在选区内；成功 `images.length <= count` |
 | 图片任务实时流 | `GET /api/image/tasks/stream` | `src/lib/image-tasks/client.ts`、`GenerationProvider` | 已接入；SSE 断线由 2 秒轮询兜底 |
 | 提示词优化 | `POST /api/prompt/optimize` | `src/lib/prompt-optimizer/*`、图像/视频工作台 | 已接入四套 profile |
 | 图片提示词兼容接口 | `POST /api/image/prompt/optimize` | 暂无页面调用 | 保留后端兼容，不重复接入 |
@@ -64,11 +64,13 @@
   size,
   quality,
   resolution: "1K" | "2K" | "4K",
+  parentTaskId?: string,
+  parentImageIndex?: number,
   sourceImages: [{ id, role: "image" | "mask", name, dataUrl, url }]
 }
 ```
 
-参考图和遮罩按后端 `sourceImages[].role` 发送；AI 局部编辑固定使用 `mode=image`，发送第一张 `role=image` 原图和最后一张黑底白色 `role=mask` 选区，白色区域允许修改。历史 `mode=edit` 仅用于恢复兼容。背景替换的第二张背景图只用于本地 multipart 接口，不会误发到图片任务的未知 role。客户端 ID 在没有 `crypto.randomUUID()` 的内网 HTTP 环境回退到 `getRandomValues()`。
+参考图和遮罩按后端 `sourceImages[].role` 发送；AI 局部编辑固定使用 `mode=image`，发送第一张 `role=image` 原图和最后一张黑底白色 `role=mask` 选区，白色区域允许修改。编辑工作台生成结果时，同时保留并发送该结果的 `parentTaskId` 与 `parentImageIndex`，让后端锁定父图原账号、原会话、File ID 和 Gen ID；历史 `mode=edit` 仅用于恢复兼容。背景替换的第二张背景图只用于本地 multipart 接口，不会误发到图片任务的未知 role。客户端 ID 在没有 `crypto.randomUUID()` 的内网 HTTP 环境回退到 `getRandomValues()`。
 
 ### 分类隔离
 
@@ -109,7 +111,7 @@
 
 图生图上传源图后直接显示高对比“局部编辑”按钮。单图工具栏、多图结果卡片和点击图片后的大图预览也常驻该入口；点击后仍保持图生图分类选中，不进入隐藏分类或空预览。
 
-局部编辑器会生成兼容 Alpha 遮罩、黑底白色选区遮罩和带涂抹效果的界面预览；`/studio` 与旧 `/image` 代码路径的 AI 图片任务、`/api/image/local-mask-edit` 本地修复都只提交 `selectionFile`（黑底白色选区），不提交预览图。商业工作台 AI 请求固定使用 `mode=image`，`sourceImages[0].role=image`，最后一项 `role=mask`。后端在成功发布前执行原图 + 模型结果 + 遮罩像素合成，遮罩外保持原图像素；`invalid_mask`、`mask_postprocess_failed` 作为失败任务展示、退款且不进入作品库。
+局部编辑器会生成兼容 Alpha 遮罩、黑底白色选区遮罩和带涂抹效果的界面预览；`/studio` 与旧 `/image` 代码路径的 AI 图片任务、`/api/image/local-mask-edit` 本地修复都只提交 `selectionFile`（黑底白色选区），不提交预览图。商业工作台 AI 请求固定使用 `mode=image`，`sourceImages[0].role=image`，最后一项 `role=mask`。结果工具栏、多图卡片和大图预览会把正确的父任务 ID 与被选图片序号传入编辑请求；后端先用父图原生 Inpainting 完成语义替换，再执行原图 + 模型结果 + 遮罩像素合成，遮罩外保持原图像素。`source_context_missing`、`invalid_mask`、`mask_postprocess_failed` 作为失败展示、退款且不进入作品库。
 
 作品页的“整体变化”和“局部编辑”会把签名 `/p/img/*` 源图带入工作台。该地址是浏览器同源相对路径，提交图片任务或带图优化前，前端先携带 Cookie 读取图片并转成 Data URL，再放入 `sourceImages[].dataUrl` / `sourceImage`；这样既保留作品代理鉴权，也符合后端参考图摄取只接受 Data URL、Base64 或公开 HTTP(S) URL 的契约。
 
@@ -187,4 +189,4 @@ git diff --check
 视频页面: http://127.0.0.1:18100/video
 ```
 
-登录后的端到端检查重点：登录 -> 图生图上传源图 -> 打开遮罩编辑器 -> 创建 `mode=image + role=mask` 任务 -> 状态轮询/SSE -> 对比遮罩外像素 -> 从结果工具栏和大图预览再次进入局部编辑 -> 积分同步。
+登录后的端到端检查重点：登录 -> 选择一张系统生成结果 -> 从结果工具栏或大图预览打开遮罩编辑器 -> 创建带 `parentTaskId + parentImageIndex + mode=image + role=mask` 的单图任务 -> 确认原物消失、新物只出现在选区 -> 核对遮罩外差异像素为 0 -> 积分与作品同步。

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildModePrompt } from "./mode-request";
+import { buildGenerationPrompt, buildModePrompt } from "./mode-request";
 
 const settings = {
   imageEditAction: "add-text" as const,
@@ -26,4 +26,8 @@ describe("buildModePrompt", () => {
     expect(buildModePrompt("remove-bg", "商业海报", settings)).toContain("添加文字“星海新品”");
     expect(buildModePrompt("upscale", "保持自然", settings)).toContain("4× 超分");
   });
+});
+
+it("keeps a masked edit prompt free of generic image-to-image constraints", () => {
+  expect(buildGenerationPrompt("image", "把选区完整替换成汉堡", settings, true)).toBe("把选区完整替换成汉堡");
 });

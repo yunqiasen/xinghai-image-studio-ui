@@ -34,7 +34,7 @@ type StudioPreviewProps = {
   startedAt?: number;
   templates?: StudioPromptTemplate[];
   onTemplateSelect?: (template: StudioPromptTemplate) => void;
-  onEditResult?: (url: string) => void;
+  onEditResult?: (url: string, imageIndex: number) => void;
   prompt?: string;
   onPromptChange?: (value: string) => void;
   onOptimizePrompt?: () => void;
@@ -109,6 +109,7 @@ export function StudioPreview({
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [previewUrl, setPreviewUrl] = useState("");
+  const [previewIndex, setPreviewIndex] = useState(0);
   const dragOrigin = useRef<DragOrigin | null>(null);
   const ratio = useMemo(() => aspectRatioCss(aspectRatio), [aspectRatio]);
   const state = busy ? "loading" : error ? "error" : results.length ? "results" : "empty";
@@ -172,6 +173,11 @@ export function StudioPreview({
     dragOrigin.current = null;
   }
 
+  function openPreview(url: string, imageIndex: number) {
+    setPreviewIndex(imageIndex);
+    setPreviewUrl(url);
+  }
+
   const syncTitle = busy ? t("preview.sync.generatingTitle") : error ? t("preview.sync.errorTitle") : results.length ? (localResult ? t("preview.sync.localTitle") : t("preview.sync.savedTitle")) : t("preview.sync.waitTitle");
   const syncNote = busy
     ? t("preview.sync.generatingNote")
@@ -195,8 +201,8 @@ export function StudioPreview({
               <span className="w-12 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
               <button aria-label={t("preview.zoomIn")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(zoom + 0.1)} type="button"><Plus size={14} /></button>
               <button aria-label={t("preview.fit")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => applyZoom(1)} title={t("preview.fit")} type="button"><Maximize2 size={14} /></button>
-              <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-violet-600 px-2.5 font-bold text-white shadow-sm transition hover:bg-violet-700" data-preview-action="local-edit" onClick={() => onEditResult?.(results[0])} title={t("studio.localEdit")} type="button"><ScanLine size={14} /><span>{t("studio.localEdit")}</span></button>
-              <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => setPreviewUrl(results[0])} title={t("preview.openOriginal")} type="button"><ExternalLink size={14} /></button>
+              <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-violet-600 px-2.5 font-bold text-white shadow-sm transition hover:bg-violet-700" data-preview-action="local-edit" onClick={() => onEditResult?.(results[0], 0)} title={t("studio.localEdit")} type="button"><ScanLine size={14} /><span>{t("studio.localEdit")}</span></button>
+              <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" onClick={() => openPreview(results[0], 0)} title={t("preview.openOriginal")} type="button"><ExternalLink size={14} /></button>
               <a aria-label={t("preview.download")} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100" download="xinghai-result.png" href={results[0]} title={t("preview.download")}><Download size={14} /></a>
             </div>
         ) : null}
@@ -252,7 +258,7 @@ export function StudioPreview({
                     key={url}
                     className={`relative mx-auto grid h-full min-h-0 max-h-full w-full max-w-none touch-none place-items-center overflow-hidden rounded-[18px] border border-[#dbe2eb] bg-white shadow-[0_22px_50px_rgba(38,49,65,.15)] ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"}`}
                     data-result-card={index + 1}
-                    onClick={() => { if (zoom <= 1) setPreviewUrl(url); }}
+                    onClick={() => { if (zoom <= 1) openPreview(url, index); }}
                     onPointerCancel={stopDragging}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
@@ -273,10 +279,10 @@ export function StudioPreview({
                     data-result-card={index + 1}
                     style={{ aspectRatio: ratio }}
                   >
-                    <img alt={t("preview.resultAlt", { index: index + 1 })} className="h-full w-full cursor-zoom-in select-none object-contain transition duration-300 group-hover:scale-[1.02]" draggable={false} onClick={() => setPreviewUrl(url)} src={url} />
+                    <img alt={t("preview.resultAlt", { index: index + 1 })} className="h-full w-full cursor-zoom-in select-none object-contain transition duration-300 group-hover:scale-[1.02]" draggable={false} onClick={() => openPreview(url, index)} src={url} />
                     <div className="absolute right-2 top-2 flex gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                      <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-950/65 px-2.5 text-[10px] font-semibold text-white backdrop-blur hover:bg-violet-700" onClick={() => onEditResult?.(url)} type="button"><ScanLine size={13} />{t("studio.localEdit")}</button>
-                      <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950/65 text-white backdrop-blur hover:bg-slate-950/80" onClick={() => setPreviewUrl(url)} type="button"><ExternalLink size={14} /></button>
+                      <button aria-label={t("studio.localEdit")} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-950/65 px-2.5 text-[10px] font-semibold text-white backdrop-blur hover:bg-violet-700" onClick={() => onEditResult?.(url, index)} type="button"><ScanLine size={13} />{t("studio.localEdit")}</button>
+                      <button aria-label={t("preview.openOriginal")} className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950/65 text-white backdrop-blur hover:bg-slate-950/80" onClick={() => openPreview(url, index)} type="button"><ExternalLink size={14} /></button>
                     </div>
                     <span className="absolute bottom-2 left-2 rounded-lg bg-slate-950/55 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur">{index + 1}/{results.length}</span>
                   </div>
@@ -332,7 +338,7 @@ export function StudioPreview({
           {busy && onCancel ? <button aria-label={t("studio.cancelTask")} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60" disabled={cancelDisabled} onClick={onCancel} type="button"><XCircle size={15} />{cancelDisabled ? t("studio.cancelRequested") : t("studio.cancelTask")}</button> : <button aria-label={generateLabel || t("studio.generate")} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[linear-gradient(115deg,#7c3aed,#c946ea)] px-4 text-xs font-bold text-white shadow-[0_10px_24px_rgba(124,58,237,.22)] disabled:cursor-not-allowed disabled:opacity-60" disabled={promptDisabled} onClick={onGenerate} type="button"><Sparkles size={15} />{generateLabel || t("studio.generate")}</button>}
         </div>
       </footer>
-      {previewUrl ? <StudioImageLightbox url={previewUrl} onClose={() => setPreviewUrl("")} onEdit={(url) => onEditResult?.(url)} /> : null}
+      {previewUrl ? <StudioImageLightbox url={previewUrl} onClose={() => setPreviewUrl("")} onEdit={(url) => onEditResult?.(url, previewIndex)} /> : null}
     </section>
   );
 }

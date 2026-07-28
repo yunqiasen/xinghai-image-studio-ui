@@ -36,3 +36,13 @@ export function buildModePrompt(mode: StudioMode, prompt: string, settings: Mode
 
   return [base, ...instructions].filter(Boolean).join("\n\n");
 }
+
+export function buildGenerationPrompt(
+  mode: StudioMode,
+  prompt: string,
+  settings: ModeRequestSettings,
+  hasMask: boolean,
+) {
+  if (hasMask) return prompt.trim();
+  return buildModePrompt(mode, prompt, settings);
+}

@@ -15,3 +15,8 @@ describe("AI local edit mask wiring", () => {
     expect(imageSubmitHook).not.toContain("dataUrl: mask.previewDataUrl");
   });
 });
+
+it("passes the selected result index and parent task into local editing", () => {
+  expect(studioPage).toContain("createResultSourceAsset(url, currentGeneration.task?.id, imageIndex)");
+  expect(studioPage).toContain("...parentEditContext(sourceItems)");
+});
