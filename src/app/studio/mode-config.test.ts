@@ -13,7 +13,7 @@ describe("mode-specific studio configuration", () => {
     expect(imageModes).toEqual(["text", "image", "edit", "remove-bg", "upscale", "batch"]);
     expect(studioVisibleModes).toEqual(["text", "image", "remove-bg", "upscale", "batch"]);
     expect(studioModeDefinitions["remove-bg"].label).toBe("图片编辑");
-    expect(studioModeDefinitions.upscale.label).toBe("超分");
+    expect(studioModeDefinitions.upscale.label).toBe("放大/去水印");
     expect(studioVisibleModes).not.toContain("background");
   });
 

@@ -108,7 +108,7 @@ export const studioModeDefinitions: Record<StudioMode, StudioModeDefinition> = {
   image: { label: "图生图", labelKey: "studio.mode.image.short", descriptionKey: "studio.mode.image.description", controls: ["source", "reference-strength", "composition", "model", "aspect", "count", "resolution", "prompt"], templates: imageTemplates },
   edit: { label: "局部编辑", labelKey: "studio.mode.edit.short", descriptionKey: "studio.mode.edit.description", controls: ["source", "mask", "prompt"], templates: editTemplates },
   "remove-bg": { label: "图片编辑", labelKey: "studio.mode.remove-bg.short", descriptionKey: "studio.mode.remove-bg.description", controls: ["source", "image-edit-action", "prompt"], templates: [] },
-  upscale: { label: "超分", labelKey: "studio.mode.upscale.short", descriptionKey: "studio.mode.upscale.description", controls: ["source", "super-resolution-action", "prompt"], templates: superTemplates },
+  upscale: { label: "放大/去水印", labelKey: "studio.mode.upscale.short", descriptionKey: "studio.mode.upscale.description", controls: ["source", "super-resolution-action", "prompt"], templates: superTemplates },
   background: { label: "换背景", labelKey: "studio.mode.background.short", descriptionKey: "studio.mode.background.description", controls: ["source", "prompt"], templates: imageEditTemplates.filter((item) => item.id === "replace-background") },
   batch: { label: "批量一致性", labelKey: "studio.mode.batch.short", descriptionKey: "studio.mode.batch.description", controls: ["source", "consistency", "aspect", "count", "resolution", "prompt"], templates: batchTemplates },
 };

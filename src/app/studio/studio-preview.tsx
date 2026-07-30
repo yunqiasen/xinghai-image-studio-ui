@@ -292,7 +292,7 @@ export function StudioPreview({
           )}
         </div>
 
-        <aside className="grid min-h-0 content-start gap-2.5 overflow-y-auto sm:grid-cols-2 lg:grid-cols-1" aria-label={t("preview.info")}>
+        <aside className="studio-scroll-region grid min-h-0 content-start gap-2.5 overflow-y-auto sm:grid-cols-2 lg:grid-cols-1" aria-label={t("preview.info")}>
           {mode === "remove-bg" ? (
             <ImageEditTemplatePanel action={imageEditAction} selectedUrl={selectedEditTemplateUrl} onSelect={(template) => onImageEditTemplateSelect?.(template)} />
           ) : (

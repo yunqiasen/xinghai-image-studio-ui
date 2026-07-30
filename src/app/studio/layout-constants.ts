@@ -15,8 +15,8 @@ export const CONTROLS_PANEL_CLASS_NAME = "studio-controls overflow-hidden rounde
 export const PREVIEW_PANEL_CLASS_NAME = "studio-preview grid min-h-[620px] min-w-0 grid-rows-[74px_minmax(0,1fr)_78px] overflow-hidden rounded-[26px] border border-[#dfe5ee] bg-[#fbfcfe] text-[#111827] shadow-[0_20px_60px_rgba(36,43,64,.1)] lg:h-full lg:min-h-0";
 
 export const STUDIO_EDITOR_BODY_CLASS_NAME = "min-h-0 lg:grid lg:grid-cols-[176px_minmax(0,1fr)]";
-export const STUDIO_MODE_RAIL_CLASS_NAME = "studio-mode-rail border-b border-white/10 bg-black/10 p-3 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r";
-export const STUDIO_PARAMETER_SCROLL_CLASS_NAME = "studio-parameters min-w-0 space-y-3 p-4 lg:min-h-0 lg:overflow-y-auto";
+export const STUDIO_MODE_RAIL_CLASS_NAME = "studio-mode-rail studio-scroll-region border-b border-white/10 bg-black/10 p-3 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r";
+export const STUDIO_PARAMETER_SCROLL_CLASS_NAME = "studio-parameters studio-scroll-region min-w-0 space-y-3 p-4 lg:min-h-0 lg:overflow-y-auto";
 export const STUDIO_ACTION_BAR_CLASS_NAME = "studio-action-bar flex min-h-[66px] items-center justify-between gap-3 border-t border-white/10 bg-[#12101d]/88 px-4 backdrop-blur-xl";
 
 export const MODE_OPTION_CLASS_NAME = "flex min-h-[54px] w-full items-center gap-2 rounded-[15px] border px-2 py-1.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d946ef]/70";

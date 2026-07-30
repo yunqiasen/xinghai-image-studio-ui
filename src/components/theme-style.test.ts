@@ -34,3 +34,13 @@ describe("work gallery styling", () => {
     expect(css).toContain("@media (min-width: 360px)");
   });
 });
+
+
+describe("studio interaction polish", () => {
+  it("keeps workbench copy selectable while hiding internal scrollbars", () => {
+    expect(css).toContain(".studio-page button");
+    expect(css).toContain("user-select: text !important");
+    expect(css).toContain(".studio-scroll-region");
+    expect(css).toContain("scrollbar-width: none");
+  });
+});
