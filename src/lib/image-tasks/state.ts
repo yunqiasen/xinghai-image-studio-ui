@@ -19,9 +19,20 @@ export function selectStudioTask(tasks: ImageTask[]) {
   return studioTasks.find(isActiveImageTask) || studioTasks[0];
 }
 
+function sameOriginImageUrl(url: string) {
+  if (!/^https?:\/\//i.test(url)) return url;
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.startsWith("/p/")) return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return url;
+  }
+  return url;
+}
+
 export function taskImageUrls(task: ImageTask | null | undefined) {
   if (task?.status !== "succeeded") return [];
-  return task.images.flatMap((image) => image.url && image.sourceStatus !== "unavailable" ? [image.url] : []);
+  return task.images.flatMap((image) => image.url && image.sourceStatus !== "unavailable" ? [sameOriginImageUrl(image.url)] : []);
 }
 
 export function taskErrorMessage(task: ImageTask | null | undefined) {

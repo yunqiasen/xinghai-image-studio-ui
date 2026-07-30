@@ -11,9 +11,9 @@
 ```
 
 ```text
-接入契约版本: 2026-07-28.native-inpainting.1
-后端契约 Commit: e44edff1fcafe50d88aca6a0355a5d4a4cb4f005
-后端实现基线 Commit: 138d862185d5dbd2e8e1796c14696200bd316860
+接入契约版本: 2026-07-30.image-operations-v2.6
+后端契约 Commit: 8fa96bde270159c7e39533623bcebfe4b9b9908f
+后端实现基线 Commit: eb5684b6015a57fda5e40cee78ca77800d054987
 ```
 
 上述两个后端提交均为完整 SHA；实现基线是契约提交的祖先。前端不根据页面需要猜路径、字段、响应或业务数据，也不新增 BFF、Mock 业务接口或本地业务数据库。
@@ -40,11 +40,11 @@
 | 图片任务实时流 | `GET /api/image/tasks/stream` | `src/lib/image-tasks/client.ts`、`GenerationProvider` | 已接入；SSE 断线由 2 秒轮询兜底 |
 | 提示词优化 | `POST /api/prompt/optimize` | `src/lib/prompt-optimizer/*`、图像/视频工作台 | 已接入四套 profile |
 | 图片提示词兼容接口 | `POST /api/image/prompt/optimize` | 暂无页面调用 | 保留后端兼容，不重复接入 |
+| 图片模型目录 | `GET /api/models?type=image` | `src/lib/image-models/*`、`src/app/studio/*` | 已接入；按 operation 动态过滤模型、尺寸、质量和价格 |
 | 视频模型目录 | `GET /api/models?type=video` | `src/lib/video-tasks/client.ts`、`src/app/video/*` | 已接入，按能力动态渲染 |
 | 视频任务创建/列表/详情 | `POST/GET /api/video/tasks`、`GET /api/video/tasks/:task_id` | `src/lib/video-tasks/*`、`src/app/video/page.tsx` | 已接入 |
-| 本地去背景 | `POST /api/image/cutout` | `src/lib/image-operations/client.ts`、图像工作台 | 已接入，返回 PNG 暂存当前工作台 |
-| 本地换背景 | `POST /api/image/background-replace` | `src/lib/image-operations/client.ts`、图像工作台 | 已接入，返回 PNG 暂存当前工作台 |
-| 本地局部修复 | `POST /api/image/local-mask-edit` | `src/lib/image-operations/client.ts`、`ImageEditModal` | 已接入，返回 PNG 暂存当前工作台 |
+| 统一图片操作 | `POST /api/image/tasks` | `src/lib/image-tasks/*`、`src/app/studio/*` | 已接入 generate/img2img/inpaint/cutout/background_replace/clothes_replace/face_swap/text_overlay/variation/face_enhance/batch_consistency；结果统一持久化 |
+| 旧本地图片接口 | `/api/image/cutout`、`background-replace`、`local-mask-edit` | `src/lib/image-operations/client.ts` | 仅保留旧页面兼容，商业工作台不再作为主链路 |
 
 ## 图片工作台接入行为
 
@@ -82,7 +82,7 @@
 - 比例、数量、分辨率和分类专属参数
 - 图片任务状态与结果预览
 
-切换分类只切换当前视图，不取消其他分类正在执行的任务；返回分类时显示该分类自己的任务。任务状态按后端 `task.mode` 分发，SSE 事件中的旧任务不会覆盖同分类较新的任务。每个分类的模型选择器都位于参数区顶部，当前均展示 `GPT Image 2.0`（请求值 `gpt-image-2`），后续可以按分类扩展 `studioModeModels`。
+切换分类只切换当前视图，不取消其他分类正在执行的任务；返回分类时显示该分类自己的任务。任务状态按后端 `task.mode` 分发，SSE 事件中的旧任务不会覆盖同分类较新的任务。每个分类顶部通过 `GET /api/models?type=image` 动态展示支持当前 operation 的模型，并按能力限制分辨率、质量、数量和暂缓操作。
 
 分类控件与后端能力的对应关系：
 
@@ -93,7 +93,7 @@
 - `upscale`：2×、4×、图片变体、老照片修复、人脸增强，通过已有图片任务和明确提示词执行。
 - `batch`：参考图、角色一致性、构图变化、输出设置。
 
-后端当前没有单独的换衣服、换脸、超分 API，因此前端不会伪造新路径；这些动作只复用已发布的 `/api/image/tasks` 契约。
+工作台统一发送 `operation + options + sourceImages.role`。换衣、换脸分别上传 `garment`、`face`；加文字发送确定性排版参数；超分和老照片修复按模型能力显示为暂未开放。
 
 ### 任务生命周期
 
@@ -149,15 +149,9 @@ video-image          -> image_to_video
 
 音频入口 `/audio` 目前只有界面占位。后端契约明确音频模型尚未开放普通用户执行接口，前端不提交音频任务。
 
-## 本地图片处理
+## 图片操作主链路
 
-三个本地接口均使用 `multipart/form-data`，不消耗图片模型积分：
-
-- `cutoutImage(File)` -> `/api/image/cutout`，字段 `image`、`tolerance`、`feather`。
-- `replaceImageBackground(File, File)` -> `/api/image/background-replace`，字段 `foreground`、`background`、`auto_cutout`。
-- `localMaskEdit(File, File)` -> `/api/image/local-mask-edit`，字段 `image`、`mask`、`radius`。
-
-接口成功返回 `image/png` Blob。前端转换为 Data URL，仅保存在当前 React 工作台状态，可继续下载或送入下一步编辑；后端契约没有本地处理结果的作品落库接口，所以这些结果不会伪装成作品库记录。
+商业工作台的抠图、换背景、换衣、换脸、文字、变体、人脸增强和批量一致性全部使用 `POST /api/image/tasks`。任务响应的 `creditsCost`、实际宽高、格式和 Alpha 状态直接展示；后端返回的内网 `/p/img/*` 绝对地址会归一为前端同源路径，避免浏览器加载失败。旧 multipart 接口只用于历史页面兼容。
 
 ## 有意未接入的契约能力
 

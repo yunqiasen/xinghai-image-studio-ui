@@ -15,6 +15,8 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 
 import { useLanguage } from "@/components/language-provider";
 import type { ResolutionTier } from "@/lib/billing/pricing";
+import type { ImageOperation } from "@/lib/image-models/types";
+import type { ImageTaskResult } from "@/lib/image-tasks/types";
 import type { StudioAspectRatio } from "@/lib/image2api/size-presets";
 
 import { PREVIEW_PANEL_CLASS_NAME } from "./layout-constants";
@@ -30,6 +32,9 @@ type StudioPreviewProps = {
   count: number;
   busy: boolean;
   results: string[];
+  resultDetails?: ImageTaskResult[];
+  creditsCost?: number;
+  operation?: ImageOperation;
   error?: string;
   startedAt?: number;
   templates?: StudioPromptTemplate[];
@@ -87,6 +92,9 @@ export function StudioPreview({
   count,
   busy,
   results,
+  resultDetails = [],
+  creditsCost,
+  operation,
   error,
   startedAt,
   templates = [],
@@ -317,6 +325,10 @@ export function StudioPreview({
               <div className="flex justify-between gap-2"><dt>{t("studio.ratio")}</dt><dd className="font-semibold text-[#27364b]">{aspectRatio}</dd></div>
               <div className="flex justify-between gap-2"><dt>{t("studio.resolution")}</dt><dd className="font-semibold text-[#27364b]">{resolution.toUpperCase()}</dd></div>
               <div className="flex justify-between gap-2"><dt>{t("preview.quantity")}</dt><dd className="font-semibold text-[#27364b]">{t(count === 1 ? "common.image" : "common.images", { count })}</dd></div>
+              {operation ? <div className="flex justify-between gap-2"><dt>{t("preview.operation")}</dt><dd className="font-semibold text-[#27364b]">{operation}</dd></div> : null}
+              {creditsCost !== undefined ? <div className="flex justify-between gap-2"><dt>{t("common.credits")}</dt><dd className="font-semibold text-[#27364b]">{creditsCost}</dd></div> : null}
+              {resultDetails[0]?.width && resultDetails[0]?.height ? <div className="flex justify-between gap-2"><dt>{t("preview.actualSize")}</dt><dd className="font-semibold text-[#27364b]">{resultDetails[0].width}×{resultDetails[0].height}</dd></div> : null}
+              {resultDetails[0]?.format ? <div className="flex justify-between gap-2"><dt>{t("preview.format")}</dt><dd className="font-semibold uppercase text-[#27364b]">{resultDetails[0].format}{resultDetails[0].hasAlpha ? " · Alpha" : ""}</dd></div> : null}
             </dl>
           </section>
 

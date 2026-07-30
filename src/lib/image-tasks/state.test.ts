@@ -59,3 +59,11 @@ it("does not restore image results whose source is unavailable", () => {
   });
   expect(taskImageUrls(selected)).toEqual(["/fresh.png"]);
 });
+
+it("routes internal image asset URLs through the frontend same-origin proxy", () => {
+  const selected = task({
+    status: "succeeded",
+    images: [{ url: "http://100.126.43.55:18080/p/img/img_1/0?exp=1&sig=x", sourceStatus: "available" }],
+  });
+  expect(taskImageUrls(selected)).toEqual(["/p/img/img_1/0?exp=1&sig=x"]);
+});

@@ -2,11 +2,14 @@ import { createContext, useContext } from "react";
 
 import type { StudioMode } from "@/lib/billing/pricing";
 import type { ImageTask, ImageTaskSource } from "@/lib/image-tasks/types";
+import type { ImageOperation, ImageOperationOptions } from "@/lib/image-models/types";
 
 import type { StudioGenerationState, StudioGenerationStates } from "./generation-state";
 
 type StartGenerationInput = {
   mode: string;
+  operation: ImageOperation;
+  options?: ImageOperationOptions;
   prompt: string;
   model: string;
   count: number;

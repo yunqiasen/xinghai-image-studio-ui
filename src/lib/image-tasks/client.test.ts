@@ -24,19 +24,30 @@ describe("commercial asynchronous image task client", () => {
       taskId: "web_123",
       conversationId: "commercial-studio",
       turnId: "turn_123",
-      mode: "edit",
+      mode: "remove-bg",
+      operation: "face_swap",
+      options: { referenceStrength: 86, preserveComposition: true },
       prompt: "保留人物，替换背景",
       model: "gpt-image-2",
       count: 2,
       size: "1248x1248",
       quality: "",
-      sourceImages: [{ id: "ref-1", role: "image", name: "ref.png", dataUrl: "data:image/png;base64,AA==", url: "" }],
+      sourceImages: [
+        { id: "ref-1", role: "image", name: "ref.png", dataUrl: "data:image/png;base64,AA==", url: "" },
+        { id: "face-1", role: "face", name: "face.png", dataUrl: "data:image/png;base64,BB==", url: "" },
+      ],
     })).resolves.toMatchObject({ task: { id: "img_123" } });
 
     expect(fetchMock).toHaveBeenCalledWith("/api/image/tasks", expect.objectContaining({ method: "POST", credentials: "include" }));
     const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
-    expect(body).toMatchObject({ conversationId: "commercial-studio", mode: "edit", count: 2 });
-    expect(body.sourceImages[0]).toMatchObject({ role: "image", name: "ref.png" });
+    expect(body).toMatchObject({
+      conversationId: "commercial-studio",
+      mode: "remove-bg",
+      operation: "face_swap",
+      options: { referenceStrength: 86, preserveComposition: true },
+      count: 2,
+    });
+    expect(body.sourceImages.map((item: { role: string }) => item.role)).toEqual(["image", "face"]);
   });
 
   it("restores the current user's recent tasks from the list endpoint", async () => {

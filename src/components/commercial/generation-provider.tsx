@@ -94,6 +94,8 @@ export function GenerationProvider({ children, userId }: { children: ReactNode; 
         conversationId: COMMERCIAL_STUDIO_CONVERSATION_ID,
         turnId: createClientId("turn"),
         mode: input.mode,
+        operation: input.operation,
+        options: input.options,
         prompt: input.prompt,
         model: input.model,
         count: input.count,

@@ -10,6 +10,7 @@ const value: StudioSettingsValue = {
   aspectRatio: "1:1",
   count: 1,
   resolution: "1k",
+  quality: "standard",
   prompt: "测试提示词",
   imageEditAction: "remove-background",
   superAction: "2x",
@@ -18,6 +19,16 @@ const value: StudioSettingsValue = {
   consistency: 80,
   variation: 30,
   overlayText: "",
+  fontSize: 64,
+  textColor: "#FFFFFF",
+  textPosition: "bottom-center",
+  textX: 0,
+  textY: 0,
+  cutoutTolerance: 34,
+  cutoutFeather: 22,
+  autoCutout: true,
+  style: "",
+  backgroundDescription: "",
 };
 
 function renderMode(mode: Parameters<typeof ModeSettings>[0]["mode"]) {
@@ -113,5 +124,65 @@ describe("local image operation inputs", () => {
       </LanguageProvider>,
     );
     expect(html).toContain("上传背景图");
+  });
+});
+
+
+describe("operation-specific API controls", () => {
+  it("uploads garments and faces with their documented source roles", () => {
+    const clothes = renderToStaticMarkup(
+      <LanguageProvider initialLocale="zh-CN">
+        <ModeSettings mode="remove-bg" value={{ ...value, imageEditAction: "change-clothes" }} assets={[]} onChange={() => undefined} onFiles={() => undefined} onRemoveAsset={() => undefined} onOpenMaskEditor={() => undefined} />
+      </LanguageProvider>,
+    );
+    const face = renderToStaticMarkup(
+      <LanguageProvider initialLocale="zh-CN">
+        <ModeSettings mode="remove-bg" value={{ ...value, imageEditAction: "swap-face" }} assets={[]} onChange={() => undefined} onFiles={() => undefined} onRemoveAsset={() => undefined} onOpenMaskEditor={() => undefined} />
+      </LanguageProvider>,
+    );
+    expect(clothes).toContain('data-upload-role="garment"');
+    expect(face).toContain('data-upload-role="face"');
+  });
+
+  it("renders deterministic text overlay and dynamic quality controls", () => {
+    const html = renderToStaticMarkup(
+      <LanguageProvider initialLocale="zh-CN">
+        <ModeSettings
+          mode="remove-bg"
+          value={{ ...value, imageEditAction: "add-text", overlayText: "星海新品" }}
+          assets={[]}
+          models={[{ value: "agnes", label: "Agnes Image" }]}
+          availableQualities={["standard", "high"]}
+          onChange={() => undefined}
+          onFiles={() => undefined}
+          onRemoveAsset={() => undefined}
+          onOpenMaskEditor={() => undefined}
+        />
+      </LanguageProvider>,
+    );
+    expect(html).toContain("字体大小");
+    expect(html).toContain("文字颜色");
+    expect(html).toContain("文字位置");
+    expect(html).toContain("输出质量");
+    expect(html).toContain("Agnes Image");
+  });
+
+  it("marks backend-paused operations as unavailable", () => {
+    const html = renderToStaticMarkup(
+      <LanguageProvider initialLocale="zh-CN">
+        <ModeSettings
+          mode="upscale"
+          value={{ ...value, superAction: "variation" }}
+          assets={[]}
+          availableOperations={["variation", "face_enhance"]}
+          onChange={() => undefined}
+          onFiles={() => undefined}
+          onRemoveAsset={() => undefined}
+          onOpenMaskEditor={() => undefined}
+        />
+      </LanguageProvider>,
+    );
+    expect(html).toContain('data-operation-available="false"');
+    expect(html).toContain("暂未开放");
   });
 });

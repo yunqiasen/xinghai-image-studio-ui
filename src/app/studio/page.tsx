@@ -14,17 +14,21 @@ import { ImageEditModal, type MaskPayload } from "@/components/image-edit-modal"
 import { useGeneration } from "@/components/commercial/generation-context";
 import { useLanguage } from "@/components/language-provider";
 import { createLocalId } from "@/lib/client-id";
-import { estimateCredits, type StudioMode } from "@/lib/billing/pricing";
+import type { StudioMode } from "@/lib/billing/pricing";
 import { sizeFromStudioPreset } from "@/lib/image2api/size-presets";
-import { cutoutImage, localMaskEdit, replaceImageBackground } from "@/lib/image-operations/client";
+import { listImageModels } from "@/lib/image-models/client";
+import { estimateImageCredits } from "@/lib/image-models/pricing";
+import { availableImageOperations, imageModelsForOperation, selectImageModel } from "@/lib/image-models/selection";
+import type { ImageModel, ImageOperation } from "@/lib/image-models/types";
 import { optimizePrompt } from "@/lib/prompt-optimizer/client";
 import { useSessionUser } from "@/lib/storage/session-hooks";
 
 import { studioModeDefinitions, studioModeModels, studioVisibleModes, type StudioPromptTemplate } from "./mode-config";
 import { buildGenerationPrompt } from "./mode-request";
+import { buildStudioTaskOptions, normalizeStudioCount, resolveStudioOperation, validateStudioSubmission, type StudioValidationError } from "./operation-request";
 import { mergePastedImageAssets } from "./prompt-paste";
 import { createResultSourceAsset, parentEditContext } from "./result-edit-context";
-import { assetToFile, blobToDataUrl, prepareImageTaskAssets } from "./local-image-runtime";
+import { blobToDataUrl, prepareImageTaskAssets } from "./local-image-runtime";
 import {
   CONTROLS_PANEL_CLASS_NAME,
   EDITOR_PANEL_GRID_CLASS_NAME,
@@ -72,12 +76,6 @@ function displaySource(asset: StudioAsset) {
   return asset.dataUrl || asset.url;
 }
 
-type LocalOperationState = { busy: boolean; resultUrl?: string; error?: string };
-
-function emptyLocalOperations(): Partial<Record<StudioMode, LocalOperationState>> {
-  return {};
-}
-
 export function StudioPage() {
   const location = useLocation();
   const { t } = useLanguage();
@@ -89,9 +87,12 @@ export function StudioPage() {
   const [modeAssets, setModeAssets] = useState<Record<StudioMode, StudioAsset[]>>(emptyModeAssets);
   const [editorImageSrc, setEditorImageSrc] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<StudioMode>("image");
+  const [imageModels, setImageModels] = useState<ImageModel[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
   const [optimizingMode, setOptimizingMode] = useState<StudioMode | null>(null);
-  const [localOperations, setLocalOperations] = useState<Partial<Record<StudioMode, LocalOperationState>>>(emptyLocalOperations);
   const { user } = useSessionUser();
+  const userId = user?.id;
   const { states: generationStates, startGeneration, cancelGeneration } = useGeneration();
 
   const currentGeneration = generationStates[mode];
@@ -99,14 +100,37 @@ export function StudioPage() {
   const currentPrompt = modePrompts[mode];
   const settings = modeSettings[mode];
   const currentSettings: StudioSettingsValue = { ...settings, prompt: currentPrompt };
-  const cost = estimateCredits(mode, settings.resolution, settings.count);
-  const currentModelLabel = studioModeModels[mode].find((item) => item.value === settings.model)?.label || studioModeModels[mode][0].label;
+  const currentOperation = resolveStudioOperation(mode, currentSettings, assets.some((item) => item.role === "mask"));
+  const supportedOperations = useMemo(() => availableImageOperations(imageModels), [imageModels]);
+  const operationModels = useMemo(() => imageModelsForOperation(imageModels, currentOperation), [currentOperation, imageModels]);
+  const currentModel = selectImageModel(imageModels, currentOperation, settings.model);
+  const maxOutputs = currentModel?.capabilities.max_outputs || 4;
+  const normalizedCount = normalizeStudioCount(currentOperation, settings.count, maxOutputs);
+  const countOptions = [1, 2, 4].filter((count) => normalizeStudioCount(currentOperation, count, maxOutputs) === count);
+  const displayedCost = currentGeneration.task?.creditsCost ?? estimateImageCredits(currentModel, currentOperation, settings.resolution.toUpperCase() as "1K" | "2K" | "4K", settings.quality, normalizedCount);
+  const currentModelLabel = currentModel?.name || operationModels[0]?.name || studioModeModels[mode][0].label;
   const currentDefinition = studioModeDefinitions[mode];
   const sourceAssets = assets.filter((item) => item.role === "image");
   const imageTaskActive = Boolean(currentGeneration.task && ["queued", "running", "cancel_requested"].includes(currentGeneration.task.status));
-  const currentLocalOperation = localOperations[mode];
-  const directLocalAction = mode === "remove-bg" && (settings.imageEditAction === "remove-background" || settings.imageEditAction === "replace-background");
-  const displayedCost = directLocalAction ? 0 : cost;
+
+  useEffect(() => {
+    if (!userId) {
+      setImageModels([]);
+      return;
+    }
+    let active = true;
+    setModelsLoading(true);
+    listImageModels()
+      .then((items) => { if (active) setImageModels(items); })
+      .catch((error) => { if (active) toast.error(error instanceof Error ? error.message : t("studio.imageModelUnavailable")); })
+      .finally(() => { if (active) setModelsLoading(false); });
+    return () => { active = false; };
+  }, [t, userId]);
+
+  useEffect(() => {
+    if (!currentModel || settings.model === currentModel.slug) return;
+    setModeSettings((previous) => ({ ...previous, [mode]: { ...previous[mode], model: currentModel.slug } }));
+  }, [currentModel, mode, settings.model]);
 
   useEffect(() => {
     if (!importedRoute) return;
@@ -125,6 +149,7 @@ export function StudioPage() {
       };
       setModeAssets((previous) => ({ ...previous, [targetMode]: [source] }));
       if (importedRoute.openMaskEditor) {
+        setEditorMode(targetMode);
         setEditorImageSrc(displaySource(source));
         setEditorOpen(true);
       }
@@ -151,7 +176,7 @@ export function StudioPage() {
   async function appendImageFiles(files: File[], role: StudioAsset["role"], mergeReferences = false) {
     if (!files.length) return;
     const next: StudioAsset[] = [];
-    for (const file of files.slice(0, role === "mask" || role === "background" ? 1 : 4)) {
+    for (const file of files.slice(0, role === "image" ? 4 : 1)) {
       if (!file.type.startsWith("image/")) continue;
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -162,7 +187,7 @@ export function StudioPage() {
       next.push({ id: createLocalId(), name: file.name || t("studio.sourceImage"), dataUrl, url: "", role });
     }
     if (!next.length) return;
-    setModeAssets((previous) => ({ ...previous, [mode]: role === "mask" || role === "background"
+    setModeAssets((previous) => ({ ...previous, [mode]: role !== "image"
       ? [...previous[mode].filter((item) => item.role !== role), next[0]]
       : mergeReferences
         ? mergePastedImageAssets(previous[mode], next)
@@ -188,7 +213,7 @@ export function StudioPage() {
       toast.error(t("studio.error.upload"));
       return;
     }
-    setMode("image");
+    setEditorMode(mode);
     setEditorImageSrc(displaySource(source));
     setEditorOpen(true);
   }
@@ -235,76 +260,48 @@ export function StudioPage() {
     const source = createResultSourceAsset(url, currentGeneration.task?.id, imageIndex);
     setModeAssets((previous) => ({ ...previous, image: [source] }));
     setMode("image");
+    setEditorMode("image");
     setEditorImageSrc(url);
     setEditorOpen(true);
+  }
+
+  function validationMessage(error: StudioValidationError) {
+    const keys: Record<StudioValidationError, Parameters<typeof t>[0]> = {
+      source: "studio.error.upload", prompt: "studio.error.prompt", mask: "studio.error.mask",
+      garment: "studio.error.garment", face: "studio.error.face", background: "studio.backgroundRequired", text: "studio.error.text",
+    };
+    return t(keys[error]);
   }
 
   async function submitGeneration(targetMode: StudioMode, rawPrompt: string, sourceItems: StudioAsset[]) {
     const targetSettings = modeSettings[targetMode];
     const hasMask = sourceItems.some((item) => item.role === "mask");
+    const operation = resolveStudioOperation(targetMode, { ...targetSettings, prompt: rawPrompt }, hasMask);
+    const selectedModel = selectImageModel(imageModels, operation, targetSettings.model);
+    if (!selectedModel) throw new Error(t("studio.imageModelUnavailable"));
+    const validationError = validateStudioSubmission(operation, sourceItems, { ...targetSettings, prompt: rawPrompt }, rawPrompt);
+    if (validationError) throw new Error(validationMessage(validationError));
     const prompt = buildGenerationPrompt(targetMode, rawPrompt, targetSettings, hasMask);
-    if (!user) {
-      toast.error(t("studio.error.login"));
-      return;
-    }
-    if (!prompt.trim()) {
-      toast.error(t("studio.error.prompt"));
-      return;
-    }
-    setLocalOperations((previous) => ({ ...previous, [targetMode]: undefined }));
     const preparedSources = await prepareImageTaskAssets(sourceItems);
+    const count = normalizeStudioCount(operation, targetSettings.count, selectedModel.capabilities.max_outputs);
     await startGeneration({
       mode: targetMode,
+      operation,
+      options: buildStudioTaskOptions(operation, { ...targetSettings, prompt: rawPrompt }),
       prompt,
-      model: targetSettings.model,
-      count: targetSettings.count,
+      model: selectedModel.slug,
+      count,
       size: sizeFromStudioPreset(targetSettings.aspectRatio, targetSettings.resolution),
-      quality: "",
-      sourceImages: preparedSources
-        .filter((item): item is StudioAsset & { role: "image" | "mask" } => item.role === "image" || item.role === "mask")
-        .map((item) => ({ id: item.id, role: item.role, name: item.name, dataUrl: item.dataUrl, url: item.url })),
+      quality: targetSettings.quality,
+      sourceImages: preparedSources.map((item) => ({ id: item.id, role: item.role, name: item.name, dataUrl: item.dataUrl, url: item.url })),
+      style: targetSettings.style.trim(),
+      background: operation === "background_replace" ? (targetSettings.backgroundDescription.trim() || rawPrompt.trim()) : "",
       resolution: targetSettings.resolution.toUpperCase() as "1K" | "2K" | "4K",
       ...parentEditContext(sourceItems),
     });
   }
 
-  async function submitLocalOperation() {
-    const targetMode: StudioMode = "remove-bg";
-    const source = assets.find((item) => item.role === "image");
-    const background = assets.find((item) => item.role === "background");
-    if (!source) {
-      toast.error(t("studio.error.upload"));
-      return;
-    }
-    if (settings.imageEditAction === "replace-background" && !background) {
-      toast.error(t("studio.backgroundRequired"));
-      return;
-    }
-    setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: true } }));
-    try {
-      const sourceFile = await assetToFile(source);
-      const output = settings.imageEditAction === "replace-background"
-        ? await replaceImageBackground(sourceFile, await assetToFile(background!), { autoCutout: true })
-        : await cutoutImage(sourceFile);
-      const resultUrl = await blobToDataUrl(output);
-      setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: false, resultUrl } }));
-      toast.success(t("studio.localProcessDone"));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("studio.localProcessFailed");
-      setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: false, error: message } }));
-      toast.error(message);
-    }
-  }
-
   async function submit() {
-    if (mode !== "text" && !sourceAssets.length) {
-      toast.error(t("studio.error.upload"));
-      return;
-    }
-    if (directLocalAction) {
-      await submitLocalOperation();
-      return;
-    }
     try {
       await submitGeneration(mode, currentPrompt, assets);
       toast.success(t("studio.submitted"));
@@ -318,35 +315,19 @@ export function StudioPage() {
     if (!source) return;
     const maskDataUrl = await blobToDataUrl(payload.mask.selectionFile);
     const mask: StudioAsset = { id: createLocalId(), name: "mask.png", dataUrl: maskDataUrl, url: "", role: "mask" };
-    const nextAssets = [source, mask];
-    setModeAssets((previous) => ({ ...previous, image: nextAssets }));
-    setModePrompts((previous) => ({ ...previous, image: payload.prompt }));
+    const nextAssets = [...modeAssets[editorMode].filter((item) => item.role !== "mask"), mask];
+    setModeAssets((previous) => ({ ...previous, [editorMode]: nextAssets }));
+    setModePrompts((previous) => ({ ...previous, [editorMode]: payload.prompt }));
+    setMode(editorMode);
     setEditorOpen(false);
     try {
-      await submitGeneration("image", payload.prompt, nextAssets);
+      await submitGeneration(editorMode, payload.prompt, nextAssets);
       toast.success(t("studio.submitted"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("studio.error.create"));
     }
   }
 
-  async function submitLocalMaskEditor(payload: { prompt: string; mask: MaskPayload }) {
-    const source = sourceAssets[0];
-    if (!source) return;
-    const targetMode: StudioMode = "image";
-    setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: true } }));
-    try {
-      const output = await localMaskEdit(await assetToFile(source), payload.mask.selectionFile);
-      const resultUrl = await blobToDataUrl(output);
-      setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: false, resultUrl } }));
-      setEditorOpen(false);
-      toast.success(t("studio.localRepairDone"));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("studio.localProcessFailed");
-      setLocalOperations((previous) => ({ ...previous, [targetMode]: { busy: false, error: message } }));
-      toast.error(message);
-    }
-  }
 
   return (
     <div className={STUDIO_PAGE_CLASS_NAME}>
@@ -359,7 +340,7 @@ export function StudioPage() {
           <div className={CONTROLS_PANEL_CLASS_NAME}>
             <header className="flex min-h-[74px] items-center justify-between gap-3 border-b border-white/10 px-5">
               <div className="select-text"><p className="text-[10px] font-bold tracking-[0.22em] text-[#efa3fa]">XINGHAI STUDIO</p><h1 className="mt-1 text-2xl font-semibold tracking-[-0.045em] text-white">{t("studio.title")}</h1></div>
-              <div className="rounded-[12px] border border-white/12 bg-white/7 px-3.5 py-2 text-xs font-semibold text-white select-text">{t("studio.estimatedCredits", { count: displayedCost })}</div>
+              <div className="rounded-[12px] border border-white/12 bg-white/7 px-3.5 py-2 text-xs font-semibold text-white select-text">{t(currentGeneration.task?.creditsCost !== undefined ? "studio.actualCredits" : "studio.estimatedCredits", { count: displayedCost })}</div>
             </header>
 
             <div className={STUDIO_EDITOR_BODY_CLASS_NAME}>
@@ -376,21 +357,21 @@ export function StudioPage() {
 
               <div className={STUDIO_PARAMETER_SCROLL_CLASS_NAME}>
                 {!user ? <div className="rounded-2xl border border-[#60a5fa]/20 bg-[#60a5fa]/10 px-3 py-2.5 text-xs text-[#dbeafe] select-text">{t("studio.loginNotice")}<Link to="/login" className="ml-2 font-semibold text-white underline underline-offset-4">{t("studio.goLogin")}</Link></div> : null}
-                <ModeSettings mode={mode} value={currentSettings} assets={assets} onChange={changeSetting} onFiles={appendFiles} onRemoveAsset={removeAsset} onOpenMaskEditor={() => openMaskEditor()} />
+                <ModeSettings mode={mode} value={currentSettings} assets={assets} models={operationModels.map((model) => ({ value: model.slug, label: model.name }))} availableOperations={imageModels.length ? supportedOperations : undefined} availableResolutions={currentModel?.capabilities.resolutions} availableQualities={currentModel?.capabilities.qualities} countOptions={countOptions.length ? countOptions : [1]} modelLoading={modelsLoading} onChange={changeSetting} onFiles={appendFiles} onRemoveAsset={removeAsset} onOpenMaskEditor={() => openMaskEditor()} />
               </div>
             </div>
 
             <footer className={STUDIO_ACTION_BAR_CLASS_NAME}>
-              <div className="min-w-0 select-text"><p className="truncate text-xs font-semibold text-white">{`${t(currentDefinition.labelKey)} · ${t(settings.count === 1 ? "common.image" : "common.images", { count: settings.count })} · ${settings.resolution.toUpperCase()}`}</p><p className="mt-1 text-[9px] text-white/38">{directLocalAction ? t("studio.localProcessFree") : t("studio.cost", { count: displayedCost })}</p></div>
+              <div className="min-w-0 select-text"><p className="truncate text-xs font-semibold text-white">{`${t(currentDefinition.labelKey)} · ${t(settings.count === 1 ? "common.image" : "common.images", { count: settings.count })} · ${settings.resolution.toUpperCase()}`}</p><p className="mt-1 text-[9px] text-white/38">{t("studio.cost", { count: displayedCost })}</p></div>
               <div className="select-text text-right"><p className="text-[9px] text-white/38">{t("preview.engine")}</p><p className="text-xs font-semibold text-white/80">{currentModelLabel}</p></div>
             </footer>
           </div>
         </section>
 
-        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={Boolean(currentLocalOperation?.busy) || currentGeneration.starting || imageTaskActive} results={currentLocalOperation?.resultUrl ? [currentLocalOperation.resultUrl] : currentGeneration.resultUrls} error={currentLocalOperation?.error || currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={() => void optimizeCurrentPrompt()} optimizing={optimizingMode === mode} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={Boolean(currentLocalOperation?.busy) || currentGeneration.starting || imageTaskActive || optimizingMode === mode} onCancel={imageTaskActive ? () => void cancelGeneration(mode) : undefined} cancelDisabled={currentGeneration.task?.status === "cancel_requested"} localResult={Boolean(currentLocalOperation?.resultUrl)} generateLabel={directLocalAction ? t("studio.processImage") : t("studio.generate")} />
+        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={currentGeneration.starting || imageTaskActive} results={currentGeneration.resultUrls} resultDetails={currentGeneration.task?.images} creditsCost={currentGeneration.task?.creditsCost} operation={currentGeneration.task?.operation} error={currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={() => void optimizeCurrentPrompt()} optimizing={optimizingMode === mode} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={currentGeneration.starting || imageTaskActive || optimizingMode === mode || (imageModels.length > 0 && !supportedOperations.includes(currentOperation))} onCancel={imageTaskActive ? () => void cancelGeneration(mode) : undefined} cancelDisabled={currentGeneration.task?.status === "cancel_requested"} generateLabel={t("studio.generate")} />
       </div>
 
-      <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} isSubmitting={Boolean(localOperations.image?.busy) || generationStates.image.starting} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} onLocalSubmit={submitLocalMaskEditor} />
+      <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} isSubmitting={generationStates[editorMode].starting} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} />
     </div>
   );
 }

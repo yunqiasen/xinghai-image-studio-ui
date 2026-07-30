@@ -1,5 +1,6 @@
 import type { TranslationKey } from "@/components/language-modes";
 import type { StudioMode } from "@/lib/billing/pricing";
+import type { ImageOperation } from "@/lib/image-models/types";
 
 export type StudioControl =
   | "source"
@@ -73,19 +74,19 @@ const batchTemplates: StudioPromptTemplate[] = [
 ];
 
 export const imageEditActions = [
-  { value: "remove-background", labelKey: "studio.imageEdit.removeBackground" as TranslationKey },
-  { value: "replace-background", labelKey: "studio.imageEdit.replaceBackground" as TranslationKey },
-  { value: "change-clothes", labelKey: "studio.imageEdit.changeClothes" as TranslationKey },
-  { value: "swap-face", labelKey: "studio.imageEdit.swapFace" as TranslationKey },
-  { value: "add-text", labelKey: "studio.imageEdit.addText" as TranslationKey },
+  { value: "remove-background", operation: "cutout" as ImageOperation, labelKey: "studio.imageEdit.removeBackground" as TranslationKey },
+  { value: "replace-background", operation: "background_replace" as ImageOperation, labelKey: "studio.imageEdit.replaceBackground" as TranslationKey },
+  { value: "change-clothes", operation: "clothes_replace" as ImageOperation, labelKey: "studio.imageEdit.changeClothes" as TranslationKey },
+  { value: "swap-face", operation: "face_swap" as ImageOperation, labelKey: "studio.imageEdit.swapFace" as TranslationKey },
+  { value: "add-text", operation: "text_overlay" as ImageOperation, labelKey: "studio.imageEdit.addText" as TranslationKey },
 ] as const;
 
 export const superResolutionActions = [
-  { value: "2x", labelKey: "studio.super.2x" as TranslationKey },
-  { value: "4x", labelKey: "studio.super.4x" as TranslationKey },
-  { value: "variation", labelKey: "studio.super.variation" as TranslationKey },
-  { value: "restore-photo", labelKey: "studio.super.restore" as TranslationKey },
-  { value: "face-enhance", labelKey: "studio.super.face" as TranslationKey },
+  { value: "2x", operation: "upscale" as ImageOperation, labelKey: "studio.super.2x" as TranslationKey },
+  { value: "4x", operation: "upscale" as ImageOperation, labelKey: "studio.super.4x" as TranslationKey },
+  { value: "variation", operation: "variation" as ImageOperation, labelKey: "studio.super.variation" as TranslationKey },
+  { value: "restore-photo", operation: "restore_photo" as ImageOperation, labelKey: "studio.super.restore" as TranslationKey },
+  { value: "face-enhance", operation: "face_enhance" as ImageOperation, labelKey: "studio.super.face" as TranslationKey },
 ] as const;
 
 // edit 只保留历史任务和旧路由兼容；当前局部编辑统一归并到 image。
