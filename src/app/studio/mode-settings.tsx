@@ -1,4 +1,5 @@
 import { Brush, ChevronDown, Sparkles, UploadCloud, X } from "lucide-react";
+import { useState } from "react";
 
 import { useLanguage } from "@/components/language-provider";
 import type { ResolutionTier, StudioMode } from "@/lib/billing/pricing";
@@ -6,6 +7,8 @@ import type { ImageOperation, ImageQuality, ImageResolution, ImageSourceRole, Te
 import type { StudioAspectRatio } from "@/lib/image2api/size-presets";
 
 import { imageEditActions, studioModeDefinitions, studioModeModels, superResolutionActions, type StudioModelOption } from "./mode-config";
+import { ImageAssetSlots } from "./image-asset-slots";
+import { StudioImageLightbox } from "./studio-image-lightbox";
 import { MODEL_SELECTOR_CLASS_NAME, PRIMARY_ASPECT_RATIOS } from "./layout-constants";
 import { MAX_STUDIO_PROMPT_LENGTH } from "./route-prompt";
 
@@ -167,15 +170,7 @@ export function ModeSettings({
     || (mode === "remove-bg" && ["remove-background", "change-clothes", "swap-face"].includes(value.imageEditAction))
     || (mode === "upscale" && value.superAction === "face-enhance");
 
-  const auxiliaryUpload = mode === "remove-bg"
-    ? value.imageEditAction === "replace-background"
-      ? { role: "background" as const, label: t("studio.uploadBackground") }
-      : value.imageEditAction === "change-clothes"
-        ? { role: "garment" as const, label: t("studio.uploadGarment") }
-        : value.imageEditAction === "swap-face"
-          ? { role: "face" as const, label: t("studio.uploadFace") }
-          : undefined
-    : undefined;
+  const [previewAsset, setPreviewAsset] = useState<StudioAsset | null>(null);
 
   return (
     <div className="space-y-3">
@@ -190,25 +185,29 @@ export function ModeSettings({
 
       {has("source") ? (
         <section className="rounded-[16px] border border-dashed border-[#a78bfa]/30 bg-[#a78bfa]/8 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="select-text"><p className="text-sm font-semibold text-white">{mode === "image" ? t("studio.uploadReference") : t("studio.uploadSource")}</p><p className="mt-1 text-[10px] text-white/42">{t(studioModeDefinitions[mode].descriptionKey)}</p></div>
-            <div className="flex flex-wrap gap-1.5">
-              <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#171626] select-none" data-upload-role="image"><UploadCloud size={14} /> {t("studio.uploadImage")}<input className="hidden" type="file" accept="image/*" multiple={mode === "image" || mode === "batch"} onChange={(event) => onFiles(event.target.files, "image")} /></label>
-              {auxiliaryUpload ? <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-900 select-none" data-upload-role={auxiliaryUpload.role}><UploadCloud size={14} /> {auxiliaryUpload.label}<input className="hidden" type="file" accept="image/*" onChange={(event) => onFiles(event.target.files, auxiliaryUpload.role)} /></label> : null}
-              {maskSupported && sourceAssets.length ? <button className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[linear-gradient(115deg,#7c3aed,#d946ef)] px-3.5 py-2 text-xs font-bold text-white shadow-[0_10px_24px_rgba(168,85,247,.28)] transition hover:-translate-y-px hover:shadow-[0_14px_30px_rgba(168,85,247,.36)]" data-studio-action="local-edit" onClick={onOpenMaskEditor} type="button"><Brush size={14} />{t("studio.localEdit")}</button> : null}
-            </div>
-          </div>
-          {assets.length ? (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {assets.map((item) => (
-                <figure key={item.id} className="relative overflow-hidden rounded-xl border border-white/10 bg-black/18">
-                  <img src={item.dataUrl || item.url} alt={item.name} className="aspect-video w-full select-none object-cover" draggable={false} />
-                  <figcaption className="truncate px-2 py-1.5 text-[9px] text-white/50 select-text">{roleLabel(item.role, t)} · {item.name}</figcaption>
-                  <button aria-label={t("studio.removeAsset")} className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-black/70 text-white" onClick={() => onRemoveAsset(item.id)} type="button"><X size={12} /></button>
-                </figure>
-              ))}
-            </div>
-          ) : null}
+          <div className="select-text mb-2"><p className="text-sm font-semibold text-white">{mode === "image" ? t("studio.uploadReference") : mode === "remove-bg" ? t("studio.uploadAssets") : t("studio.uploadSource")}</p><p className="mt-1 text-[10px] text-white/42">{t(studioModeDefinitions[mode].descriptionKey)}</p></div>
+          {mode === "remove-bg" ? (
+            <ImageAssetSlots action={value.imageEditAction} assets={assets} onFiles={onFiles} onRemoveAsset={onRemoveAsset} onPreviewAsset={setPreviewAsset} />
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5">
+                <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#171626] select-none" data-upload-role="image"><UploadCloud size={14} /> {t("studio.uploadImage")}<input className="hidden" type="file" accept="image/*" multiple={mode === "image" || mode === "batch"} onChange={(event) => onFiles(event.target.files, "image")} /></label>
+                {maskSupported && sourceAssets.length ? <button className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[linear-gradient(115deg,#7c3aed,#d946ef)] px-3.5 py-2 text-xs font-bold text-white shadow-[0_10px_24px_rgba(168,85,247,.28)] transition hover:-translate-y-px hover:shadow-[0_14px_30px_rgba(168,85,247,.36)]" data-studio-action="local-edit" onClick={onOpenMaskEditor} type="button"><Brush size={14} />{t("studio.localEdit")}</button> : null}
+              </div>
+              {assets.length ? (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {assets.map((item) => (
+                    <figure key={item.id} className="relative overflow-hidden rounded-xl border border-white/10 bg-black/18">
+                      <button className="block w-full cursor-zoom-in" data-asset-preview={item.role} onClick={() => setPreviewAsset(item)} type="button"><img src={item.dataUrl || item.url} alt={item.name} className="aspect-video w-full select-none object-cover" draggable={false} /></button>
+                      <figcaption className="truncate px-2 py-1.5 text-[9px] text-white/50 select-text">{roleLabel(item.role, t)} · {item.name}</figcaption>
+                      <button aria-label={t("studio.removeAsset")} className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-black/70 text-white" onClick={(event) => { event.stopPropagation(); onRemoveAsset(item.id); }} type="button"><X size={12} /></button>
+                    </figure>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          )}
+          {mode === "remove-bg" && maskSupported && sourceAssets.length ? <button className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[linear-gradient(115deg,#7c3aed,#d946ef)] px-3.5 py-2 text-xs font-bold text-white shadow-[0_10px_24px_rgba(168,85,247,.28)]" data-studio-action="local-edit" onClick={onOpenMaskEditor} type="button"><Brush size={14} />{t("studio.localEdit")}</button> : null}
         </section>
       ) : null}
 
@@ -261,6 +260,7 @@ export function ModeSettings({
       {availableQualities.length ? <div><ControlTitle title={t("studio.quality")} aside={t("studio.qualityHelp")} /><OptionGrid value={value.quality} options={availableQualities.map((quality) => ({ value: quality, label: t(`studio.quality.${quality}`) }))} onChange={(next) => onChange("quality", next)} /></div> : null}
 
       {["text", "image", "upscale", "batch"].includes(mode) ? <label className="block text-[10px] text-white/52"><span className="mb-1 block">{t("studio.style")}</span><input aria-label={t("studio.style")} className="h-10 w-full rounded-xl border border-white/10 bg-black/20 px-3 text-sm text-white outline-none focus:border-[#d946ef]/70" maxLength={128} placeholder={t("studio.stylePlaceholder")} value={value.style} onChange={(event) => onChange("style", event.target.value.slice(0, MAX_STUDIO_PROMPT_LENGTH))} /></label> : null}
+      {previewAsset ? <StudioImageLightbox alt={previewAsset.name} kind="asset" onClose={() => setPreviewAsset(null)} url={previewAsset.dataUrl || previewAsset.url} /> : null}
     </div>
   );
 }

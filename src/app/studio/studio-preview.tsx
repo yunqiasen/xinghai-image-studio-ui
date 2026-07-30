@@ -55,35 +55,9 @@ type StudioPreviewProps = {
 
 type DragOrigin = { pointerX: number; pointerY: number; offsetX: number; offsetY: number };
 
-type StudioImageLightboxProps = {
-  url: string;
-  onClose: () => void;
-  onEdit: (url: string) => void;
-};
+export { StudioImageLightbox } from "./studio-image-lightbox";
 
-export function StudioImageLightbox({ url, onClose, onEdit }: StudioImageLightboxProps) {
-  const { t } = useLanguage();
-
-  return (
-    <div aria-label={t("preview.openOriginal")} aria-modal="true" className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-xl" data-preview-lightbox="image" onClick={onClose} role="dialog">
-      <button aria-label={t("common.close")} className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full bg-white/12 text-2xl text-white transition hover:bg-white/20" onClick={onClose} type="button">×</button>
-      <button
-        className="absolute bottom-6 left-1/2 z-10 inline-flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-full border border-white/25 bg-[linear-gradient(115deg,#7c3aed,#d946ef)] px-6 text-sm font-bold text-white shadow-[0_18px_48px_rgba(88,28,135,.5)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_56px_rgba(88,28,135,.6)]"
-        data-preview-action="local-edit"
-        onClick={(event) => {
-          event.stopPropagation();
-          onClose();
-          onEdit(url);
-        }}
-        type="button"
-      >
-        <ScanLine size={17} />
-        {t("studio.localEdit")}
-      </button>
-      <img alt={t("preview.resultAlt", { index: 1 })} className="max-h-[92dvh] max-w-[94vw] rounded-2xl object-contain shadow-2xl" onClick={(event) => event.stopPropagation()} src={url} />
-    </div>
-  );
-}
+import { StudioImageLightbox } from "./studio-image-lightbox";
 
 export function StudioPreview({
   mode = "text",
@@ -138,13 +112,6 @@ export function StudioPreview({
     setZoom(1);
     setOffset({ x: 0, y: 0 });
   }, [aspectRatio, results]);
-
-  useEffect(() => {
-    if (!previewUrl) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setPreviewUrl(""); };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [previewUrl]);
 
   function applyZoom(next: number) {
     const clamped = Math.min(1.8, Math.max(0.6, next));
