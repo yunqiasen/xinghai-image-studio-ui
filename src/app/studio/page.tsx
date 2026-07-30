@@ -27,6 +27,7 @@ import { studioModeDefinitions, studioModeModels, studioVisibleModes, type Studi
 import { buildGenerationPrompt } from "./mode-request";
 import { buildStudioTaskOptions, normalizeStudioCount, resolveStudioOperation, validateStudioSubmission, type StudioValidationError } from "./operation-request";
 import { mergePastedImageAssets } from "./prompt-paste";
+import { mergeImageEditPastedAssets, normalizeImageEditAssets, pasteTargetMode } from "./image-edit-assets";
 import { createResultSourceAsset, parentEditContext } from "./result-edit-context";
 import { blobToDataUrl, prepareImageTaskAssets } from "./local-image-runtime";
 import {
@@ -166,6 +167,12 @@ export function StudioPage() {
       ...previous,
       [mode]: { ...previous[mode], [key]: value } as StudioModeSettings,
     }));
+    if (mode === "remove-bg" && key === "imageEditAction") {
+      setModeAssets((previous) => ({
+        ...previous,
+        [mode]: normalizeImageEditAssets(previous[mode], value as StudioSettingsValue["imageEditAction"]),
+      }));
+    }
   }
 
   function changeMode(nextMode: StudioMode) {
@@ -173,10 +180,9 @@ export function StudioPage() {
     setMode(nextMode);
   }
 
-  async function appendImageFiles(files: File[], role: StudioAsset["role"], mergeReferences = false) {
-    if (!files.length) return;
+  async function readImageFiles(files: File[], role: StudioAsset["role"], limit: number) {
     const next: StudioAsset[] = [];
-    for (const file of files.slice(0, role === "image" ? 4 : 1)) {
+    for (const file of files.slice(0, limit)) {
       if (!file.type.startsWith("image/")) continue;
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -186,12 +192,35 @@ export function StudioPage() {
       });
       next.push({ id: createLocalId(), name: file.name || t("studio.sourceImage"), dataUrl, url: "", role });
     }
+    return next;
+  }
+
+  async function appendImageFiles(files: File[], role: StudioAsset["role"], mergeReferences = false, targetMode: StudioMode = mode) {
+    if (!files.length) return;
+    const maxFiles = role === "image" && (targetMode === "image" || targetMode === "batch") ? 4 : 1;
+    const next = await readImageFiles(files, role, maxFiles);
     if (!next.length) return;
-    setModeAssets((previous) => ({ ...previous, [mode]: role !== "image"
-      ? [...previous[mode].filter((item) => item.role !== role), next[0]]
-      : mergeReferences
-        ? mergePastedImageAssets(previous[mode], next)
-        : [...previous[mode].filter((item) => item.role !== "image" || mode === "image" || mode === "batch"), ...next].slice(0, 4) }));
+    setModeAssets((previous) => {
+      if (targetMode === "remove-bg") {
+        const action = modeSettings[targetMode].imageEditAction;
+        const normalized = normalizeImageEditAssets(previous[targetMode], action);
+        if (role === "image") {
+          return { ...previous, [targetMode]: normalizeImageEditAssets([
+            ...normalized.filter((item) => item.role !== "image"),
+            { ...next[0], role: "image" },
+          ], action) };
+        }
+        return { ...previous, [targetMode]: normalizeImageEditAssets([
+          ...normalized.filter((item) => item.role !== role),
+          next[0],
+        ], action) };
+      }
+      return { ...previous, [targetMode]: role !== "image"
+        ? [...previous[targetMode].filter((item) => item.role !== role), next[0]]
+        : mergeReferences
+          ? mergePastedImageAssets(previous[targetMode], next)
+          : [...previous[targetMode].filter((item) => item.role !== "image" || targetMode === "image" || targetMode === "batch"), ...next].slice(0, 4) };
+    });
   }
 
   async function appendFiles(files: FileList | null, role: StudioAsset["role"]) {
@@ -199,9 +228,20 @@ export function StudioPage() {
   }
 
   async function handlePromptImagePaste(files: File[]) {
-    setModePrompts((previous) => ({ ...previous, image: currentPrompt }));
-    setMode("image");
-    await appendImageFiles(files, "image", true);
+    const targetMode = pasteTargetMode(mode);
+    if (targetMode === "image" && mode === "text") {
+      setModePrompts((previous) => ({ ...previous, image: currentPrompt }));
+    }
+    setMode(targetMode);
+    if (targetMode === "remove-bg") {
+      const pasted = await readImageFiles(files, "image", 2);
+      setModeAssets((previous) => ({
+        ...previous,
+        [targetMode]: mergeImageEditPastedAssets(previous[targetMode], pasted, modeSettings[targetMode].imageEditAction),
+      }));
+      return;
+    }
+    await appendImageFiles(files, "image", true, targetMode);
   }
 
   function removeAsset(id: string) {
