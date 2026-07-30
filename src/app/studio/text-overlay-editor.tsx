@@ -89,8 +89,9 @@ export function TextOverlayEditor({ sourceUrl, text, fontFamily, fontSize, textC
             fontFamily: fontFamily.includes("serif") ? "Noto Serif SC, serif" : "Noto Sans SC, sans-serif",
             fontSize: `${previewFontSize}px`,
             lineHeight: 1.2,
+            width: "max-content",
             whiteSpace: "pre-wrap",
-            overflowWrap: "anywhere",
+            overflowWrap: "break-word",
           }}
         >
           <span className="pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,.72)]">{text || t("studio.text.previewPlaceholder")}</span>

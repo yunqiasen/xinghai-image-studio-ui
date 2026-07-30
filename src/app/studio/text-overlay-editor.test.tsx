@@ -27,5 +27,7 @@ describe("TextOverlayEditor", () => {
     expect(html).toContain("星海新品");
     expect(html).toContain('data-text-overlay-box="true"');
     expect(html).toContain("拖动文字调整位置");
+    expect(html).toContain("width:max-content");
+    expect(html).not.toContain("overflow-wrap:anywhere");
   });
 });
