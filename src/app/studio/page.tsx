@@ -28,6 +28,7 @@ import { buildGenerationPrompt } from "./mode-request";
 import { buildStudioTaskOptions, normalizeStudioCount, resolveStudioOperation, validateStudioSubmission, type StudioValidationError } from "./operation-request";
 import { mergePastedImageAssets } from "./prompt-paste";
 import { mergeImageEditPastedAssets, normalizeImageEditAssets, pasteTargetMode } from "./image-edit-assets";
+import type { ImageEditMediaTemplate } from "./image-edit-templates";
 import { createResultSourceAsset, parentEditContext } from "./result-edit-context";
 import { blobToDataUrl, prepareImageTaskAssets } from "./local-image-runtime";
 import {
@@ -262,6 +263,23 @@ export function StudioPage() {
     setModePrompts((previous) => ({ ...previous, [mode]: template.prompt }));
   }
 
+  function handleImageEditTemplateSelect(template: ImageEditMediaTemplate) {
+    const asset: StudioAsset = {
+      id: `template-${template.id}`,
+      name: `${template.id}.webp`,
+      dataUrl: "",
+      url: template.url,
+      role: template.role,
+    };
+    setModeAssets((previous) => ({
+      ...previous,
+      "remove-bg": normalizeImageEditAssets([
+        ...previous["remove-bg"].filter((item) => item.role !== template.role),
+        asset,
+      ], modeSettings["remove-bg"].imageEditAction),
+    }));
+  }
+
   function promptSourceForOptimization(asset: StudioAsset | undefined) {
     if (!asset) return undefined;
     if (asset.dataUrl) return asset.dataUrl;
@@ -408,7 +426,7 @@ export function StudioPage() {
           </div>
         </section>
 
-        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={currentGeneration.starting || imageTaskActive} results={currentGeneration.resultUrls} resultDetails={currentGeneration.task?.images} creditsCost={currentGeneration.task?.creditsCost} operation={currentGeneration.task?.operation} error={currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={() => void optimizeCurrentPrompt()} optimizing={optimizingMode === mode} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={currentGeneration.starting || imageTaskActive || optimizingMode === mode || (imageModels.length > 0 && !supportedOperations.includes(currentOperation))} onCancel={imageTaskActive ? () => void cancelGeneration(mode) : undefined} cancelDisabled={currentGeneration.task?.status === "cancel_requested"} generateLabel={t("studio.generate")} />
+        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={currentGeneration.starting || imageTaskActive} results={currentGeneration.resultUrls} resultDetails={currentGeneration.task?.images} creditsCost={currentGeneration.task?.creditsCost} operation={currentGeneration.task?.operation} error={currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} imageEditAction={settings.imageEditAction} selectedEditTemplateUrl={assets.find((item) => ["background", "garment", "face"].includes(item.role))?.url} onImageEditTemplateSelect={handleImageEditTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={() => void optimizeCurrentPrompt()} optimizing={optimizingMode === mode} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={currentGeneration.starting || imageTaskActive || optimizingMode === mode || (imageModels.length > 0 && !supportedOperations.includes(currentOperation))} onCancel={imageTaskActive ? () => void cancelGeneration(mode) : undefined} cancelDisabled={currentGeneration.task?.status === "cancel_requested"} generateLabel={t("studio.generate")} />
       </div>
 
       <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} isSubmitting={generationStates[editorMode].starting} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} />

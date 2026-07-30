@@ -20,6 +20,9 @@ import type { ImageTaskResult } from "@/lib/image-tasks/types";
 import type { StudioAspectRatio } from "@/lib/image2api/size-presets";
 
 import { PREVIEW_PANEL_CLASS_NAME } from "./layout-constants";
+import { ImageEditTemplatePanel } from "./image-edit-template-panel";
+import type { ImageEditAction } from "./image-edit-assets";
+import type { ImageEditMediaTemplate } from "./image-edit-templates";
 import type { StudioPromptTemplate } from "./mode-config";
 import type { StudioMode } from "@/lib/billing/pricing";
 import { aspectRatioCss, formatGenerationElapsed, resultGridClass } from "./preview-layout";
@@ -39,6 +42,9 @@ type StudioPreviewProps = {
   startedAt?: number;
   templates?: StudioPromptTemplate[];
   onTemplateSelect?: (template: StudioPromptTemplate) => void;
+  imageEditAction?: ImageEditAction;
+  selectedEditTemplateUrl?: string;
+  onImageEditTemplateSelect?: (template: ImageEditMediaTemplate) => void;
   onEditResult?: (url: string, imageIndex: number) => void;
   prompt?: string;
   onPromptChange?: (value: string) => void;
@@ -73,6 +79,9 @@ export function StudioPreview({
   startedAt,
   templates = [],
   onTemplateSelect,
+  imageEditAction = "remove-background",
+  selectedEditTemplateUrl,
+  onImageEditTemplateSelect,
   onEditResult,
   prompt = "",
   onPromptChange = () => undefined,
@@ -274,17 +283,21 @@ export function StudioPreview({
         </div>
 
         <aside className="grid min-h-0 content-start gap-2.5 overflow-y-auto sm:grid-cols-2 lg:grid-cols-1" aria-label={t("preview.info")}>
-          <section className="studio-info-card rounded-2xl border border-[#e3daf8] bg-[linear-gradient(145deg,rgba(244,240,255,.96),rgba(255,255,255,.9))] p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)]" data-template-mode={mode}>
-            <p className="text-[9px] font-bold tracking-[0.16em] text-[#7651c7]">{t("studio.templates")}</p>
-            <p className="mt-1 text-[9px] leading-4 text-slate-500">{t("studio.templateHelp")}</p>
-            <div className="mt-2.5 grid gap-1.5">
-              {templates.map((template) => (
-                <button key={template.id} className="group/template rounded-xl border border-violet-100 bg-white/78 px-2.5 py-2 text-left text-[10px] font-semibold text-[#27364b] transition hover:-translate-y-px hover:border-violet-300 hover:bg-white hover:text-[#7651c7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" onClick={() => onTemplateSelect?.(template)} title={template.prompt} type="button">
-                  <span className="line-clamp-2 leading-4">{t(template.nameKey)}</span>
-                </button>
-              ))}
-            </div>
-          </section>
+          {mode === "remove-bg" ? (
+            <ImageEditTemplatePanel action={imageEditAction} selectedUrl={selectedEditTemplateUrl} onSelect={(template) => onImageEditTemplateSelect?.(template)} />
+          ) : (
+            <section className="studio-info-card rounded-2xl border border-[#e3daf8] bg-[linear-gradient(145deg,rgba(244,240,255,.96),rgba(255,255,255,.9))] p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)]" data-template-mode={mode}>
+              <p className="text-[9px] font-bold tracking-[0.16em] text-[#7651c7]">{t("studio.templates")}</p>
+              <p className="mt-1 text-[9px] leading-4 text-slate-500">{t("studio.templateHelp")}</p>
+              <div className="mt-2.5 grid gap-1.5">
+                {templates.map((template) => (
+                  <button key={template.id} className="group/template rounded-xl border border-violet-100 bg-white/78 px-2.5 py-2 text-left text-[10px] font-semibold text-[#27364b] transition hover:-translate-y-px hover:border-violet-300 hover:bg-white hover:text-[#7651c7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" onClick={() => onTemplateSelect?.(template)} title={template.prompt} type="button">
+                    <span className="line-clamp-2 leading-4">{t(template.nameKey)}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="studio-info-card rounded-2xl border border-[#d7e0ea] bg-white/82 p-3 shadow-[0_10px_26px_rgba(46,58,76,.055)] backdrop-blur">
             <p className="text-[9px] font-bold tracking-[0.16em] text-slate-400">{t("preview.output")}</p>
