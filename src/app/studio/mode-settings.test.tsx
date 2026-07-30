@@ -18,6 +18,7 @@ const value: StudioSettingsValue = {
   preserveComposition: true,
   consistency: 80,
   variation: 30,
+  fontFamily: "sans",
   overlayText: "",
   fontSize: 64,
   textColor: "#FFFFFF",
@@ -162,7 +163,10 @@ describe("operation-specific API controls", () => {
     );
     expect(html).toContain("字体大小");
     expect(html).toContain("文字颜色");
-    expect(html).toContain("文字位置");
+    expect(html).toContain("快捷位置");
+    expect(html).toContain('data-text-position-picker="nine-grid"');
+    expect(html).not.toContain('aria-label="X"');
+    expect(html).not.toContain('aria-label="Y"');
     expect(html).toContain("输出质量");
     expect(html).toContain("Agnes Image");
   });

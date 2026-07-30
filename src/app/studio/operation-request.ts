@@ -44,7 +44,7 @@ export function buildStudioTaskOptions(operation: ImageOperation, settings: Stud
     case "text_overlay":
       return {
         text: settings.overlayText.trim(),
-        fontFamily: "sans",
+        fontFamily: settings.fontFamily,
         fontSize: settings.fontSize,
         textColor: settings.textColor,
         position: settings.textPosition,

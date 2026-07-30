@@ -17,6 +17,7 @@ const defaultSettings: Omit<StudioModeSettings, "model"> = {
   consistency: 80,
   variation: 30,
   overlayText: "",
+  fontFamily: "sans",
   fontSize: 64,
   textColor: "#FFFFFF",
   textPosition: "bottom-center",

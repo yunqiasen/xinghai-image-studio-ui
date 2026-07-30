@@ -23,6 +23,7 @@ const settings: StudioSettingsValue = {
   consistency: 88,
   variation: 24,
   overlayText: "星海新品",
+  fontFamily: "sans",
   fontSize: 72,
   textColor: "#FFEECC",
   textPosition: "bottom-center",

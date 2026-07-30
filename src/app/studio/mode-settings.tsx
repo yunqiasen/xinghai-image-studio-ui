@@ -36,6 +36,7 @@ export type StudioSettingsValue = {
   consistency: number;
   variation: number;
   overlayText: string;
+  fontFamily: string;
   fontSize: number;
   textColor: string;
   textPosition: TextOverlayPosition;
@@ -228,14 +229,14 @@ export function ModeSettings({
       ) : null}
 
       {mode === "remove-bg" && value.imageEditAction === "add-text" ? (
-        <section className="grid gap-2">
+        <section className="grid gap-2" data-text-overlay-controls="visual">
           <input aria-label={t("studio.imageEdit.text")} className="h-11 w-full rounded-[13px] border border-white/10 bg-black/20 px-3 text-sm text-white outline-none focus:border-[#d946ef]/70" maxLength={2000} placeholder={t("studio.imageEdit.textPlaceholder")} value={value.overlayText} onChange={(event) => onChange("overlayText", event.target.value)} />
           <div className="grid grid-cols-2 gap-2">
-            <label className="text-[10px] text-white/52"><span className="mb-1 block">{t("studio.text.fontSize")}</span><input aria-label={t("studio.text.fontSize")} className="h-10 w-full rounded-xl border border-white/10 bg-black/20 px-3 text-white" max={512} min={8} type="number" value={value.fontSize} onChange={(event) => onChange("fontSize", Number(event.target.value))} /></label>
-            <label className="text-[10px] text-white/52"><span className="mb-1 block">{t("studio.text.color")}</span><span className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-2"><input aria-label={t("studio.text.color")} className="h-7 w-9 cursor-pointer border-0 bg-transparent" type="color" value={value.textColor.slice(0, 7)} onChange={(event) => onChange("textColor", event.target.value.toUpperCase())} /><span className="text-[10px] text-white/72">{value.textColor}</span></span></label>
+            <div><ControlTitle title={t("studio.text.fontFamily")} /><OptionGrid value={value.fontFamily} options={[{ value: "sans", label: t("studio.text.font.sans") }, { value: "serif", label: t("studio.text.font.serif") }]} onChange={(next) => onChange("fontFamily", next)} /></div>
+            <label className="text-[10px] text-white/52"><span className="mb-1 block">{t("studio.text.color")}</span><span className="flex h-11 items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-2"><input aria-label={t("studio.text.color")} className="h-7 w-9 cursor-pointer border-0 bg-transparent" type="color" value={value.textColor.slice(0, 7)} onChange={(event) => onChange("textColor", event.target.value.toUpperCase())} /><span className="text-[10px] text-white/72">{value.textColor}</span></span></label>
           </div>
-          <label className="text-[10px] text-white/52"><span className="mb-1 block">{t("studio.text.position")}</span><select aria-label={t("studio.text.position")} className="h-10 w-full rounded-xl border border-white/10 bg-black/20 px-3 text-white" value={value.textPosition} onChange={(event) => onChange("textPosition", event.target.value as TextOverlayPosition)}>{(["top-left", "top-center", "top-right", "center-left", "center", "center-right", "bottom-left", "bottom-center", "bottom-right", "custom"] as TextOverlayPosition[]).map((position) => <option key={position} value={position}>{t(`studio.text.position.${position}`)}</option>)}</select></label>
-          {value.textPosition === "custom" ? <div className="grid grid-cols-2 gap-2"><input aria-label="X" className="h-10 rounded-xl border border-white/10 bg-black/20 px-3 text-white" min={-4096} max={4096} type="number" value={value.textX} onChange={(event) => onChange("textX", Number(event.target.value))} /><input aria-label="Y" className="h-10 rounded-xl border border-white/10 bg-black/20 px-3 text-white" min={-4096} max={4096} type="number" value={value.textY} onChange={(event) => onChange("textY", Number(event.target.value))} /></div> : null}
+          <RangeControl label={t("studio.text.fontSize")} value={value.fontSize} minLabel={t("studio.text.small")} maxLabel={t("studio.text.large")} min={8} max={256} suffix="px" onChange={(next) => onChange("fontSize", next)} />
+          <div data-text-position-picker="nine-grid"><ControlTitle title={t("studio.text.quickPosition")} help={t("studio.text.dragHelp")} /><div className="grid grid-cols-3 gap-1.5">{(["top-left", "top-center", "top-right", "center-left", "center", "center-right", "bottom-left", "bottom-center", "bottom-right"] as TextOverlayPosition[]).map((position) => <button key={position} aria-label={t(`studio.text.position.${position}`)} aria-pressed={value.textPosition === position} className={`grid h-9 place-items-center rounded-lg border text-[9px] font-semibold ${value.textPosition === position ? "border-fuchsia-400 bg-fuchsia-400/18 text-white" : "border-white/10 bg-black/16 text-white/45 hover:text-white"}`} onClick={() => onChange("textPosition", position)} type="button"><span className="h-1.5 w-1.5 rounded-full bg-current" /></button>)}</div></div>
         </section>
       ) : null}
 

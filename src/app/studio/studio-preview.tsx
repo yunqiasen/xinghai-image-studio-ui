@@ -27,6 +27,8 @@ import type { StudioPromptTemplate } from "./mode-config";
 import type { StudioMode } from "@/lib/billing/pricing";
 import { aspectRatioCss, formatGenerationElapsed, resultGridClass } from "./preview-layout";
 import { clipboardImageFiles } from "./prompt-paste";
+import { TextOverlayEditor } from "./text-overlay-editor";
+import type { TextOverlayPosition } from "@/lib/image-models/types";
 
 type StudioPreviewProps = {
   mode?: StudioMode;
@@ -45,6 +47,9 @@ type StudioPreviewProps = {
   imageEditAction?: ImageEditAction;
   selectedEditTemplateUrl?: string;
   onImageEditTemplateSelect?: (template: ImageEditMediaTemplate) => void;
+  textOverlaySourceUrl?: string;
+  textOverlay?: { text: string; fontFamily: string; fontSize: number; textColor: string; position: TextOverlayPosition; x: number; y: number };
+  onTextOverlayPositionChange?: (next: { position: TextOverlayPosition; x: number; y: number }) => void;
   onEditResult?: (url: string, imageIndex: number) => void;
   prompt?: string;
   onPromptChange?: (value: string) => void;
@@ -82,6 +87,9 @@ export function StudioPreview({
   imageEditAction = "remove-background",
   selectedEditTemplateUrl,
   onImageEditTemplateSelect,
+  textOverlaySourceUrl,
+  textOverlay,
+  onTextOverlayPositionChange,
   onEditResult,
   prompt = "",
   onPromptChange = () => undefined,
@@ -273,6 +281,8 @@ export function StudioPreview({
                 ))}
               </div>
             </div>
+          ) : mode === "remove-bg" && imageEditAction === "add-text" && textOverlaySourceUrl && textOverlay ? (
+            <TextOverlayEditor sourceUrl={textOverlaySourceUrl} text={textOverlay.text} fontFamily={textOverlay.fontFamily} fontSize={textOverlay.fontSize} textColor={textOverlay.textColor} position={textOverlay.position} x={textOverlay.x} y={textOverlay.y} onPositionChange={(next) => onTextOverlayPositionChange?.(next)} />
           ) : (
             <div className="mx-6 max-w-xs rounded-[22px] border border-[#e0e6ee] bg-white/92 px-8 py-7 text-center shadow-[0_18px_46px_rgba(51,65,85,.1)]">
               <span className="mx-auto grid h-13 w-13 place-items-center rounded-2xl bg-[#f3edff] text-[#8b5cf6]"><WandSparkles size={25} /></span>

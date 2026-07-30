@@ -280,6 +280,18 @@ export function StudioPage() {
     }));
   }
 
+  function handleTextOverlayPositionChange(next: { position: StudioSettingsValue["textPosition"]; x: number; y: number }) {
+    setModeSettings((previous) => ({
+      ...previous,
+      "remove-bg": {
+        ...previous["remove-bg"],
+        textPosition: next.position,
+        textX: next.x,
+        textY: next.y,
+      },
+    }));
+  }
+
   function promptSourceForOptimization(asset: StudioAsset | undefined) {
     if (!asset) return undefined;
     if (asset.dataUrl) return asset.dataUrl;
@@ -426,7 +438,7 @@ export function StudioPage() {
           </div>
         </section>
 
-        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={currentGeneration.starting || imageTaskActive} results={currentGeneration.resultUrls} resultDetails={currentGeneration.task?.images} creditsCost={currentGeneration.task?.creditsCost} operation={currentGeneration.task?.operation} error={currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} imageEditAction={settings.imageEditAction} selectedEditTemplateUrl={assets.find((item) => ["background", "garment", "face"].includes(item.role))?.url} onImageEditTemplateSelect={handleImageEditTemplateSelect} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={() => void optimizeCurrentPrompt()} optimizing={optimizingMode === mode} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={currentGeneration.starting || imageTaskActive || optimizingMode === mode || (imageModels.length > 0 && !supportedOperations.includes(currentOperation))} onCancel={imageTaskActive ? () => void cancelGeneration(mode) : undefined} cancelDisabled={currentGeneration.task?.status === "cancel_requested"} generateLabel={t("studio.generate")} />
+        <StudioPreview mode={mode} aspectRatio={settings.aspectRatio} resolution={settings.resolution} count={currentGeneration.task?.count || settings.count} busy={currentGeneration.starting || imageTaskActive} results={currentGeneration.resultUrls} resultDetails={currentGeneration.task?.images} creditsCost={currentGeneration.task?.creditsCost} operation={currentGeneration.task?.operation} error={currentGeneration.error} startedAt={currentGeneration.startedAt} templates={currentDefinition.templates} onTemplateSelect={handleTemplateSelect} imageEditAction={settings.imageEditAction} selectedEditTemplateUrl={assets.find((item) => ["background", "garment", "face"].includes(item.role))?.url} onImageEditTemplateSelect={handleImageEditTemplateSelect} textOverlaySourceUrl={sourceAssets[0] ? displaySource(sourceAssets[0]) : undefined} textOverlay={{ text: settings.overlayText, fontFamily: settings.fontFamily, fontSize: settings.fontSize, textColor: settings.textColor, position: settings.textPosition, x: settings.textX, y: settings.textY }} onTextOverlayPositionChange={handleTextOverlayPositionChange} onEditResult={handleResultEdit} prompt={currentPrompt} onPromptChange={(value) => changeSetting("prompt", value)} onOptimizePrompt={() => void optimizeCurrentPrompt()} optimizing={optimizingMode === mode} onGenerate={submit} onPasteImages={handlePromptImagePaste} promptDisabled={currentGeneration.starting || imageTaskActive || optimizingMode === mode || (imageModels.length > 0 && !supportedOperations.includes(currentOperation))} onCancel={imageTaskActive ? () => void cancelGeneration(mode) : undefined} cancelDisabled={currentGeneration.task?.status === "cancel_requested"} generateLabel={t("studio.generate")} />
       </div>
 
       <ImageEditModal open={editorOpen} imageName="生成结果" imageSrc={editorImageSrc} isSubmitting={generationStates[editorMode].starting} onClose={() => setEditorOpen(false)} onSubmit={submitFromMaskEditor} />
