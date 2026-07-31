@@ -184,3 +184,40 @@ git diff --check
 ```
 
 登录后的端到端检查重点：登录 -> 选择一张系统生成结果 -> 从结果工具栏或大图预览打开遮罩编辑器 -> 创建带 `parentTaskId + parentImageIndex + mode=image + role=mask` 的单图任务 -> 确认原物消失、新物只出现在选区 -> 核对遮罩外差异像素为 0 -> 积分与作品同步。
+
+## 图片编辑工作台 UX 约束
+
+图片编辑的用户素材严格分槽：
+
+```text
+去背景 / 加文字：image
+换背景：image + background
+换衣服：image + garment
+换脸：image + face
+```
+
+换背景、换衣和换脸最多显示并提交两张用户素材。左槽始终是 `image` 主图，右槽根据动作切换专用角色；切换动作保留主图并删除不匹配的辅助角色。粘贴图片时，文生图仍跳转图生图，图片编辑则保持 `mode=remove-bg` 并按空槽依次分配角色，不会再跳到图生图。
+
+图片编辑右侧不显示 `imageEditTemplates` 中的内部执行提示。换背景、换衣和换脸改为本地图片素材模板，点击后转为相应 `background/garment/face` 来源。用户提示词保持原文；后端 `BuildExecutionPrompt` 继续根据 operation 置顶追加固定约束。
+
+上传素材缩略图共用创作台图片灯箱，支持遮罩点击、关闭按钮和 `Escape`。灯箱只改变前端查看状态，不修改素材角色或任务状态。
+
+`text_overlay` 使用可视化文字画布。前端支持拖动和九宫格定位，并把显示坐标换算成原图像素后发送：
+
+```json
+{
+  "text": "用户文字",
+  "fontFamily": "sans 或 serif",
+  "fontSize": 64,
+  "textColor": "#FFFFFF",
+  "position": "custom",
+  "x": 320,
+  "y": 180
+}
+```
+
+页面不再暴露 X/Y 数字输入。当前后端契约没有 `fontWeight`、描边和文字底框字段，前端不发送未进入 API.md/OpenAPI 的选项。
+
+创作台文字选择通过 `.studio-page` 局部规则恢复；图片、Canvas 和滑块仍禁止选择。`.studio-scroll-region` 隐藏模式栏、参数栏和右侧信息栏滚动条，但保留滚轮、触控和键盘滚动。
+
+“超分”仅在前端入口改名为“放大/去水印”；`upscale/variation/restore_photo/face_enhance` operation、动态能力和暂缓状态保持现有契约行为，没有新增后端 operation。
